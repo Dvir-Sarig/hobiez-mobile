@@ -5,7 +5,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar } from 'react-native-big-calendar';
 import dayjs from 'dayjs';
 import { useAuth } from '../../auth/AuthContext';
-import { fetchCoachLessons, deleteLesson, editLesson, fetchSingleLesson } from '../../lesson/services/lessonService';
+import { fetchCoachLessons, deleteLesson, editLesson, fetchSingleLesson, fetchRegisteredClients } from '../../lesson/services/lessonService';
+import { fetchClientGlobalInfo } from '../../profile/services/clientService';
 import { Lesson } from '../../lesson/types/Lesson';
 import { formatLessonToEvent } from '../shared/utils/calendar.utils';
 import ViewLessonModal from '../../lesson/components/view/ViewLessonModal';
@@ -37,8 +38,9 @@ const CoachCalendarView = () => {
   const [isLoadingClients, setIsLoadingClients] = useState(false);
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [selectedDateLessons, setSelectedDateLessons] = useState<Lesson[]>([]);
+  const [registeredClients, setRegisteredClients] = useState<{ id: number; name: string }[]>([]);
 
-  const { userId: coachId, token } = useAuth();
+  const { userId: coachId } = useAuth();
   const navigation = useNavigation<NavigationProp>();
 
   const handleOpenModal = (lesson: Lesson) => {
@@ -75,16 +77,16 @@ const CoachCalendarView = () => {
   };
 
   const fetchLessons = useCallback(async () => {
-    if (coachId && token) {
+    if (coachId) {
       try {
-        const lessons = await fetchCoachLessons(coachId, token);
+        const lessons = await fetchCoachLessons(coachId);
         const formatted = lessons.map(formatLessonToEvent);
         setEvents(formatted);
       } catch (error) {
         console.error('Error fetching coach lessons:', error);
       }
     }
-  }, [coachId, token]);
+  }, [coachId]);
 
   const handleEditLesson = async () => {
     try {
@@ -109,10 +111,10 @@ const CoachCalendarView = () => {
         location: editLessonData.location
       };
 
-      const message = await editLesson(selectedLesson?.id!, editData, token!);
+      const message = await editLesson(selectedLesson?.id!, editData);
       setShowEditLessonModal(false);
       setIsModalOpen(false);
-      const updatedLesson = await fetchSingleLesson(selectedLesson?.id!, token!);
+      const updatedLesson = await fetchSingleLesson(selectedLesson?.id!);
       setEvents((prev) =>
         prev.map((event) =>
           event.id === updatedLesson.id ? formatLessonToEvent(updatedLesson) : event
@@ -127,7 +129,7 @@ const CoachCalendarView = () => {
 
   const handleDeleteLesson = async (lessonId: number) => {
     try {
-      const message = await deleteLesson(lessonId, token!);
+      const message = await deleteLesson(lessonId);
       Alert.alert('Deleted', message);
       setEvents((prev) => prev.filter((event) => event.id !== lessonId));
       setShowDeleteConfirmationModal(false);
@@ -143,6 +145,29 @@ const CoachCalendarView = () => {
     }
   };
 
+  const loadRegisteredClients = async (lessonId: number) => {
+    try {
+      setIsLoadingClients(true);
+      const clientIds = await fetchRegisteredClients(lessonId);
+      const clientsWithInfo = await Promise.all(
+        clientIds.map(async (id) => {
+          try {
+            const clientInfo = await fetchClientGlobalInfo(id);
+            return { id, name: clientInfo.name };
+          } catch (error) {
+            return { id, name: `Client ${id}` };
+          }
+        })
+      );
+      setRegisteredClients(clientsWithInfo);
+    } catch (error) {
+      console.error('Error fetching clients:', (error as Error).message);
+      setRegisteredClients([]);
+    } finally {
+      setIsLoadingClients(false);
+    }
+  };
+
   useEffect(() => {
     fetchLessons();
   }, [fetchLessons]);
@@ -152,6 +177,12 @@ const CoachCalendarView = () => {
       handleDateSelect((selectedDate ?? dayjs()).toDate());
     }
   }, [events]);
+
+  useEffect(() => {
+    if (selectedLesson) {
+      loadRegisteredClients(selectedLesson.id);
+    }
+  }, [selectedLesson]);
 
   // Add a focus listener to refresh data when the screen comes into focus
   useEffect(() => {
@@ -253,6 +284,7 @@ const CoachCalendarView = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onEditClick={(lesson) => {
+          setSelectedLesson(lesson);
           setEditLessonData({
             description: lesson.description,
             time: dayjs(lesson.time),
@@ -265,7 +297,13 @@ const CoachCalendarView = () => {
         }}
         onViewClients={(lesson) => {
           setSelectedLesson(lesson);
+          loadRegisteredClients(lesson.id);
           setShowRegisteredClientsModal(true);
+          setIsModalOpen(false);
+        }}
+        onDelete={(lesson) => {
+          setSelectedLesson(lesson);
+          setShowDeleteConfirmationModal(true);
           setIsModalOpen(false);
         }}
       />
@@ -290,7 +328,7 @@ const CoachCalendarView = () => {
         isOpen={showRegisteredClientsModal}
         onClose={() => setShowRegisteredClientsModal(false)}
         lessonId={selectedLesson?.id || 0}
-        registeredClients={[]}
+        registeredClients={registeredClients}
         isLoading={isLoadingClients}
       />
     </View>

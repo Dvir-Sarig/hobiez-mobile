@@ -11,13 +11,13 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { signIn, UserType } from '../services/authService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { AuthContext } from '../AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import SecureStorage from '../services/SecureStorage';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
@@ -71,9 +71,10 @@ export default function SignInScreen() {
     try {
       const data = await signIn(email, password, userType);
 
-      await AsyncStorage.setItem('token', data.token);
-      await AsyncStorage.setItem('userId', data.userId.toString());
-      await AsyncStorage.setItem('userType', userType.toLowerCase());
+      // Store data securely
+      await SecureStorage.storeToken(data.token);
+      await SecureStorage.storeUserId(data.userId.toString());
+      await SecureStorage.storeUserType(userType.toLowerCase());
 
       setAuthState({
         userId: data.userId.toString(),

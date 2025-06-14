@@ -33,7 +33,7 @@ export default function CoachDashboardScreen() {
   const [isDeletingLesson, setIsDeletingLesson] = useState(false);
   const [isEditingLesson, setIsEditingLesson] = useState(false);
 
-  const { token, userId } = useAuth();
+  const { userId } = useAuth();
   const navigation = useNavigation();
 
   const defaultLocation = { city: '', country: '' };
@@ -57,19 +57,19 @@ export default function CoachDashboardScreen() {
   });
 
   const fetchLessonsData = async () => {
-    if (!userId || !token) return;
+    if (!userId) return;
     try {
       setLoading(true);
-      const lessonsWithCounts = await fetchCoachLessons(userId, token);
+      const lessonsWithCounts = await fetchCoachLessons(userId);
       setLessons(lessonsWithCounts);
     } catch (error) {
       console.error('Error fetching lessons:', error);
+      Alert.alert('Error', 'Failed to fetch lessons. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Add focus listener to refresh data when screen comes into focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       fetchLessonsData();
@@ -88,7 +88,7 @@ export default function CoachDashboardScreen() {
   }, [userId]);
 
   const handleCreateLesson = async () => {
-    if (!userId || !token) return;
+    if (!userId) return;
   
     if (!newLesson.time || isNaN(new Date(newLesson.time).getTime())) {
       Alert.alert("Error", "Invalid date/time selected for the lesson.");
@@ -97,7 +97,6 @@ export default function CoachDashboardScreen() {
   
     try {
       setIsCreatingLesson(true);
-      // Get the exact time components from the selected time
       const selectedTime = new Date(newLesson.time);
       const year = selectedTime.getFullYear();
       const month = selectedTime.getMonth();
@@ -105,8 +104,6 @@ export default function CoachDashboardScreen() {
       const hours = selectedTime.getHours();
       const minutes = selectedTime.getMinutes();
 
-      // Create a new date with the exact time components and format it as ISO string
-      // but without timezone conversion
       const exactTime = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
       
       const lessonData = {
@@ -114,7 +111,7 @@ export default function CoachDashboardScreen() {
         time: exactTime
       };
 
-      const createdLesson = await createLesson(lessonData, parseInt(userId, 10), token);
+      const createdLesson = await createLesson(lessonData, parseInt(userId, 10));
       setShowNewLessonModal(false);
       await fetchLessonsData();
     } catch (error) {
@@ -123,13 +120,11 @@ export default function CoachDashboardScreen() {
       setIsCreatingLesson(false);
     }
   };
-  
 
   const handleEditLesson = async () => {
-    if (!selectedLesson || !token) return;
+    if (!selectedLesson) return;
     try {
       setIsEditingLesson(true);
-      // Get the exact time components from the selected time
       const selectedTime = dayjs(editLessonData.time).toDate();
       const year = selectedTime.getFullYear();
       const month = selectedTime.getMonth();
@@ -137,8 +132,6 @@ export default function CoachDashboardScreen() {
       const hours = selectedTime.getHours();
       const minutes = selectedTime.getMinutes();
 
-      // Create a new date with the exact time components and format it as ISO string
-      // but without timezone conversion
       const exactTime = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
 
       const editData = {
@@ -149,9 +142,9 @@ export default function CoachDashboardScreen() {
         location: editLessonData.location
       };
 
-      await editLesson(selectedLesson.id, editData, token);
+      await editLesson(selectedLesson.id, editData);
       setShowEditLessonModal(false);
-      const updatedLesson = await fetchSingleLesson(selectedLesson.id, token);
+      const updatedLesson = await fetchSingleLesson(selectedLesson.id);
       setLessons(prev =>
         prev.map(lesson =>
           lesson.id === updatedLesson.id ? { ...updatedLesson, registeredCount: lesson.registeredCount } : lesson
@@ -165,10 +158,9 @@ export default function CoachDashboardScreen() {
   };
 
   const handleDeleteLesson = async (lessonId: number) => {
-    if (!token) return;
     try {
       setIsDeletingLesson(true);
-      await deleteLesson(lessonId, token);
+      await deleteLesson(lessonId);
       await fetchLessonsData();
     } catch (error) {
       Alert.alert('Error', (error as Error).message || 'Failed to delete lesson');
@@ -186,10 +178,9 @@ export default function CoachDashboardScreen() {
   };
 
   const loadRegisteredClients = async (lessonId: number) => {
-    if (!token) return;
     try {
       setLoadingRegisteredClients(true);
-      const clientIds = await fetchRegisteredClients(lessonId, token);
+      const clientIds = await fetchRegisteredClients(lessonId);
       const clientsWithInfo = await Promise.all(
         clientIds.map(async (id) => {
           try {

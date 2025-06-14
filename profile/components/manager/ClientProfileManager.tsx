@@ -15,7 +15,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types';
 import ClientProfileView from '../view/ClientProfileView';
 import ClientProfileEditForm from './ClientProfileEditForm';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const styles = StyleSheet.create({
   container: {
@@ -114,7 +113,7 @@ const styles = StyleSheet.create({
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ClientProfileDashboardScreen() {
-  const { userId, token } = useAuth();
+  const { userId } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -125,15 +124,12 @@ export default function ClientProfileDashboardScreen() {
 
   const fetchProfile = async () => {
     try {
-      const userId = await AsyncStorage.getItem('userId');
-      const token = await AsyncStorage.getItem('token');
-
-      if (!userId || !token) {
-        throw new Error('Missing user ID or token');
+      if (!userId) {
+        throw new Error('Missing user ID');
       }
 
       const numericUserId = parseInt(userId, 10);
-      const profileData = await fetchClientProfile(numericUserId, token);
+      const profileData = await fetchClientProfile(numericUserId);
       setProfile(profileData);
       if (profileData) {
         setEditData(profileData);
@@ -160,18 +156,15 @@ export default function ClientProfileDashboardScreen() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const userId = await AsyncStorage.getItem('userId');
-      const token = await AsyncStorage.getItem('token');
-
-      if (!userId || !token || !editData) {
-        throw new Error('Missing credentials or profile data');
+      if (!userId || !editData) {
+        throw new Error('Missing user ID or profile data');
       }
 
       const numericUserId = parseInt(userId, 10);
-      await updateClientProfile(numericUserId, editData, token);
+      await updateClientProfile(numericUserId, editData);
       
       // Fetch the updated profile
-      const updatedProfile = await fetchClientProfile(numericUserId, token);
+      const updatedProfile = await fetchClientProfile(numericUserId);
       if (updatedProfile) {
         setProfile(updatedProfile);
         setEditMode(false);

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { DrawerContentScrollView, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useAuth } from '../../auth/AuthContext';
-import { signOut } from '../../auth/services/authService';
+import { logout } from '../../auth/services/authService';
 
 type DrawerParamList = {
   Home: undefined;
@@ -23,7 +23,7 @@ export default function SideMenu(props: DrawerContentComponentProps) {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
       props.navigation.closeDrawer();
       setAuthState({ token: null, userId: null, userType: null });
     } catch (error) {

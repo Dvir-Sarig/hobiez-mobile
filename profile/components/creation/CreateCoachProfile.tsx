@@ -79,21 +79,12 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
     if (!userId) return;
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found. Please sign in again.');
-      }
       const userInfo = await fetchUserInfo(userId, 'coach');
-      await createCoachProfile(userInfo.id, formData, token);
+      await createCoachProfile(userInfo.id, formData);
       Alert.alert('Success', 'Coach profile created!', [
         { 
           text: 'OK', 
-          onPress: () => {
-            // Navigate back to the drawer's profile screen
-            navigation.navigate('MainDrawer', {
-              screen: 'Profile'
-            });
-          }
+          onPress: () => navigation.navigate('MainDrawer', { screen: 'Profile' }),
         },
       ]);
     } catch (err) {

@@ -31,7 +31,7 @@ const ClientCalendarView: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [selectedDateLessons, setSelectedDateLessons] = useState<Lesson[]>([]);
 
-  const { token, userId } = useAuth();
+  const { userId } = useAuth();
   const navigation = useNavigation<NavigationProp>();
 
   const handleOpenModal = (lesson: Lesson) => {
@@ -71,7 +71,7 @@ const ClientCalendarView: React.FC = () => {
 
   const handleUnregister = async (lessonId: number) => {
     try {
-      const message = await deleteClientFromLesson(parseInt(userId!), lessonId, token!);
+      const message = await deleteClientFromLesson(parseInt(userId!), lessonId);
       handleCloseModal();
       setEvents((prev) => prev.filter((e) => e.id !== lessonId));
     } catch (error) {
@@ -83,7 +83,7 @@ const ClientCalendarView: React.FC = () => {
   const fetchCoachInfoData = async (coachId: number) => {
     if (!coachInfoMap[coachId]) {
       try {
-        const coachInfo = await fetchCoachGlobalInfo(coachId, token!);
+        const coachInfo = await fetchCoachGlobalInfo(coachId);
         setCoachInfoMap((prev) => ({ ...prev, [coachId]: coachInfo }));
       } catch (error) {
         console.error(`Error fetching coach ${coachId}:`, error);
@@ -115,10 +115,10 @@ const ClientCalendarView: React.FC = () => {
   };
 
   const fetchLessons = useCallback(async () => {
-    if (userId && token) {
+    if (userId) {
       try {
-        const lessons = await fetchClientRegisteredLessons(userId, token);
-        const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(lessons, token);
+        const lessons = await fetchClientRegisteredLessons(userId);
+        const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(lessons);
         const formattedLessons = lessonsWithCounts.map((lesson: Lesson) => {
           fetchCoachInfoData(lesson.coachId);
           return formatLessonToEvent(lesson);
@@ -129,14 +129,13 @@ const ClientCalendarView: React.FC = () => {
         console.error('Error fetching registered lessons:', error);
       }
     }
-  }, [userId, token]);
+  }, [userId]);
 
   useEffect(() => {
     if (events.length > 0) {
       handleDateSelect((selectedDate ?? dayjs()).toDate());
     }
   }, [events]);
-
 
   useEffect(() => {
     fetchLessons();

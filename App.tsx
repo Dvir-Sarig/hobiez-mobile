@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View } from 'react-native';
 import { RootStackParamList } from './types';
 import DrawerNavigator from './layout/DrawerNavigator';
+import { AuthContext, loadAuthState } from './auth/AuthContext';
+import SecureStorage from './auth/services/SecureStorage';
 
 import SignIn from './auth/signin/SignIn';
 import SignUp from './auth/signup/SignUp';
 import LandingPage from './auth/landing/LandingPage';
-import { AuthContext } from './auth/AuthContext';
 
 import CoachProfilePage from './profile/pages/CoachProfilePage';
 import ClientProfilePage from './profile/pages/ClientProfilePage';
@@ -30,25 +30,28 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadAuth = async () => {
-      // Clear auth data for testing
-      await AsyncStorage.multiRemove(['userType', 'userId', 'token', 'userInfo']);
-      
-      const userType = await AsyncStorage.getItem('userType');
-      const userId = await AsyncStorage.getItem('userId');
-      const token = await AsyncStorage.getItem('token');
-
-      if (userId && !userType) {
-        await AsyncStorage.multiRemove(['userType', 'userId', 'token', 'userInfo']);
+    const initializeAuth = async () => {
+      try {
+        const state = await loadAuthState();
+        
+        // Validate the loaded state
+        if (state.userId && !state.userType) {
+          // Invalid state, clear everything
+          await SecureStorage.clearAll();
+          setAuthState({ userType: null, userId: null, token: null });
+        } else {
+          setAuthState(state);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        await SecureStorage.clearAll();
         setAuthState({ userType: null, userId: null, token: null });
-      } else {
-        setAuthState({ userType, userId, token });
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
-    loadAuth();
+    initializeAuth();
   }, []);
 
   if (loading) {

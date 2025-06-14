@@ -58,12 +58,8 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
     if (!userId) return;
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found. Please sign in again.');
-      }
       const userInfo = await fetchUserInfo(userId, 'client');
-      await createClientProfile(userInfo.id, formData, token);
+      await createClientProfile(userInfo.id, formData);
       Alert.alert('Success', 'Profile created successfully!', [
         {
           text: 'OK',

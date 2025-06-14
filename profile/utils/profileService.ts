@@ -1,19 +1,26 @@
 import API_BASE_URL from '../../shared/config';
 import { CoachProfile, ClientProfile } from '../types/profile';
+import SecureStorage from '../../auth/services/SecureStorage';
+
+const getAuthHeaders = async () => {
+    const token = await SecureStorage.getToken();
+    if (!token) throw new Error('No authentication token found');
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+    };
+};
 
 // --------- Coach Profile ---------
 
 export const createCoachProfile = async (
   coachId: number,
-  profileData: CoachProfile,
-  token: string
+  profileData: CoachProfile
 ): Promise<void> => {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/coach-profile?coachId=${coachId}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
+    headers,
     body: JSON.stringify(profileData),
   });
 
@@ -30,13 +37,11 @@ export const createCoachProfile = async (
 };
 
 export const fetchCoachProfile = async (
-  coachId: number,
-  token: string
+  coachId: number
 ): Promise<CoachProfile | null> => {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/coach-profile/${coachId}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+    headers,
   });
 
   if (!response.ok) return null;
@@ -62,15 +67,12 @@ export const fetchPublicCoachProfile = async (
 
 export const updateCoachProfile = async (
   coachId: number,
-  profileData: CoachProfile,
-  token: string
+  profileData: CoachProfile
 ): Promise<void> => {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/coach-profile/${coachId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
+    headers,
     body: JSON.stringify(profileData),
   });
 
@@ -84,15 +86,12 @@ export const updateCoachProfile = async (
 
 export const createClientProfile = async (
   clientId: number,
-  profileData: ClientProfile,
-  token: string
+  profileData: ClientProfile
 ): Promise<void> => {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/client-profile?clientId=${clientId}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
+    headers,
     body: JSON.stringify(profileData),
   });
 
@@ -109,13 +108,11 @@ export const createClientProfile = async (
 };
 
 export const fetchClientProfile = async (
-  clientId: number,
-  token: string
+  clientId: number
 ): Promise<ClientProfile | null> => {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/client-profile/${clientId}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+    headers,
   });
 
   if (!response.ok) return null;
@@ -124,15 +121,12 @@ export const fetchClientProfile = async (
 
 export const updateClientProfile = async (
   clientId: number,
-  profileData: ClientProfile,
-  token: string
+  profileData: ClientProfile
 ): Promise<void> => {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/client-profile/${clientId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
+    headers,
     body: JSON.stringify(profileData),
   });
 

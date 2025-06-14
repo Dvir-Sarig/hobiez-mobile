@@ -1,5 +1,5 @@
 import API_BASE_URL from "../../shared/config";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SecureStorage from "./SecureStorage";
 
 export enum UserType {
     CLIENT = "CLIENT",
@@ -24,7 +24,6 @@ export const signIn = async (
         try {
             data = await response.json();
         } catch (parseError) {
-            // If we can't parse the response as JSON, it's likely an authentication error
             if (response.status === 401) {
                 throw new Error('Invalid email or password');
             }
@@ -41,27 +40,15 @@ export const signIn = async (
             throw new Error(data.message || 'Login failed. Please try again');
         }
 
+        // Store data securely
+        await SecureStorage.storeToken(data.token);
+        await SecureStorage.storeUserId(data.userId.toString());
+        await SecureStorage.storeUserType(userType.toLowerCase());
+
         return data;
     } catch (error) {
-        // Handle network errors
-        if (error instanceof TypeError && error.message.includes('Network request failed')) {
-            throw new Error('Network error. Please check your connection');
-        }
-
-        // Only log unexpected errors, not authentication failures
-        if (!(error instanceof Error && error.message === 'Invalid email or password')) {
-            console.error('Login error details:', {
-                error,
-                message: error instanceof Error ? error.message : 'Unknown error',
-                stack: error instanceof Error ? error.stack : undefined
-            });
-        }
-
-        // Always return a user-friendly error message
-        if (error instanceof Error && error.message === 'Invalid email or password') {
-            throw error;
-        }
-        throw new Error('Login failed. Please try again');
+        console.error('Login error:', error);
+        throw error;
     }
 };
 
@@ -150,12 +137,21 @@ export const signUp = async (
     }
 };
 
-export const signOut = async (): Promise<void> => {
+export const logout = async () => {
     try {
-        await AsyncStorage.clear();
+        const token = await SecureStorage.getToken();
+        if (token) {
+            await fetch(`${API_BASE_URL}/logout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+        }
     } catch (error) {
-        console.error('Sign out error:', error);
-        throw new Error('Failed to sign out. Please try again.');
+        console.error('Logout error:', error);
+    } finally {
+        await SecureStorage.clearAll();
     }
 };
 

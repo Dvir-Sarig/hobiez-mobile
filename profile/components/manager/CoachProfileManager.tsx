@@ -8,7 +8,6 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types';
@@ -16,11 +15,13 @@ import { fetchCoachProfile, updateCoachProfile } from '../../utils/profileServic
 import { CoachProfile } from '../../types/profile';
 import CoachProfileView from '../view/CoachProfileView';
 import CoachProfileEditForm from './CoachProfileEditForm';
+import { useAuth } from '../../../auth/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function CoachProfileDashboard() {
   const navigation = useNavigation<NavigationProp>();
+  const { userId } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<CoachProfile | null>(null);
@@ -29,15 +30,12 @@ export default function CoachProfileDashboard() {
 
   const fetchProfile = async () => {
     try {
-      const userId = await AsyncStorage.getItem('userId');
-      const token = await AsyncStorage.getItem('token');
-
-      if (!userId || !token) {
-        throw new Error('Missing user ID or token');
+      if (!userId) {
+        throw new Error('Missing user ID');
       }
 
       const numericUserId = parseInt(userId, 10);
-      const profileData = await fetchCoachProfile(numericUserId, token);
+      const profileData = await fetchCoachProfile(numericUserId);
       setProfile(profileData);
       if (profileData) {
         setEditData(profileData);
@@ -63,18 +61,15 @@ export default function CoachProfileDashboard() {
 
   const handleSave = async () => {
     try {
-      const userId = await AsyncStorage.getItem('userId');
-      const token = await AsyncStorage.getItem('token');
-
-      if (!userId || !token) {
-        throw new Error('Missing credentials');
+      if (!userId) {
+        throw new Error('Missing user ID');
       }
 
       const numericUserId = parseInt(userId, 10);
-      await updateCoachProfile(numericUserId, editData as CoachProfile, token);
+      await updateCoachProfile(numericUserId, editData as CoachProfile);
       
       // Fetch the updated profile
-      const updatedProfile = await fetchCoachProfile(numericUserId, token);
+      const updatedProfile = await fetchCoachProfile(numericUserId);
       if (updatedProfile) {
         setProfile(updatedProfile);
         setEditMode(false);

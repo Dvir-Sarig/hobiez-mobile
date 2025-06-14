@@ -55,12 +55,12 @@ export default function ClientDashboardScreen() {
   });
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { token, userId } = useAuth();
+  const { userId } = useAuth();
 
   const fetchCoachInfoData = async (coachId: number) => {
     if (!coachInfoMap[coachId]) {
       try {
-        const coachInfo = await fetchCoachGlobalInfo(coachId, token!);
+        const coachInfo = await fetchCoachGlobalInfo(coachId);
         setCoachInfoMap((prev) => ({ ...prev, [coachId]: coachInfo }));
       } catch (error) {
         console.error('Error fetching coach info:', error);
@@ -80,8 +80,8 @@ export default function ClientDashboardScreen() {
 
   const handleRegisterToLesson = async (lessonId: number) => {
     try {
-      if (!userId || !token) return;
-      await registerToLesson(parseInt(userId), lessonId, token);
+      if (!userId) return;
+      await registerToLesson(parseInt(userId), lessonId);
       handleCloseModal();
       fetchLessonsData();
       fetchClientRegisteredLessonsData();
@@ -104,9 +104,9 @@ export default function ClientDashboardScreen() {
   };
 
   const handleUnregister = async () => {
-    if (!lessonToUnregister || !userId || !token) return;
+    if (!lessonToUnregister || !userId) return;
     try {
-      await deleteClientFromLesson(parseInt(userId), lessonToUnregister.id, token);
+      await deleteClientFromLesson(parseInt(userId), lessonToUnregister.id);
       setIsUnregisterModalOpen(false);
       fetchLessonsData();
       fetchClientRegisteredLessonsData();
@@ -118,9 +118,9 @@ export default function ClientDashboardScreen() {
   const fetchClientRegisteredLessonsData = async () => {
     try {
       setIsLoadingRegisteredLessons(true);
-      if (!userId || !token) return;
-      const data = await fetchClientRegisteredLessons(userId, token);
-      const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(data, token);
+      if (!userId) return;
+      const data = await fetchClientRegisteredLessons(userId);
+      const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(data);
       setRegisteredLessons(lessonsWithCounts);
     } catch (e) {
       console.error('Error fetching registered lessons', e);
@@ -132,7 +132,6 @@ export default function ClientDashboardScreen() {
   const handleSearch = async () => {
     try {
       setIsLoadingLessons(true);
-      if (!token) return;
       const searchRequest = {
         maxPrice: searchQuery.maxPrice ? parseFloat(searchQuery.maxPrice) : null,
         lessonType: searchQuery.lessonType || null,
@@ -144,8 +143,8 @@ export default function ClientDashboardScreen() {
           radiusKm: searchQuery.radiusKm
         } : null
       };
-      const data = await searchLessons(searchRequest, token);
-      const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(data, token);
+      const data = await searchLessons(searchRequest);
+      const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(data);
       setLessons(lessonsWithCounts);
     } catch (error) {
       console.error(error);
@@ -157,9 +156,8 @@ export default function ClientDashboardScreen() {
   const fetchLessonsData = async () => {
     try {
       setIsLoadingLessons(true);
-      if (!token) return;
-      const lessonsData = await fetchLessons(token);
-      const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(lessonsData, token);
+      const lessonsData = await fetchLessons();
+      const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(lessonsData);
       lessonsWithCounts.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
       setLessons(lessonsWithCounts);
       lessonsWithCounts.forEach((lesson) => {
@@ -220,14 +218,14 @@ export default function ClientDashboardScreen() {
       fetchLessonsData();
       fetchClientRegisteredLessonsData();
     }
-  }, [userId, token]);
+  }, [userId]);
 
   useFocusEffect(
     React.useCallback(() => {
-      if (userId && token) {
+      if (userId) {
         fetchClientRegisteredLessonsData();
       }
-    }, [userId, token])
+    }, [userId])
   );
 
   return (

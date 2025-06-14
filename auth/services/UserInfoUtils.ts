@@ -1,11 +1,11 @@
 import API_BASE_URL from "../../shared/config";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SecureStorage from "./SecureStorage";
 
 export type UserRole = "client" | "coach";
 
 export const fetchUserInfo = async (userId: string, role: UserRole) => {
     try {
-        const token = await AsyncStorage.getItem("token");
+        const token = await SecureStorage.getToken();
         if (!token) {
             throw new Error("User not authenticated");
         }

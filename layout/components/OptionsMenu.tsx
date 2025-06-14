@@ -6,25 +6,29 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {RootStackParamList} from "../../types";
 import {NativeStackNavigationProp} from "@react-navigation/native-stack";
+import { MaterialIcons } from '@expo/vector-icons';
+import { useAuth } from '../../auth/AuthContext';
+import { logout } from '../../auth/services/authService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-export default function OptionsMenu() {
+interface OptionsMenuProps {
+    onClose: () => void;
+}
+
+export default function OptionsMenu({ onClose }: OptionsMenuProps) {
     const [modalVisible, setModalVisible] = useState(false);
     const navigation = useNavigation<NavigationProp>();
+    const { setAuthState } = useAuth();
 
     const handleLogout = async () => {
         try {
-            setModalVisible(false);
-
-            await AsyncStorage.multiRemove(['token', 'userId', 'userType', 'userInfo']);
-
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'SignIn' }],
-            });
+            await logout();
+            await AsyncStorage.multiRemove(['userId', 'userType', 'userInfo']);
+            setAuthState({ token: null, userId: null, userType: null });
+            onClose();
         } catch (error) {
-            console.error('Logout failed:', error);
+            console.error('Error during logout:', error);
         }
     };
 
