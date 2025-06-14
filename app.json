@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "hobiez-mobile",
+    "slug": "hobiez-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "icon": "./assets/ios-icon.png",
+      "bundleIdentifier": "com.dvirs.hobiez",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.dvirs.hobiez",
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "apiBaseUrl": "http://10.0.0.14:8080",
+      "googleMapsApiKey": "AIzaSyCJhO6Aret0kyO_YPhtgbb6E-Jn24CvVe8"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/8a9bc157-d1de-499a-a3bd-54b3545170e2"
+    },
+    "privacy": "public",
+    "owner": "dvirs"
+  }
+}

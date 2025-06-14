@@ -1,0 +1,45 @@
+# 📦 Node dependencies
+node_modules/
+
+# 💻 IDE/editor settings
+.idea/
+.vscode/
+
+# ⚙️ Expo and build outputs
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# 📱 Native artifacts
+android/
+ios/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# 🧪 Metro
+.metro-health-check*
+
+# 🐞 Debug & logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# 🍎 macOS system files
+.DS_Store
+*.pem
+
+# 🧪 Git merge conflict backups
+*.orig.*
+
+# 🔐 Local environment variables
+.env
+.env.*.local
+.env.local
+
+# 🧾 TypeScript build artifacts
+*.tsbuildinfo
