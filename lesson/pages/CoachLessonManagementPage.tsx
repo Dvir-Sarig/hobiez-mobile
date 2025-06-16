@@ -24,7 +24,7 @@ export default function CoachDashboardScreen() {
   const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
   const [showRegisteredClientsModal, setShowRegisteredClientsModal] = useState(false);
   const [selectedLessonForClients, setSelectedLessonForClients] = useState<Lesson | null>(null);
-  const [registeredClients, setRegisteredClients] = useState<{ id: number; name: string }[]>([]);
+  const [registeredClients, setRegisteredClients] = useState<{ id: string; name: string }[]>([]);
   const [lessonToView, setLessonToView] = useState<Lesson | null>(null);
   const [showViewLessonModal, setShowViewLessonModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -111,7 +111,7 @@ export default function CoachDashboardScreen() {
         time: exactTime
       };
 
-      const createdLesson = await createLesson(lessonData, parseInt(userId, 10));
+      const createdLesson = await createLesson(lessonData, userId);
       setShowNewLessonModal(false);
       await fetchLessonsData();
     } catch (error) {

@@ -18,7 +18,7 @@ import UnregisterConfirmationModal from '../../../lesson/components/management/r
 
 interface Props {
   lesson: Lesson | null;
-  coachInfoMap: { [key: number]: { name: string; email: string } };
+  coachInfoMap: { [key: string]: { name: string; email: string } };
   isOpen: boolean;
   onClose: () => void;
   onUnregister: (lessonId: number) => void;

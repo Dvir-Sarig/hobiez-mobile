@@ -5,7 +5,7 @@ export interface Lesson {
     title: string;
     description: string;
     time: string; // מומלץ להשתמש ב-ISO string (Date.toISOString())
-    coachId: number;
+    coachId: string;
     price: number;
     capacityLimit: number;
     duration: number; // בדקות

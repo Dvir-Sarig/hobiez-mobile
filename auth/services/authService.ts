@@ -47,7 +47,6 @@ export const signIn = async (
 
         return data;
     } catch (error) {
-        console.error('Login error:', error);
         throw error;
     }
 };
@@ -62,7 +61,6 @@ export const signUp = async (
             name: formData.name,
             email: formData.email,
             password: formData.password,
-            id: null
         };
 
         const response = await fetch(url, {

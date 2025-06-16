@@ -24,7 +24,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onRegister: (lessonId: number) => void;
-  onOpenCoachModal: (coachId: number) => void;
+  onOpenCoachModal: (coachId: string) => void;
 }
 
 const getCapacityColor = (registered: number, limit: number): string => {

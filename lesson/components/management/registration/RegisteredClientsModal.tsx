@@ -16,7 +16,7 @@ interface RegisteredClientsModalProps {
     isOpen: boolean;
     onClose: () => void;
     lessonId: number;
-    registeredClients: { id: number; name: string }[];
+    registeredClients: { id: string; name: string }[];
     isLoading: boolean;
 }
 
@@ -27,7 +27,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
     registeredClients,
     isLoading
 }) => {
-    const [clientInfos, setClientInfos] = useState<{ [key: number]: ClientGlobalInfo }>({});
+    const [clientInfos, setClientInfos] = useState<{ [key: string]: ClientGlobalInfo }>({});
     const [hasLoaded, setHasLoaded] = useState(false);
     const navigation = useNavigation<any>();
 
@@ -36,7 +36,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
             if (!isOpen) return;
 
             setHasLoaded(false);
-            const newClientInfos: { [key: number]: ClientGlobalInfo } = {};
+            const newClientInfos: { [key: string]: ClientGlobalInfo } = {};
 
             try {
                 for (const client of registeredClients) {
@@ -54,7 +54,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
         fetchClientInfos();
     }, [isOpen, registeredClients]);
 
-    const handleClientClick = (clientId: number) => {
+    const handleClientClick = (clientId: string) => {
         onClose();
         navigation.navigate('ClientProfilePage', { clientId });
     };

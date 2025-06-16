@@ -31,7 +31,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiBaseUrl": "http://10.0.0.14:8080",
+      "apiBaseUrl": "http://10.0.0.3:8080",
       "googleMapsApiKey": "AIzaSyCJhO6Aret0kyO_YPhtgbb6E-Jn24CvVe8"
     },
     "runtimeVersion": {

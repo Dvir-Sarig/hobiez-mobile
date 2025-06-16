@@ -34,8 +34,7 @@ export default function CoachProfileDashboard() {
         throw new Error('Missing user ID');
       }
 
-      const numericUserId = parseInt(userId, 10);
-      const profileData = await fetchCoachProfile(numericUserId);
+      const profileData = await fetchCoachProfile(userId);
       setProfile(profileData);
       if (profileData) {
         setEditData(profileData);
@@ -65,11 +64,10 @@ export default function CoachProfileDashboard() {
         throw new Error('Missing user ID');
       }
 
-      const numericUserId = parseInt(userId, 10);
-      await updateCoachProfile(numericUserId, editData as CoachProfile);
+      await updateCoachProfile(userId, editData as CoachProfile);
       
       // Fetch the updated profile
-      const updatedProfile = await fetchCoachProfile(numericUserId);
+      const updatedProfile = await fetchCoachProfile(userId);
       if (updatedProfile) {
         setProfile(updatedProfile);
         setEditMode(false);

@@ -7,15 +7,15 @@ export type RootStackParamList = {
       screen?: string; 
       userType?: string;
       params?: {
-        coachId?: number;
-        clientId?: number;
+        coachId?: string;
+        clientId?: string;
       };
     }; 
   
-    CoachProfile: { coachId: number };
-    ClientProfile: { userId: number };
-    CoachProfilePage: { coachId: number };
-    ClientProfilePage: { clientId: number };
+    CoachProfile: { coachId: string };
+    ClientProfile: { userId: string };
+    CoachProfilePage: { coachId: string };
+    ClientProfilePage: { clientId: string };
     CreateClientProfile: undefined;
     CreateCoachProfile: undefined;
     ClientCalendar: undefined;

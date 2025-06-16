@@ -60,12 +60,7 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
     try {
       const userInfo = await fetchUserInfo(userId, 'client');
       await createClientProfile(userInfo.id, formData);
-      Alert.alert('Success', 'Profile created successfully!', [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate('MainDrawer', { screen: 'Profile' }),
-        },
-      ]);
+      navigation.navigate('MainDrawer', { screen: 'Profile' });
     } catch (err) {
       Alert.alert('Error', (err as Error).message || 'Failed to create profile');
     } finally {

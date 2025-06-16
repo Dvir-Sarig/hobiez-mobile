@@ -128,8 +128,7 @@ export default function ClientProfileDashboardScreen() {
         throw new Error('Missing user ID');
       }
 
-      const numericUserId = parseInt(userId, 10);
-      const profileData = await fetchClientProfile(numericUserId);
+      const profileData = await fetchClientProfile(userId);
       setProfile(profileData);
       if (profileData) {
         setEditData(profileData);
@@ -160,11 +159,10 @@ export default function ClientProfileDashboardScreen() {
         throw new Error('Missing user ID or profile data');
       }
 
-      const numericUserId = parseInt(userId, 10);
-      await updateClientProfile(numericUserId, editData);
+      await updateClientProfile(userId, editData);
       
       // Fetch the updated profile
-      const updatedProfile = await fetchClientProfile(numericUserId);
+      const updatedProfile = await fetchClientProfile(userId);
       if (updatedProfile) {
         setProfile(updatedProfile);
         setEditMode(false);

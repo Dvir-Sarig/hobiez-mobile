@@ -21,7 +21,7 @@ export const fetchLessons = async (): Promise<Lesson[]> => {
 };
 
 export const registerToLesson = async (
-    clientId: number,
+    clientId: string,
     lessonId: number
 ): Promise<string> => {
     const headers = await getAuthHeaders();
@@ -36,7 +36,7 @@ export const registerToLesson = async (
 };
 
 export const deleteClientFromLesson = async (
-    clientId: number,
+    clientId: string,
     lessonId: number
 ): Promise<string> => {
     const headers = await getAuthHeaders();
@@ -98,7 +98,7 @@ export const fetchLessonRegistrationCount = async (
 
 export const fetchRegisteredClients = async (
     lessonId: number
-): Promise<number[]> => {
+): Promise<string[]> => {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/get-registered-clients/${lessonId}`, {
         headers,
@@ -127,7 +127,7 @@ export const fetchCoachLessons = async (
 
 export const createLesson = async (
     newLesson: any,
-    coachId: number
+    coachId: string
 ): Promise<Lesson> => {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/create-lesson`, {

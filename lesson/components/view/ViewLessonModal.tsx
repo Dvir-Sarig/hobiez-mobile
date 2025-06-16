@@ -12,6 +12,9 @@ interface ViewLessonModalProps {
     onEditClick: (lesson: Lesson) => void;
     onViewClients: (lesson: Lesson) => void;
     onDelete: (lesson: Lesson) => void;
+    isEditing?: boolean;
+    isDeleting?: boolean;
+    isLoadingClients?: boolean;
 }
 
 const getCapacityColor = (registered: number, limit: number) => {
@@ -27,7 +30,10 @@ const ViewLessonModal: React.FC<ViewLessonModalProps> = ({
     onClose, 
     onEditClick, 
     onViewClients,
-    onDelete 
+    onDelete,
+    isEditing = false,
+    isDeleting = false,
+    isLoadingClients = false
 }) => {
     if (!lesson) return null;
 
@@ -77,23 +83,32 @@ const ViewLessonModal: React.FC<ViewLessonModalProps> = ({
                             <TouchableOpacity 
                                 style={styles.viewClientsButton} 
                                 onPress={() => onViewClients(lesson)}
+                                disabled={isLoadingClients}
                             >
                                 <Icon name="people" size={20} color="#1976d2" style={styles.buttonIcon} />
-                                <Text style={styles.viewClientsButtonText}>View Registered</Text>
+                                <Text style={styles.viewClientsButtonText}>
+                                    {isLoadingClients ? 'Loading...' : 'View Registered'}
+                                </Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
                                 style={styles.editButton} 
                                 onPress={() => onEditClick(lesson)}
+                                disabled={isEditing}
                             >
                                 <Icon name="edit" size={20} color="#fff" style={styles.buttonIcon} />
-                                <Text style={styles.editButtonText}>Edit Lesson</Text>
+                                <Text style={styles.editButtonText}>
+                                    {isEditing ? 'Editing...' : 'Edit Lesson'}
+                                </Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
                                 style={styles.deleteButton} 
                                 onPress={() => onDelete(lesson)}
+                                disabled={isDeleting}
                             >
                                 <Icon name="delete" size={20} color="#fff" style={styles.buttonIcon} />
-                                <Text style={styles.deleteButtonText}>Delete Lesson</Text>
+                                <Text style={styles.deleteButtonText}>
+                                    {isDeleting ? 'Deleting...' : 'Delete Lesson'}
+                                </Text>
                             </TouchableOpacity>
                         </View>
                     </ScrollView>

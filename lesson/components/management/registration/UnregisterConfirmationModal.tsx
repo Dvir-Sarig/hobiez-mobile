@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { Lesson } from '../../../../lesson/types/Lesson';
 import { formatLessonTimeReadable } from '../../../../shared/services/formatService';
@@ -22,12 +23,12 @@ interface Props {
 }
 
 const UnregisterConfirmationModal: React.FC<Props> = ({
-                                                        lesson,
-                                                        isOpen,
-                                                        onClose,
-                                                        onConfirm,
-                                                        coachInfo,
-                                                      }) => {
+  lesson,
+  isOpen,
+  onClose,
+  onConfirm,
+  coachInfo,
+}) => {
   const navigation = useNavigation<any>();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -48,174 +49,193 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
   };
 
   return (
-      <Modal visible={isOpen} animationType="fade" transparent>
-        <View style={styles.overlay}>
-          <View style={styles.container}>
-            <Avatar.Icon icon="alert" size={60} style={styles.avatar} />
-
+    <Modal visible={isOpen} animationType="fade" transparent>
+      <View style={styles.overlay}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Avatar.Icon 
+              icon="alert" 
+              size={50} 
+              style={styles.avatar}
+              color="#fff"
+            />
             <Text style={styles.title}>Confirm Unregistration</Text>
-            <Text style={styles.subtitle}>Your coach already noticed 👀</Text>
+            <Text style={styles.subtitle}>Are you sure you want to leave this lesson?</Text>
+          </View>
 
-            <View style={styles.content}>
-              <Text style={styles.mainText}>
-                You're about to leave the lesson{' '}
-                <Text style={styles.bold}>{lesson.title}</Text>
-              </Text>
+          <View style={styles.content}>
+            <View style={styles.lessonInfo}>
+              <Text style={styles.lessonTitle}>{lesson.title}</Text>
+              
+              <View style={styles.infoRow}>
+                <MaterialIcons name="access-time" size={20} color="#666" />
+                <Text style={styles.infoText}>
+                  {formatLessonTimeReadable(lesson.time)}
+                </Text>
+              </View>
 
               {coachInfo?.name && (
-                  <TouchableOpacity onPress={handleCoachPress} disabled={isLoading}>
-                    <Text style={[styles.secondaryText, isLoading && styles.disabledText]}>
-                      Coach:{' '}
-                      <Text style={[styles.link, isLoading && styles.disabledText]}>
-                        {coachInfo.name}
-                      </Text>
-                    </Text>
-                  </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.coachRow} 
+                  onPress={handleCoachPress} 
+                  disabled={isLoading}
+                >
+                  <MaterialIcons name="person" size={20} color="#666" />
+                  <Text style={styles.infoText}>
+                    Coach: <Text style={styles.coachName}>{coachInfo.name}</Text>
+                  </Text>
+                </TouchableOpacity>
               )}
 
-              <Text style={styles.secondaryText}>
-                Scheduled on{' '}
-                <Text style={styles.bold}>{formatLessonTimeReadable(lesson.time)}</Text>
-              </Text>
-
               {lesson.location && (
-                  <View style={styles.locationRow}>
-                    <Entypo name="location-pin" size={16} color="#666" />
-                    <Text style={styles.secondaryText}>
-                      {lesson.location.address ||
-                          `${lesson.location.city}, ${lesson.location.country}`}
-                    </Text>
-                  </View>
+                <View style={styles.infoRow}>
+                  <Entypo name="location-pin" size={20} color="#666" />
+                  <Text style={styles.infoText}>
+                    {lesson.location.address || `${lesson.location.city}, ${lesson.location.country}`}
+                  </Text>
+                </View>
               )}
             </View>
 
             <View style={styles.actions}>
               <TouchableOpacity 
-                style={[styles.cancelButton, isLoading && styles.disabledButton]} 
+                style={[styles.button, styles.cancelButton, isLoading && styles.disabledButton]} 
                 onPress={onClose}
                 disabled={isLoading}
               >
-                <Text style={[styles.cancelText, isLoading && styles.disabledText]}>Cancel</Text>
+                <Text style={[styles.buttonText, styles.cancelText]}>Cancel</Text>
               </TouchableOpacity>
+              
               <TouchableOpacity 
-                style={[styles.unregisterButton, isLoading && styles.unregisterButtonDisabled]} 
+                style={[styles.button, styles.unregisterButton, isLoading && styles.unregisterButtonDisabled]} 
                 onPress={handleUnregister}
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator color="#fff" size="small" />
-                    <Text style={[styles.unregisterText, styles.loadingText]}>Unregistering...</Text>
+                    <Text style={[styles.buttonText, styles.loadingText]}>Unregistering...</Text>
                   </View>
                 ) : (
                   <>
-                    <MaterialIcons name="warning-amber" size={18} color="#fff" />
-                    <Text style={styles.unregisterText}> Unregister</Text>
+                    <MaterialIcons name="exit-to-app" size={20} color="#fff" />
+                    <Text style={[styles.buttonText, styles.unregisterText]}> Unregister</Text>
                   </>
                 )}
               </TouchableOpacity>
             </View>
           </View>
         </View>
-      </Modal>
+      </View>
+    </Modal>
   );
 };
 
-export default UnregisterConfirmationModal;
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
-    width: '90%',
+    width: width * 0.9,
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    overflow: 'hidden',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  header: {
+    backgroundColor: '#fff3e0',
+    padding: 24,
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ffe0b2',
   },
   avatar: {
-    backgroundColor: '#ffe082',
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: '#d32f2f',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
+    backgroundColor: '#ff9800',
     marginBottom: 16,
   },
-  content: {
-    width: '100%',
-    marginBottom: 24,
-  },
-  mainText: {
-    fontSize: 15,
-    textAlign: 'center',
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#e65100',
     marginBottom: 8,
   },
-  secondaryText: {
-    fontSize: 14,
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
-    color: '#444',
-    marginTop: 4,
   },
-  bold: {
+  content: {
+    padding: 24,
+  },
+  lessonInfo: {
+    marginBottom: 24,
+  },
+  lessonTitle: {
+    fontSize: 18,
     fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
   },
-  link: {
-    color: '#1976d2',
-  },
-  locationRow: {
+  infoRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 6,
+    marginBottom: 12,
+  },
+  coachRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  infoText: {
+    fontSize: 15,
+    color: '#666',
+    marginLeft: 8,
+  },
+  coachName: {
+    color: '#1976d2',
+    fontWeight: '500',
   },
   actions: {
     flexDirection: 'row',
-    width: '100%',
     justifyContent: 'space-between',
+    gap: 12,
   },
-  cancelButton: {
+  button: {
     flex: 1,
-    padding: 12,
-    marginRight: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#1565c0',
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#1565c0',
-    fontWeight: '600',
-  },
-  unregisterButton: {
-    flex: 1,
-    padding: 12,
-    marginLeft: 8,
-    backgroundColor: '#d32f2f',
-    borderRadius: 10,
+    padding: 16,
+    borderRadius: 12,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  unregisterText: {
-    color: '#fff',
+  cancelButton: {
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  unregisterButton: {
+    backgroundColor: '#f44336',
+  },
+  buttonText: {
+    fontSize: 16,
     fontWeight: '600',
   },
-  disabledButton: {
-    opacity: 0.5,
+  cancelText: {
+    color: '#666',
   },
-  disabledText: {
+  unregisterText: {
+    color: '#fff',
+  },
+  disabledButton: {
     opacity: 0.5,
   },
   unregisterButtonDisabled: {
@@ -228,5 +248,8 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginLeft: 8,
+    color: '#fff',
   },
 });
+
+export default UnregisterConfirmationModal;

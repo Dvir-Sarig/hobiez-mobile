@@ -14,7 +14,7 @@ const getAuthHeaders = async () => {
 // --------- Coach Profile ---------
 
 export const createCoachProfile = async (
-  coachId: number,
+  coachId: string,
   profileData: CoachProfile
 ): Promise<void> => {
   const headers = await getAuthHeaders();
@@ -37,7 +37,7 @@ export const createCoachProfile = async (
 };
 
 export const fetchCoachProfile = async (
-  coachId: number
+  coachId: string
 ): Promise<CoachProfile | null> => {
   const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/coach-profile/${coachId}`, {
@@ -52,10 +52,12 @@ export const fetchPublicCoachProfile = async (
   coachId: string
 ): Promise<CoachProfile | null> => {
   try {
-    const numericCoachId = parseInt(coachId, 10);
-    if (isNaN(numericCoachId)) throw new Error('Invalid coach ID format');
+    // Validate UUID format
+    if (!isValidUUID(coachId)) {
+      throw new Error('Invalid coach ID format');
+    }
 
-    const response = await fetch(`${API_BASE_URL}/public/coach-profile/${numericCoachId}`);
+    const response = await fetch(`${API_BASE_URL}/public/coach-profile/${coachId}`);
     if (!response.ok) return null;
 
     return await response.json();
@@ -65,8 +67,14 @@ export const fetchPublicCoachProfile = async (
   }
 };
 
+// Helper function to validate UUID format
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
 export const updateCoachProfile = async (
-  coachId: number,
+  coachId: string,
   profileData: CoachProfile
 ): Promise<void> => {
   const headers = await getAuthHeaders();
@@ -85,7 +93,7 @@ export const updateCoachProfile = async (
 // --------- Client Profile ---------
 
 export const createClientProfile = async (
-  clientId: number,
+  clientId: string,
   profileData: ClientProfile
 ): Promise<void> => {
   const headers = await getAuthHeaders();
@@ -108,7 +116,7 @@ export const createClientProfile = async (
 };
 
 export const fetchClientProfile = async (
-  clientId: number
+  clientId: string
 ): Promise<ClientProfile | null> => {
   const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/client-profile/${clientId}`, {
@@ -120,7 +128,7 @@ export const fetchClientProfile = async (
 };
 
 export const updateClientProfile = async (
-  clientId: number,
+  clientId: string,
   profileData: ClientProfile
 ): Promise<void> => {
   const headers = await getAuthHeaders();
@@ -137,7 +145,7 @@ export const updateClientProfile = async (
 };
 
 export const fetchPublicClientProfile = async (
-  clientId: number
+  clientId: string
 ): Promise<ClientProfile | null> => {
   try {
     const response = await fetch(`${API_BASE_URL}/public/client-profile/${clientId}`);

@@ -30,7 +30,7 @@ export default function ClientProfilePage() {
         setIsLoading(true);
         setError(null);
         if (!clientId) throw new Error('No client ID provided');
-        const profile = await fetchPublicClientProfile(parseInt(clientId));
+        const profile = await fetchPublicClientProfile(clientId);
         if (!profile) {
           setShowNoProfileModal(true);
         } else {

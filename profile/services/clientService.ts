@@ -6,9 +6,7 @@ export interface ClientGlobalInfo {
   profilePictureUrl?: string | null;
 }
 
-export const fetchClientGlobalInfo = async (
-  clientId: number
-): Promise<ClientGlobalInfo> => {
+export const fetchClientGlobalInfo = async (clientId: string): Promise<ClientGlobalInfo> => {
   try {
     const response = await fetch(`${API_BASE_URL}/public/client-global-info/${clientId}`);
 

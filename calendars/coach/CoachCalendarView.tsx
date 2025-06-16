@@ -27,6 +27,7 @@ const CoachCalendarView = () => {
   const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
   const [showRegisteredClientsModal, setShowRegisteredClientsModal] = useState(false);
   const [isEditingLesson, setIsEditingLesson] = useState(false);
+  const [isDeletingLesson, setIsDeletingLesson] = useState(false);
   const [editLessonData, setEditLessonData] = useState({
     description: '',
     time: dayjs(),
@@ -38,7 +39,7 @@ const CoachCalendarView = () => {
   const [isLoadingClients, setIsLoadingClients] = useState(false);
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [selectedDateLessons, setSelectedDateLessons] = useState<Lesson[]>([]);
-  const [registeredClients, setRegisteredClients] = useState<{ id: number; name: string }[]>([]);
+  const [registeredClients, setRegisteredClients] = useState<{ id: string; name: string }[]>([]);
 
   const { userId: coachId } = useAuth();
   const navigation = useNavigation<NavigationProp>();
@@ -129,13 +130,16 @@ const CoachCalendarView = () => {
 
   const handleDeleteLesson = async (lessonId: number) => {
     try {
+      setIsDeletingLesson(true);
       const message = await deleteLesson(lessonId);
-      Alert.alert('Deleted', message);
       setEvents((prev) => prev.filter((event) => event.id !== lessonId));
+      setSelectedDateLessons((prev) => prev.filter((lesson) => lesson.id !== lessonId));
       setShowDeleteConfirmationModal(false);
       setSelectedLesson(null);
     } catch (error) {
       Alert.alert('Error', (error as Error).message || 'Failed to delete lesson');
+    } finally {
+      setIsDeletingLesson(false);
     }
   };
 
@@ -306,6 +310,9 @@ const CoachCalendarView = () => {
           setShowDeleteConfirmationModal(true);
           setIsModalOpen(false);
         }}
+        isEditing={isEditingLesson}
+        isDeleting={isDeletingLesson}
+        isLoadingClients={isLoadingClients}
       />
 
       <EditLessonModal
@@ -322,6 +329,7 @@ const CoachCalendarView = () => {
         isOpen={showDeleteConfirmationModal}
         onClose={() => setShowDeleteConfirmationModal(false)}
         onConfirmDelete={confirmDeleteLesson}
+        isDeleting={isDeletingLesson}
       />
 
       <RegisteredClientsModal

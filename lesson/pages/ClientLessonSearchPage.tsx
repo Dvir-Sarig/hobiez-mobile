@@ -36,7 +36,7 @@ export default function ClientDashboardScreen() {
   const [clientInfo, setClientInfo] = useState<{ name: string; email: string } | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [registeredLessons, setRegisteredLessons] = useState<Lesson[]>([]);
-  const [coachInfoMap, setCoachInfoMap] = useState<{ [key: number]: { name: string; email: string } }>({});
+  const [coachInfoMap, setCoachInfoMap] = useState<{ [key: string]: { name: string; email: string } }>({});
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
@@ -57,7 +57,7 @@ export default function ClientDashboardScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { userId } = useAuth();
 
-  const fetchCoachInfoData = async (coachId: number) => {
+  const fetchCoachInfoData = async (coachId: string) => {
     if (!coachInfoMap[coachId]) {
       try {
         const coachInfo = await fetchCoachGlobalInfo(coachId);
@@ -81,7 +81,7 @@ export default function ClientDashboardScreen() {
   const handleRegisterToLesson = async (lessonId: number) => {
     try {
       if (!userId) return;
-      await registerToLesson(parseInt(userId), lessonId);
+      await registerToLesson(userId, lessonId);
       handleCloseModal();
       fetchLessonsData();
       fetchClientRegisteredLessonsData();
@@ -106,7 +106,7 @@ export default function ClientDashboardScreen() {
   const handleUnregister = async () => {
     if (!lessonToUnregister || !userId) return;
     try {
-      await deleteClientFromLesson(parseInt(userId), lessonToUnregister.id);
+      await deleteClientFromLesson(userId, lessonToUnregister.id);
       setIsUnregisterModalOpen(false);
       fetchLessonsData();
       fetchClientRegisteredLessonsData();

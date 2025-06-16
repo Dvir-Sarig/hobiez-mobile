@@ -21,7 +21,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ClientCalendarView: React.FC = () => {
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [coachInfoMap, setCoachInfoMap] = useState<{ [key: number]: { name: string; email: string } }>({});
+  const [coachInfoMap, setCoachInfoMap] = useState<{ [key: string]: { name: string; email: string } }>({});
   const [selectedCoachInfo, setSelectedCoachInfo] = useState<{ name: string; email: string } | null>(null);
   const [lessonToDelete, setLessonToDelete] = useState<Lesson | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,7 +61,7 @@ const ClientCalendarView: React.FC = () => {
     }
   };
 
-  const handleOpenCoachModal = (coachId: number) => {
+  const handleOpenCoachModal = (coachId: string) => {
     const coachInfo = coachInfoMap[coachId];
     if (coachInfo) {
       setSelectedCoachInfo(coachInfo);
@@ -71,16 +71,17 @@ const ClientCalendarView: React.FC = () => {
 
   const handleUnregister = async (lessonId: number) => {
     try {
-      const message = await deleteClientFromLesson(parseInt(userId!), lessonId);
+      const message = await deleteClientFromLesson(userId!, lessonId);
       handleCloseModal();
       setEvents((prev) => prev.filter((e) => e.id !== lessonId));
+      setSelectedDateLessons((prev) => prev.filter((lesson) => lesson.id !== lessonId));
     } catch (error) {
       console.error('Error unregistering:', error);
       Alert.alert('Error', 'An error occurred while unregistering.');
     }
   };
 
-  const fetchCoachInfoData = async (coachId: number) => {
+  const fetchCoachInfoData = async (coachId: string) => {
     if (!coachInfoMap[coachId]) {
       try {
         const coachInfo = await fetchCoachGlobalInfo(coachId);

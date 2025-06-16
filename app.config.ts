@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
-const isDevelopment = process.env.APP_ENV === 'development';
+const isDevServer = process.env.APP_ENV === 'development';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
@@ -37,14 +37,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         favicon: './assets/favicon.png'
     },
     extra: {
-        apiBaseUrl: isDevelopment
-            ? 'http://10.0.0.14:8080'
+        apiBaseUrl: process.env.APP_ENV === 'development'
+            ? 'http://10.0.0.3:8080'
             : 'https://hobiez-backend.onrender.com',
         googleMapsApiKey: 'AIzaSyCJhO6Aret0kyO_YPhtgbb6E-Jn24CvVe8',
         eas: {
-            projectId: 'your-project-id'
+          projectId: 'your-project-id'
         }
-    },
+    },   
     plugins: [
         'expo-secure-store'
     ]

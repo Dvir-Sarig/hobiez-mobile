@@ -17,7 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 
 interface RegisteredLessonCardsProps {
   lessons: Lesson[];
-  coachInfoMap: { [key: number]: { name: string; email: string } };
+  coachInfoMap: { [key: string]: { name: string; email: string } };
   onOpenDeleteModal: (lesson: Lesson) => void;
   isLoading?: boolean;
 }

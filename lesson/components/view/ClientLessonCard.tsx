@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 
 interface ClientLessonCardsProps {
   lessons: Lesson[];
-  coachInfoMap: { [key: number]: { name: string; email: string } };
+  coachInfoMap: { [key: string]: { name: string; email: string } };
   onOpenLessonModal: (lesson: Lesson) => void;
   isLoading?: boolean;
 }

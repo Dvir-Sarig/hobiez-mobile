@@ -25,7 +25,6 @@ import EducationEditor from '../EducationEditor';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoadingModal from '../modals/LoadingModal';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -81,12 +80,7 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
     try {
       const userInfo = await fetchUserInfo(userId, 'coach');
       await createCoachProfile(userInfo.id, formData);
-      Alert.alert('Success', 'Coach profile created!', [
-        { 
-          text: 'OK', 
-          onPress: () => navigation.navigate('MainDrawer', { screen: 'Profile' }),
-        },
-      ]);
+      navigation.navigate('MainDrawer', { screen: 'Profile' });
     } catch (err) {
       Alert.alert('Error', (err as Error).message || 'Failed to create profile');
     } finally {

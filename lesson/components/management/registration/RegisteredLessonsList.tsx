@@ -14,9 +14,9 @@ import { MaterialCommunityIcons, FontAwesome5, Ionicons } from '@expo/vector-ico
 
 interface RegisteredLessonsListProps {
   registeredLessons: Lesson[];
-  onOpenCoachModal: (coachId: number) => void;
+  onOpenCoachModal: (coachId: string) => void;
   onOpenDeleteModal: (lesson: Lesson) => void;
-  coachInfoMap: { [key: number]: { name: string; email: string } };
+  coachInfoMap: { [key: string]: { name: string; email: string } };
 }
 
 const getLessonIcon = (title: string) => {
