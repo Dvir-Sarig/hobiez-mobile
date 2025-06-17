@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, ScrollView, Alert, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Button, ScrollView, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, Pressable, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { fetchUserInfo } from '../../auth/services/UserInfoUtils';
 import { fetchCoachLessons, createLesson, deleteLesson, fetchSingleLesson, fetchRegisteredClients, editLesson } from '../services/lessonService';
@@ -32,6 +32,10 @@ export default function CoachDashboardScreen() {
   const [isCreatingLesson, setIsCreatingLesson] = useState(false);
   const [isDeletingLesson, setIsDeletingLesson] = useState(false);
   const [isEditingLesson, setIsEditingLesson] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [filteredLessons, setFilteredLessons] = useState<Lesson[]>([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const { userId } = useAuth();
   const navigation = useNavigation();
@@ -86,6 +90,18 @@ export default function CoachDashboardScreen() {
       fetchLessonsData();
     })();
   }, [userId]);
+
+  useEffect(() => {
+    if (selectedDay) {
+      const filtered = lessons.filter(lesson => {
+        const lessonDate = new Date(lesson.time);
+        return lessonDate.toDateString() === selectedDay.toDateString();
+      });
+      setFilteredLessons(filtered);
+    } else {
+      setFilteredLessons(lessons);
+    }
+  }, [selectedDay, lessons]);
 
   const handleCreateLesson = async () => {
     if (!userId) return;
@@ -206,16 +222,58 @@ export default function CoachDashboardScreen() {
     }
   }, [selectedLessonForClients]);
 
+  const generateDates = () => {
+    const dates = [];
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      dates.push(null);
+    }
+
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      dates.push(new Date(year, month, day));
+    }
+
+    return dates;
+  };
+
+  const getDayName = (date: Date) => {
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  };
+
+  const getMonthName = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+  };
+
   const SectionHeader = ({ title, icon }: { title: string; icon: string }) => (
     <View style={styles.sectionHeaderCard}>
       <View style={styles.headerContent}>
         <Text style={styles.sectionHeaderText}>{title}</Text>
-        <TouchableOpacity 
-          style={styles.calendarButton}
+        <Pressable 
+          style={({ pressed }) => [
+            styles.calendarButton,
+            pressed && styles.calendarButtonPressed
+          ]}
           onPress={() => navigation.navigate('CoachCalendar' as never)}
         >
-          <Icon name="calendar-today" size={24} color="#fff" />
-        </TouchableOpacity>
+          <View style={styles.calendarButtonContent}>
+            <Text style={styles.calendarIcon}>📅</Text>
+            <Text style={styles.calendarButtonText}>View Calendar</Text>
+          </View>
+        </Pressable>
       </View>
     </View>
   );
@@ -225,30 +283,47 @@ export default function CoachDashboardScreen() {
       <SectionHeader title="My Lessons" icon="book" />
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.createButton} 
-          onPress={() => setShowNewLessonModal(true)}
-        >
-          <Icon name="add" size={24} color="#fff" style={styles.buttonIcon} />
-          <Text style={styles.createButtonText}>Create New Lesson</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity 
+            style={styles.createButton} 
+            onPress={() => setShowNewLessonModal(true)}
+          >
+            <Icon name="add" size={24} color="#fff" style={styles.buttonIcon} />
+            <Text style={styles.createButtonText}>Create New Lesson</Text>
+          </TouchableOpacity>
+
+          <Pressable 
+            style={({ pressed }) => [
+              styles.filterButton,
+              pressed && styles.filterButtonPressed
+            ]}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <View style={styles.filterButtonContent}>
+              <Icon name="calendar-today" size={24} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.filterButtonText}>
+                {selectedDay ? selectedDay.toLocaleDateString() : 'Filter by Date'}
+              </Text>
+            </View>
+          </Pressable>
+        </View>
       </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1976d2" />
         </View>
-      ) : lessons.length === 0 ? (
+      ) : filteredLessons.length === 0 ? (
         <View style={styles.emptyStateContainer}>
           <Icon name="school" size={40} color="#1976d2" style={styles.emptyStateIcon} />
-          <Text style={styles.emptyStateTitle}>No Lessons Yet</Text>
+          <Text style={styles.emptyStateTitle}>No Lessons Found</Text>
           <Text style={styles.emptyStateText}>
-            Your clients are waiting! Create your first lesson to start teaching.
+            {selectedDay ? 'No lessons scheduled for this day.' : 'Your clients are waiting! Create your first lesson to start teaching.'}
           </Text>
         </View>
       ) : (
         <LessonCard
-          lessons={lessons}
+          lessons={filteredLessons}
           onEdit={(lesson: Lesson) => {
             setLessonToView(lesson);
             setShowViewLessonModal(true);
@@ -274,6 +349,82 @@ export default function CoachDashboardScreen() {
           }}
         />
       )}
+
+      <Modal
+        visible={showDatePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Date</Text>
+              <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                <Text style={styles.closeButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.monthNavigation}>
+              <TouchableOpacity onPress={handlePrevMonth} style={styles.monthNavButton}>
+                <Text style={styles.monthNavButtonText}>←</Text>
+              </TouchableOpacity>
+              <Text style={styles.monthTitle}>{getMonthName(currentMonth)}</Text>
+              <TouchableOpacity onPress={handleNextMonth} style={styles.monthNavButton}>
+                <Text style={styles.monthNavButtonText}>→</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.weekDaysContainer}>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
+                <Text key={index} style={styles.weekDayText}>{day}</Text>
+              ))}
+            </View>
+
+            <View style={styles.calendarGrid}>
+              {generateDates().map((date, index) => (
+                date ? (
+                  <Pressable
+                    key={index}
+                    style={({ pressed }) => [
+                      styles.dateItem,
+                      selectedDay?.toDateString() === date.toDateString() && styles.selectedDateItem,
+                      pressed && styles.dateItemPressed,
+                      new Date().toDateString() === date.toDateString() && styles.todayDateItem
+                    ]}
+                    onPress={() => {
+                      setSelectedDay(date);
+                      setShowDatePicker(false);
+                    }}
+                  >
+                    <Text style={[
+                      styles.dateNumber,
+                      selectedDay?.toDateString() === date.toDateString() && styles.selectedDateText,
+                      new Date().toDateString() === date.toDateString() && styles.todayDateText
+                    ]}>
+                      {date.getDate()}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <View key={index} style={styles.emptyDateItem} />
+                )
+              ))}
+            </View>
+
+            {selectedDay && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => {
+                  setSelectedDay(null);
+                  setShowDatePicker(false);
+                }}
+              >
+                <Text style={styles.clearButtonText}>Clear Filter</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       <CoachLessonModal
         isOpen={showNewLessonModal}
@@ -367,12 +518,43 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   calendarButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    padding: 8,
-    borderRadius: 8,
+    backgroundColor: '#e3f2fd',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#1976d2',
+    marginLeft: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    transform: [{ scale: 1 }],
+  },
+  calendarButtonPressed: {
+    backgroundColor: '#bbdefb',
+    transform: [{ scale: 0.98 }],
+  },
+  calendarButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  calendarIcon: {
+    fontSize: 20,
+  },
+  calendarButtonText: {
+    color: '#1976d2',
+    fontSize: 12,
+    fontWeight: '500',
   },
   buttonContainer: {
     padding: 16,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
   createButton: {
     backgroundColor: '#1976d2',
@@ -420,5 +602,159 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  filterButton: {
+    backgroundColor: '#1976d2',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  filterButtonPressed: {
+    backgroundColor: '#1565c0',
+    transform: [{ scale: 0.98 }],
+  },
+  filterButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  filterButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1976d2',
+  },
+  closeButton: {
+    fontSize: 24,
+    color: '#666',
+    padding: 4,
+  },
+  monthNavigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  monthNavButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#e3f2fd',
+  },
+  monthNavButtonText: {
+    fontSize: 18,
+    color: '#1976d2',
+    fontWeight: '600',
+  },
+  monthTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  weekDaysContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  weekDayText: {
+    width: '13%',
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  dateItem: {
+    width: '13%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  emptyDateItem: {
+    width: '13%',
+    aspectRatio: 1,
+  },
+  selectedDateItem: {
+    backgroundColor: '#1976d2',
+    borderColor: '#1976d2',
+  },
+  todayDateItem: {
+    borderColor: '#1976d2',
+    borderWidth: 2,
+  },
+  dateItemPressed: {
+    backgroundColor: '#bbdefb',
+  },
+  dateNumber: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  selectedDateText: {
+    color: '#fff',
+  },
+  todayDateText: {
+    color: '#1976d2',
+    fontWeight: '600',
+  },
+  clearButton: {
+    marginTop: 20,
+    padding: 12,
+    alignItems: 'center',
+    backgroundColor: '#e3f2fd',
+    borderRadius: 8,
+  },
+  clearButtonText: {
+    color: '#1976d2',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

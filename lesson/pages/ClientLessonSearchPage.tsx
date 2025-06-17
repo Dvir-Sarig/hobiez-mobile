@@ -3,11 +3,9 @@ import {
   View,
   ScrollView,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   Alert,
-  ActivityIndicator,
+  Pressable,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
@@ -52,6 +50,7 @@ export default function ClientDashboardScreen() {
     coachName: '',
     location: null as Location | null,
     radiusKm: 0.5,
+    day: null as Date | null,
   });
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -141,7 +140,8 @@ export default function ClientDashboardScreen() {
           latitude: searchQuery.location.latitude,
           longitude: searchQuery.location.longitude,
           radiusKm: searchQuery.radiusKm
-        } : null
+        } : null,
+        day: searchQuery.day ? searchQuery.day.toISOString().split('T')[0] : null
       };
       const data = await searchLessons(searchRequest);
       const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(data);
@@ -201,12 +201,18 @@ export default function ClientDashboardScreen() {
           {icon} {title}
         </Text>
         {isRegistered && onCalendarPress && (
-          <TouchableOpacity 
-            style={styles.calendarButton}
+          <Pressable 
+            style={({ pressed }) => [
+              styles.calendarButton,
+              pressed && styles.calendarButtonPressed
+            ]}
             onPress={onCalendarPress}
           >
-            <Text style={styles.calendarIcon}>📅</Text>
-          </TouchableOpacity>
+            <View style={styles.calendarButtonContent}>
+              <Text style={styles.calendarIcon}>📅</Text>
+              <Text style={styles.calendarButtonText}>View Calendar</Text>
+            </View>
+          </Pressable>
         )}
       </View>
     </View>
@@ -349,8 +355,28 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   calendarButton: {
-    fontSize: 20,
+    backgroundColor: '#e8f5e9',
     paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2e7d32',
+    marginLeft: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    transform: [{ scale: 1 }],
+  },
+  calendarButtonPressed: {
+    backgroundColor: '#c8e6c9',
+    transform: [{ scale: 0.98 }],
+  },
+  calendarButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   sectionHeaderCard: {
     backgroundColor: '#e3f2fd',
@@ -383,5 +409,10 @@ const styles = StyleSheet.create({
   },
   calendarIcon: {
     fontSize: 20,
+  },
+  calendarButtonText: {
+    color: '#2e7d32',
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
