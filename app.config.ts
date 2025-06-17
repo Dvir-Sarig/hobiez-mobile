@@ -42,7 +42,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             : 'https://hobiez-backend.onrender.com',
         googleMapsApiKey: 'AIzaSyCJhO6Aret0kyO_YPhtgbb6E-Jn24CvVe8',
         eas: {
-          projectId: 'your-project-id'
+          projectId: '8a9bc157-d1de-499a-a3bd-54b3545170e2'
         }
     },   
     plugins: [
