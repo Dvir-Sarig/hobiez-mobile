@@ -1,5 +1,7 @@
 import API_BASE_URL from "../../shared/config";
 import SecureStorage from "./SecureStorage";
+import { profileCacheService } from '../../profile/services/profileCacheService';
+import { fetchClientProfile, fetchCoachProfile } from '../../profile/utils/profileService';
 
 export enum UserType {
     CLIENT = "CLIENT",
@@ -40,13 +42,28 @@ export const signIn = async (
             throw new Error(data.message || 'Login failed. Please try again');
         }
 
+        
         // Store data securely
         await SecureStorage.storeToken(data.token);
         await SecureStorage.storeUserId(data.userId.toString());
         await SecureStorage.storeUserType(userType.toLowerCase());
 
+        // Fetch and cache user profile based on user type
+        if (userType === UserType.CLIENT) {
+            const profile = await fetchClientProfile(data.userId);
+            if (profile) {
+                await profileCacheService.setUserProfile(data.userId, profile);
+            }
+        } else if (userType === UserType.COACH) {
+            const profile = await fetchCoachProfile(data.userId);
+            if (profile) {
+                await profileCacheService.setUserProfile(data.userId, profile);
+            }
+        }
+
         return data;
     } catch (error) {
+        console.error('Error signing in:', error);
         throw error;
     }
 };
@@ -150,6 +167,19 @@ export const logout = async () => {
         console.error('Logout error:', error);
     } finally {
         await SecureStorage.clearAll();
+    }
+};
+
+export const signOut = async () => {
+    try {
+        const userId = await SecureStorage.getUserId();
+        if (userId) {
+            await profileCacheService.clearUserProfile(userId);
+        }
+        await SecureStorage.clearAll();
+    } catch (error) {
+        console.error('Error signing out:', error);
+        throw error;
     }
 };
 
