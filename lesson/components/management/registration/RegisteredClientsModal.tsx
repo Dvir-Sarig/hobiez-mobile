@@ -76,13 +76,23 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
                             keyExtractor={(item) => item.id.toString()}
                             renderItem={({ item }) => {
                                 const info = clientInfos[item.id];
+                                const hasProfileImage = info?.profilePictureUrl && info.profilePictureUrl.trim() !== '';
+                                
                                 return (
                                     <TouchableOpacity onPress={() => handleClientClick(item.id)} style={styles.clientItem}>
-                                        <Avatar.Text
-                                            label={info?.name?.charAt(0).toUpperCase() || 'C'}
-                                            size={40}
-                                            style={{ backgroundColor: '#1565c0', marginRight: 12 }}
-                                        />
+                                        {hasProfileImage ? (
+                                            <Avatar.Image
+                                                source={{ uri: info.profilePictureUrl! }}
+                                                size={40}
+                                                style={{ marginRight: 12 }}
+                                            />
+                                        ) : (
+                                            <Avatar.Text
+                                                label={info?.name?.charAt(0).toUpperCase() || 'C'}
+                                                size={40}
+                                                style={{ backgroundColor: '#1565c0', marginRight: 12 }}
+                                            />
+                                        )}
                                         <View>
                                             <Text style={styles.clientName}>{info?.name || `Client ${item.id}`}</Text>
                                             <Text style={styles.clientEmail}>{info?.email || ''}</Text>

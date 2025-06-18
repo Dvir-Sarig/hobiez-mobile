@@ -48,7 +48,6 @@ export const fetchCoachProfile = async (
       return cachedProfile as CoachProfile;
     }
 
-    console.log(`🔄 Cache miss, fetching coach profile from API for ${coachId}`);
     // If not in cache, fetch from API
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/coach-profile/${coachId}`, {
@@ -100,7 +99,6 @@ export const updateCoachProfile = async (
   coachId: string,
   profileData: CoachProfile
 ): Promise<void> => {
-  console.log(`📝 Updating coach profile for ${coachId}`);
   const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/coach-profile/${coachId}`, {
     method: 'PUT',
@@ -146,7 +144,6 @@ export const fetchClientProfile = async (
   clientId: string
 ): Promise<ClientProfile | null> => {
   try {
-    console.log(`🔍 Fetching client profile for ${clientId}`);
     
     // Try to get from cache first
     const cachedProfile = await profileCacheService.getUserProfile(clientId);

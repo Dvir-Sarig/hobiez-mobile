@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CoachProfile,SupportedLanguage } from '../../types/profile';
@@ -13,6 +14,7 @@ import LocationField from '../../../integrations/google_location/LocationField';
 import LanguageSelector from '../LanguageSelector';
 import SkillSelector from '../SkillSelector';
 import EducationEditor from '../EducationEditor';
+import ImagePickerComponent from '../../../shared/compenents/ImagePicker';
 import LoadingModal from '../modals/LoadingModal';
 
 interface Props {
@@ -45,6 +47,20 @@ export default function CoachProfileEditForm({
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.label}>Profile Picture</Text>
+        <ImagePickerComponent
+          currentImageUrl={editData.genericProfile.profilePictureUrl}
+          onImageChange={(imageUrl) =>
+            updateField({
+              genericProfile: {
+                ...editData.genericProfile,
+                profilePictureUrl: imageUrl,
+              },
+            })
+          }
+          size={120}
+        />
+
         <Text style={styles.label}>Phone Number</Text>
         <TextInput
           style={styles.input}
@@ -137,8 +153,17 @@ export default function CoachProfileEditForm({
         onPress={onSave}
         disabled={loading}
       >
-        <MaterialIcons name="save" size={20} color="#fff" />
-        <Text style={styles.saveButtonText}>Save Changes</Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color="#fff" size="small" />
+            <Text style={[styles.saveButtonText, styles.loadingText]}>Saving...</Text>
+          </View>
+        ) : (
+          <>
+            <MaterialIcons name="save" size={20} color="#fff" />
+            <Text style={styles.saveButtonText}>Save Changes</Text>
+          </>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity 
@@ -244,5 +269,12 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginLeft: 8,
   },
 });
