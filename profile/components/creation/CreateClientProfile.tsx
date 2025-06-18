@@ -16,6 +16,7 @@ import { fetchUserInfo } from '../../../auth/services/UserInfoUtils';
 import { useAuth } from '../../../auth/AuthContext';
 import HobbySelector from '../HobbySelector';
 import LanguageSelector from '../LanguageSelector';
+import ImagePickerComponent from '../../../shared/compenents/ImagePicker';
 import { RootStackParamList } from '../../../types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -79,6 +80,18 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.label}>Profile Picture</Text>
+        <ImagePickerComponent
+          currentImageUrl={formData.genericProfile.profilePictureUrl}
+          onImageChange={(imageUrl) =>
+            setFormData((prev) => ({
+              ...prev,
+              genericProfile: { ...prev.genericProfile, profilePictureUrl: imageUrl },
+            }))
+          }
+          size={120}
+        />
+
         <Text style={styles.label}>Name</Text>
         <TextInput style={styles.input} value={formData.genericProfile.name} editable={false} />
 

@@ -1,6 +1,7 @@
 import API_BASE_URL from '../../shared/config';
 import { CoachProfile, ClientProfile } from '../types/profile';
 import SecureStorage from '../../auth/services/SecureStorage';
+import { profileCacheService } from '../services/profileCacheService';
 
 const getAuthHeaders = async () => {
     const token = await SecureStorage.getToken();
@@ -39,13 +40,34 @@ export const createCoachProfile = async (
 export const fetchCoachProfile = async (
   coachId: string
 ): Promise<CoachProfile | null> => {
-  const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/coach-profile/${coachId}`, {
-    headers,
-  });
+  try {
+    
+    // Try to get from cache first
+    const cachedProfile = await profileCacheService.getUserProfile(coachId);
+    if (cachedProfile) {
+      return cachedProfile as CoachProfile;
+    }
 
-  if (!response.ok) return null;
-  return response.json();
+    // If not in cache, fetch from API
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/coach-profile/${coachId}`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+    
+    const profile = await response.json();
+    
+    // Cache the profile
+    await profileCacheService.setUserProfile(coachId, profile);
+    
+    return profile;
+  } catch (error) {
+    console.error('Error fetching coach profile:', error);
+    return null;
+  }
 };
 
 export const fetchPublicCoachProfile = async (
@@ -88,6 +110,9 @@ export const updateCoachProfile = async (
     const errorData = await response.text();
     throw new Error(errorData || 'Failed to update profile');
   }
+
+  // Update cache with new profile data
+  await profileCacheService.setUserProfile(coachId, profileData);
 };
 
 // --------- Client Profile ---------
@@ -118,13 +143,34 @@ export const createClientProfile = async (
 export const fetchClientProfile = async (
   clientId: string
 ): Promise<ClientProfile | null> => {
-  const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/client-profile/${clientId}`, {
-    headers,
-  });
+  try {
+    
+    // Try to get from cache first
+    const cachedProfile = await profileCacheService.getUserProfile(clientId);
+    if (cachedProfile) {
+      return cachedProfile as ClientProfile;
+    }
 
-  if (!response.ok) return null;
-  return response.json();
+    // If not in cache, fetch from API
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/client-profile/${clientId}`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+    
+    const profile = await response.json();
+    
+    // Cache the profile
+    await profileCacheService.setUserProfile(clientId, profile);
+    
+    return profile;
+  } catch (error) {
+    console.error('Error fetching client profile:', error);
+    return null;
+  }
 };
 
 export const updateClientProfile = async (
@@ -142,6 +188,9 @@ export const updateClientProfile = async (
     const errorData = await response.text();
     throw new Error(errorData || 'Failed to update profile');
   }
+
+  // Update cache with new profile data
+  await profileCacheService.setUserProfile(clientId, profileData);
 };
 
 export const fetchPublicClientProfile = async (

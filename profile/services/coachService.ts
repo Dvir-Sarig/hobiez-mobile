@@ -2,6 +2,12 @@
 import API_BASE_URL from '../../shared/config';
 import SecureStorage from '../../auth/services/SecureStorage';
 
+export interface CoachGlobalInfo {
+  name: string;
+  email: string;
+  profilePictureUrl?: string | null;
+}
+
 const getAuthHeaders = async () => {
     const token = await SecureStorage.getToken();
     if (!token) throw new Error('No authentication token found');
@@ -11,7 +17,7 @@ const getAuthHeaders = async () => {
     };
 };
 
-export const fetchCoachGlobalInfo = async (coachId: string) => {
+export const fetchCoachGlobalInfo = async (coachId: string): Promise<CoachGlobalInfo> => {
     // Validate UUID format
     if (!isValidUUID(coachId)) {
         throw new Error('Invalid coach ID format');

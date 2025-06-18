@@ -16,6 +16,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { CalendarEvent } from '../shared/types/calendar.types';
 import { formatLessonTimeReadable } from '../../shared/services/formatService';
 import { RootStackParamList } from '../../types';
+import { lessonCacheService } from '../../lesson/services/lessonCacheService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -73,6 +74,8 @@ const ClientCalendarView: React.FC = () => {
     try {
       const message = await deleteClientFromLesson(userId!, lessonId);
       handleCloseModal();
+      // Clear the registered lessons cache
+      await lessonCacheService.clearRegisteredLessons(userId!);
       setEvents((prev) => prev.filter((e) => e.id !== lessonId));
       setSelectedDateLessons((prev) => prev.filter((lesson) => lesson.id !== lessonId));
     } catch (error) {
@@ -118,14 +121,29 @@ const ClientCalendarView: React.FC = () => {
   const fetchLessons = useCallback(async () => {
     if (userId) {
       try {
+        // Try to get from cache first
+        const cachedLessons = await lessonCacheService.getRegisteredLessons(userId);
+        if (cachedLessons) {
+          const formattedLessons = cachedLessons.map((lesson: Lesson) => {
+            fetchCoachInfoData(lesson.coachId);
+            return formatLessonToEvent(lesson);
+          });
+          setEvents(formattedLessons);
+          return;
+        }
+
+        // If not in cache, fetch from API
         const lessons = await fetchClientRegisteredLessons(userId);
         const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(lessons);
+        
+        // Cache the results
+        await lessonCacheService.setRegisteredLessons(userId, lessonsWithCounts);
+        
         const formattedLessons = lessonsWithCounts.map((lesson: Lesson) => {
           fetchCoachInfoData(lesson.coachId);
           return formatLessonToEvent(lesson);
         });
         setEvents(formattedLessons);
-        
       } catch (error) {
         console.error('Error fetching registered lessons:', error);
       }

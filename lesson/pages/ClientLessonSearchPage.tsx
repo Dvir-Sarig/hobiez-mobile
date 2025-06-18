@@ -29,6 +29,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { Lesson } from '../types/Lesson';
 import SearchForm from '../components/search/SearchForm';
 import { Location } from '../../profile/types/profile';
+import { lessonCacheService } from '../services/lessonCacheService';
 
 export default function ClientDashboardScreen() {
   const [clientInfo, setClientInfo] = useState<{ name: string; email: string } | null>(null);
@@ -56,6 +57,15 @@ export default function ClientDashboardScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { userId } = useAuth();
 
+  // Add polling interval state
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Function to handle refresh of all lesson data
+  const refreshAllLessonData = async () => {
+    await fetchLessonsData(true);
+    await fetchClientRegisteredLessonsData();
+  };
+
   const fetchCoachInfoData = async (coachId: string) => {
     if (!coachInfoMap[coachId]) {
       try {
@@ -82,8 +92,12 @@ export default function ClientDashboardScreen() {
       if (!userId) return;
       await registerToLesson(userId, lessonId);
       handleCloseModal();
-      fetchLessonsData();
-      fetchClientRegisteredLessonsData();
+      
+      // Clear cache after registration
+      await lessonCacheService.clearAllCache(userId);
+      
+      // Refresh all lesson data
+      await refreshAllLessonData();
     } catch (error) {
       const errorMessage = (error as Error).message;
       if (errorMessage.includes("already registered")) {
@@ -107,8 +121,12 @@ export default function ClientDashboardScreen() {
     try {
       await deleteClientFromLesson(userId, lessonToUnregister.id);
       setIsUnregisterModalOpen(false);
-      fetchLessonsData();
-      fetchClientRegisteredLessonsData();
+      
+      // Clear cache after unregistration
+      await lessonCacheService.clearAllCache(userId);
+      
+      // Refresh all lesson data
+      await refreshAllLessonData();
     } catch (error) {
       Alert.alert('Error', (error as Error).message);
     }
@@ -118,8 +136,21 @@ export default function ClientDashboardScreen() {
     try {
       setIsLoadingRegisteredLessons(true);
       if (!userId) return;
+
+      // Try to get from cache first
+      const cachedRegisteredLessons = await lessonCacheService.getRegisteredLessons(userId);
+      if (cachedRegisteredLessons) {
+        setRegisteredLessons(cachedRegisteredLessons);
+        return;
+      }
+
+      // If not in cache, fetch from API
       const data = await fetchClientRegisteredLessons(userId);
       const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(data);
+      
+      // Cache the results
+      await lessonCacheService.setRegisteredLessons(userId, lessonsWithCounts);
+      
       setRegisteredLessons(lessonsWithCounts);
     } catch (e) {
       console.error('Error fetching registered lessons', e);
@@ -143,22 +174,114 @@ export default function ClientDashboardScreen() {
         } : null,
         day: searchQuery.day ? searchQuery.day.toISOString().split('T')[0] : null
       };
+
+      // First try to search in cache
+      const cachedLessons = await lessonCacheService.getAvailableLessons();
+      if (cachedLessons) {
+        const filteredLessons = cachedLessons.filter(lesson => {
+          // Filter by price
+          if (searchRequest.maxPrice && lesson.price > searchRequest.maxPrice) {
+            return false;
+          }
+
+          // Filter by lesson type
+          if (searchRequest.lessonType && lesson.title !== searchRequest.lessonType) {
+            return false;
+          }
+
+          // Filter by max participants
+          if (searchRequest.maxParticipants && lesson.capacityLimit > searchRequest.maxParticipants) {
+            return false;
+          }
+
+          // Filter by location
+          if (searchRequest.location && lesson.location?.latitude && lesson.location?.longitude) {
+            const distance = calculateDistance(
+              searchRequest.location.latitude,
+              searchRequest.location.longitude,
+              lesson.location.latitude,
+              lesson.location.longitude
+            );
+            if (distance > searchRequest.location.radiusKm) {
+              return false;
+            }
+          }
+
+          // Filter by day
+          if (searchRequest.day) {
+            const lessonDate = new Date(lesson.time).toISOString().split('T')[0];
+            if (lessonDate !== searchRequest.day) {
+              return false;
+            }
+          }
+
+          return true;
+        });
+
+        if (filteredLessons.length > 0) {
+          setLessons(filteredLessons);
+          filteredLessons.forEach((lesson) => {
+            if (lesson.coachId) fetchCoachInfoData(lesson.coachId);
+          });
+          return;
+        }
+      }
+
+      // If no results in cache or cache is empty, fetch from API
       const data = await searchLessons(searchRequest);
       const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(data);
       setLessons(lessonsWithCounts);
+      lessonsWithCounts.forEach((lesson) => {
+        if (lesson.coachId) fetchCoachInfoData(lesson.coachId);
+      });
     } catch (error) {
-      console.error(error);
+      console.error('Error searching lessons:', error);
     } finally {
       setIsLoadingLessons(false);
     }
   };
 
-  const fetchLessonsData = async () => {
+  // Helper function to calculate distance between two points using Haversine formula
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const toRad = (degrees: number): number => {
+    return degrees * (Math.PI / 180);
+  };
+
+  const fetchLessonsData = async (forceRefresh = false) => {
     try {
       setIsLoadingLessons(true);
+
+      // Only check cache if not forcing refresh
+      if (!forceRefresh) {
+        const cachedLessons = await lessonCacheService.getAvailableLessons();
+        if (cachedLessons) {
+          setLessons(cachedLessons);
+          cachedLessons.forEach((lesson) => {
+            if (lesson.coachId) fetchCoachInfoData(lesson.coachId);
+          });
+          return;
+        }
+      }
+
+      // Always fetch fresh data from API when forceRefresh is true
       const lessonsData = await fetchLessons();
       const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(lessonsData);
       lessonsWithCounts.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+      
+      // Cache the fresh results
+      await lessonCacheService.setAvailableLessons(lessonsWithCounts);
+      
       setLessons(lessonsWithCounts);
       lessonsWithCounts.forEach((lesson) => {
         if (lesson.coachId) fetchCoachInfoData(lesson.coachId);
@@ -182,12 +305,14 @@ export default function ClientDashboardScreen() {
     title, 
     icon, 
     isRegistered = false,
-    onCalendarPress
+    onCalendarPress,
+    onRefresh
   }: { 
     title: string; 
     icon: string; 
     isRegistered?: boolean;
     onCalendarPress?: () => void;
+    onRefresh?: () => void;
   }) => (
     <View style={[
       styles.sectionHeaderCard,
@@ -200,29 +325,61 @@ export default function ClientDashboardScreen() {
         ]}>
           {icon} {title}
         </Text>
-        {isRegistered && onCalendarPress && (
-          <Pressable 
-            style={({ pressed }) => [
-              styles.calendarButton,
-              pressed && styles.calendarButtonPressed
-            ]}
-            onPress={onCalendarPress}
-          >
-            <View style={styles.calendarButtonContent}>
-              <Text style={styles.calendarIcon}>📅</Text>
-              <Text style={styles.calendarButtonText}>View Calendar</Text>
-            </View>
-          </Pressable>
-        )}
+        <View style={styles.headerActions}>
+          {onRefresh && (
+            <Pressable 
+              onPress={onRefresh}
+              disabled={isLoadingLessons}
+              style={({ pressed }) => [
+                styles.refreshButton,
+                pressed && { opacity: 0.7 }
+              ]}
+            >
+              <Text style={[
+                styles.refreshIcon,
+                isLoadingLessons && { opacity: 0.5 }
+              ]}>🔄</Text>
+            </Pressable>
+          )}
+          {isRegistered && onCalendarPress && (
+            <Pressable 
+              style={({ pressed }) => [
+                styles.calendarButton,
+                pressed && styles.calendarButtonPressed
+              ]}
+              onPress={onCalendarPress}
+            >
+              <View style={styles.calendarButtonContent}>
+                <Text style={styles.calendarIcon}>📅</Text>
+                <Text style={styles.calendarButtonText}>View Calendar</Text>
+              </View>
+            </Pressable>
+          )}
+        </View>
       </View>
     </View>
   );
 
+  // Set up polling on component mount
   useEffect(() => {
     if (userId) {
+      // Initial fetch
       fetchUserInfo(userId, 'client').then(setClientInfo);
-      fetchLessonsData();
-      fetchClientRegisteredLessonsData();
+      refreshAllLessonData();
+
+      // Set up 3-minute polling
+      const interval = setInterval(() => {
+        refreshAllLessonData();
+      }, 3 * 60 * 1000); // 3 minutes
+
+      setPollingInterval(interval);
+
+      // Cleanup on unmount
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
     }
   }, [userId]);
 
@@ -243,7 +400,11 @@ export default function ClientDashboardScreen() {
       />
 
       <View style={{ marginTop: 24 }}>
-        <SectionHeader title="Available Lessons" icon="📚" />
+        <SectionHeader 
+          title="Available Lessons" 
+          icon="📚" 
+          onRefresh={refreshAllLessonData}
+        />
         <ClientLessonCards
           lessons={lessons}
           coachInfoMap={coachInfoMap}
@@ -393,8 +554,13 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   registeredHeaderCard: {
     backgroundColor: '#e8f5e9',
@@ -414,5 +580,11 @@ const styles = StyleSheet.create({
     color: '#2e7d32',
     fontSize: 12,
     fontWeight: '500',
+  },
+  refreshButton: {
+    padding: 4,
+  },
+  refreshIcon: {
+    fontSize: 18,
   },
 });

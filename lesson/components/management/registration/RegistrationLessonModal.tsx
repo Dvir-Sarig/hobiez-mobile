@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Avatar } from 'react-native-paper';
 import { Lesson } from '../../../types/Lesson';
 import { formatPrice } from '../../../../shared/services/formatService';
 import { MaterialIcons, FontAwesome5, Ionicons, Entypo } from '@expo/vector-icons';
 import { RootStackParamList } from '../../../../types';
+import { fetchCoachGlobalInfo, CoachGlobalInfo } from '../../../../profile/services/coachService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -43,6 +45,28 @@ const RegistrationLessonModal: React.FC<Props> = ({
 }) => {
   const navigation = useNavigation<NavigationProp>();
   const [isLoading, setIsLoading] = useState(false);
+  const [coachGlobalInfo, setCoachGlobalInfo] = useState<CoachGlobalInfo | null>(null);
+  const [isLoadingCoachInfo, setIsLoadingCoachInfo] = useState(false);
+
+  useEffect(() => {
+    const fetchCoachInfo = async () => {
+      if (!lesson?.coachId) return;
+      
+      setIsLoadingCoachInfo(true);
+      try {
+        const info = await fetchCoachGlobalInfo(lesson.coachId);
+        setCoachGlobalInfo(info);
+      } catch (error) {
+        console.error('Error fetching coach info:', error);
+      } finally {
+        setIsLoadingCoachInfo(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchCoachInfo();
+    }
+  }, [isOpen, lesson?.coachId]);
 
   if (!lesson) return null;
 
@@ -57,6 +81,51 @@ const RegistrationLessonModal: React.FC<Props> = ({
       await onRegister(lesson.id);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const renderCoachInfo = () => {
+    if (isLoadingCoachInfo) {
+      return (
+        <View style={styles.coachInfoContainer}>
+          <ActivityIndicator size="small" color="#1976d2" />
+          <Text style={styles.coachName}>Loading...</Text>
+        </View>
+      );
+    }
+
+    const coachName = coachGlobalInfo?.name || coachInfo?.name || 'Unknown Coach';
+
+    return (
+      <TouchableOpacity onPress={handleCoachPress}>
+        <Text style={styles.link}>{coachName}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderCoachIcon = () => {
+    if (isLoadingCoachInfo) {
+      return <MaterialIcons name="person" size={20} color="#1976d2" />;
+    }
+
+    const hasProfileImage = coachGlobalInfo?.profilePictureUrl && coachGlobalInfo.profilePictureUrl.trim() !== '';
+    const coachName = coachGlobalInfo?.name || coachInfo?.name || 'Unknown Coach';
+
+    if (hasProfileImage) {
+      return (
+        <Avatar.Image
+          source={{ uri: coachGlobalInfo.profilePictureUrl! }}
+          size={36}
+        />
+      );
+    } else {
+      return (
+        <Avatar.Text
+          label={coachName.charAt(0).toUpperCase()}
+          size={36}
+          style={{ backgroundColor: '#1976d2' }}
+        />
+      );
     }
   };
 
@@ -87,13 +156,9 @@ const RegistrationLessonModal: React.FC<Props> = ({
               <InfoRow icon={<Ionicons name="timer-outline" size={20} color="#1976d2" />} label="Duration" value={`${lesson.duration} minutes`} />
               <InfoRow icon={<MaterialIcons name="attach-money" size={20} color="#1976d2" />} label="Price" value={formatPrice(lesson.price)} />
               <InfoRow
-                icon={<MaterialIcons name="person" size={20} color="#1976d2" />}
+                icon={renderCoachIcon()}
                 label="Coach"
-                value={
-                  <TouchableOpacity onPress={handleCoachPress}>
-                    <Text style={styles.link}>{coachInfo?.name || 'Loading...'}</Text>
-                  </TouchableOpacity>
-                }
+                value={renderCoachInfo()}
               />
               <InfoRow
                 icon={<FontAwesome5 name="users" size={18} color="#1976d2" />}
@@ -313,6 +378,16 @@ const styles = StyleSheet.create({
   },
   cancelTextDisabled: {
     opacity: 0.5,
+  },
+  coachInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  coachName: {
+    fontSize: 16,
+    color: '#1976d2',
+    fontWeight: '500',
+    marginLeft: 8,
   },
 });
 

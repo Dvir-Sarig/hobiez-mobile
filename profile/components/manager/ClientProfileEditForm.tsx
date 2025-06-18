@@ -13,6 +13,7 @@ import { ClientProfile, SupportedHobby, SupportedLanguage } from '../../types/pr
 import LocationField from '../../../integrations/google_location/LocationField';
 import LanguageSelector from '../LanguageSelector';
 import HobbySelector from '../HobbySelector';
+import ImagePickerComponent from '../../../shared/compenents/ImagePicker';
 import LoadingModal from '../modals/LoadingModal';
 
 interface Props {
@@ -45,6 +46,20 @@ export default function ClientProfileEditForm({
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.label}>Profile Picture</Text>
+        <ImagePickerComponent
+          currentImageUrl={editData.genericProfile.profilePictureUrl}
+          onImageChange={(imageUrl) =>
+            updateField({
+              genericProfile: {
+                ...editData.genericProfile,
+                profilePictureUrl: imageUrl,
+              },
+            })
+          }
+          size={120}
+        />
+
         <Text style={styles.label}>Phone Number</Text>
         <TextInput
           style={styles.input}
