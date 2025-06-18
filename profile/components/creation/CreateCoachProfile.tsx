@@ -22,6 +22,7 @@ import LocationField from '../../../integrations/google_location/LocationField';
 import LanguageSelector from '../LanguageSelector';
 import SkillSelector from '../SkillSelector';
 import EducationEditor from '../EducationEditor';
+import ImagePickerComponent from '../../../shared/compenents/ImagePicker';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types';
@@ -103,6 +104,13 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.label}>Profile Picture</Text>
+          <ImagePickerComponent
+            currentImageUrl={formData.genericProfile.profilePictureUrl}
+            onImageChange={(imageUrl) => updateGeneric({ profilePictureUrl: imageUrl })}
+            size={120}
+          />
+
           <Text style={styles.label}>Name</Text>
           <TextInput style={styles.input} value={formData.genericProfile.name} editable={false} />
 

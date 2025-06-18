@@ -23,6 +23,7 @@ export default function CoachProfileDashboard() {
   const navigation = useNavigation<NavigationProp>();
   const { userId } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<CoachProfile | null>(null);
   const [editData, setEditData] = useState<Partial<CoachProfile>>({});
@@ -60,6 +61,7 @@ export default function CoachProfileDashboard() {
 
   const handleSave = async () => {
     try {
+      setSaving(true);
       if (!userId) {
         throw new Error('Missing user ID');
       }
@@ -76,6 +78,8 @@ export default function CoachProfileDashboard() {
       }
     } catch (err: any) {
       Alert.alert('Error', err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -123,6 +127,7 @@ export default function CoachProfileDashboard() {
           onChange={(updated) => setEditData(updated)}
           onSave={handleSave}
           onCancel={() => setEditMode(false)}
+          loading={saving}
         />
       ) : (
         <CoachProfileView
