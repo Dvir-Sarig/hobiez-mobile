@@ -220,6 +220,11 @@ const ClientCalendarView: React.FC = () => {
       </View>
 
       <View style={styles.calendarContainer}>
+        <View style={styles.calendarHeader}>
+          <Text style={styles.calendarHeaderText}>
+            Tap any day to view lessons
+          </Text>
+        </View>
         <Calendar
           events={events}
           height={300}
@@ -237,9 +242,17 @@ const ClientCalendarView: React.FC = () => {
       </View>
 
       <View style={styles.lessonsContainer}>
-        <Text style={styles.dateHeader}>
-          {selectedDate.format('MMMM D, YYYY')}
-        </Text>
+        <View style={styles.selectedDateContainer}>
+          <Text style={styles.selectedDateText}>
+            {selectedDate.format('dddd')}
+          </Text>
+          <Text style={styles.selectedDateNumber}>
+            {selectedDate.format('D')}
+          </Text>
+          <Text style={styles.selectedDateMonth}>
+            {selectedDate.format('MMMM YYYY')}
+          </Text>
+        </View>
         
         {selectedDateLessons.length > 0 ? (
           <ScrollView style={styles.lessonsList}>
@@ -314,6 +327,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+  calendarHeader: {
+    backgroundColor: '#1976d2',
+    padding: 12,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  calendarHeaderText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    textAlign: 'center',
+  },
   lessonsContainer: {
     flex: 1,
     backgroundColor: '#fff',
@@ -322,11 +347,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
   },
-  dateHeader: {
+  selectedDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  selectedDateText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 16,
+  },
+  selectedDateNumber: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#1976d2',
+    marginHorizontal: 8,
+  },
+  selectedDateMonth: {
+    fontSize: 14,
+    color: '#666',
   },
   lessonsList: {
     flex: 1,

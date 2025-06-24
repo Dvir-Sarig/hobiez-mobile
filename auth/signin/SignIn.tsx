@@ -169,47 +169,67 @@ export default function SignInScreen() {
               <TouchableOpacity
                 style={[
                   styles.userTypeButton,
-                  userType === UserType.CLIENT && styles.userTypeSelected,
+                  userType === UserType.CLIENT && styles.clientSelected,
+                  { borderColor: userType === UserType.CLIENT ? '#64B5F6' : '#E0E0E0' }
                 ]}
                 onPress={() => setUserType(UserType.CLIENT)}
               >
                 <Ionicons 
                   name="person-outline" 
                   size={20} 
-                  color={userType === UserType.CLIENT ? '#fff' : '#1976d2'} 
+                  color={userType === UserType.CLIENT ? '#fff' : '#64B5F6'} 
                   style={styles.userTypeIcon}
                 />
                 <Text
                   style={[
                     styles.userTypeText,
                     userType === UserType.CLIENT && styles.userTypeTextSelected,
+                    { color: userType === UserType.CLIENT ? '#fff' : '#64B5F6' }
                   ]}
                 >
                   Client
                 </Text>
+                {userType === UserType.CLIENT && (
+                  <Ionicons 
+                    name="checkmark-circle" 
+                    size={20} 
+                    color="#fff" 
+                    style={styles.checkmarkIcon}
+                  />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.userTypeButton,
-                  userType === UserType.COACH && styles.userTypeSelected,
+                  userType === UserType.COACH && styles.coachSelected,
+                  { borderColor: userType === UserType.COACH ? '#42A5F5' : '#E0E0E0' }
                 ]}
                 onPress={() => setUserType(UserType.COACH)}
               >
                 <Ionicons 
                   name="school-outline" 
                   size={20} 
-                  color={userType === UserType.COACH ? '#fff' : '#1976d2'} 
+                  color={userType === UserType.COACH ? '#fff' : '#42A5F5'} 
                   style={styles.userTypeIcon}
                 />
                 <Text
                   style={[
                     styles.userTypeText,
                     userType === UserType.COACH && styles.userTypeTextSelected,
+                    { color: userType === UserType.COACH ? '#fff' : '#42A5F5' }
                   ]}
                 >
                   Coach
                 </Text>
+                {userType === UserType.COACH && (
+                  <Ionicons 
+                    name="checkmark-circle" 
+                    size={20} 
+                    color="#fff" 
+                    style={styles.checkmarkIcon}
+                  />
+                )}
               </TouchableOpacity>
             </View>
 
@@ -330,12 +350,56 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#1976d2',
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
     backgroundColor: 'white',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  userTypeSelected: {
-    backgroundColor: '#1976d2',
+  userTypeButtonPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.8,
+  },
+  clientSelected: {
+    backgroundColor: '#64B5F6',
+    borderColor: '#64B5F6',
+    transform: [{ scale: 1.02 }],
+    ...Platform.select({
+      ios: {
+        shadowColor: '#64B5F6',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  coachSelected: {
+    backgroundColor: '#42A5F5',
+    borderColor: '#42A5F5',
+    transform: [{ scale: 1.02 }],
+    ...Platform.select({
+      ios: {
+        shadowColor: '#42A5F5',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   userTypeIcon: {
     marginRight: 8,
@@ -401,5 +465,8 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     fontWeight: '500',
+  },
+  checkmarkIcon: {
+    marginLeft: 8,
   },
 });

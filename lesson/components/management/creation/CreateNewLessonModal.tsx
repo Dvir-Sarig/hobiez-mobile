@@ -189,7 +189,7 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Price ($)</Text>
+                <Text style={styles.label}>Price</Text>
                 <View style={styles.inputWithIcon}>
                   <Icon name="attach-money" size={20} color="#1976d2" style={styles.inputIcon} />
                   <TextInput
