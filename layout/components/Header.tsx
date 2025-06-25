@@ -18,7 +18,7 @@ export default function Header({ onMobileMenuClick }: HeaderProps) {
                 {/* לוגו HOBIEZ */}
                 <View style={styles.logoContainer}>
                     <MaterialCommunityIcons name="karate" size={26} color="#1565c0" />
-                    <Text style={styles.logoText}>HOBIEZ</Text>
+                    <Text style={styles.logoText}>HOBINET</Text>
                 </View>
 
                 {/* כאן אפשר לשלב breadcrumbs מותאם בהמשך */}

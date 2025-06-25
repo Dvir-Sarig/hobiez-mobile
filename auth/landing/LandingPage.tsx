@@ -38,7 +38,7 @@ export default function LandingPage() {
             >
                 <View style={styles.content}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Hobiez</Text>
+                        <Text style={styles.title}>Hobinet</Text>
                         <Text style={styles.subtitle}>Turn your hobby into a habit</Text>
                     </View>
 
@@ -84,7 +84,7 @@ export default function LandingPage() {
                 <View style={styles.modalBackdrop}>
                     <View style={styles.modalContainer}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Join Hobiez</Text>
+                            <Text style={styles.modalTitle}>Join Hobinet</Text>
                             <Text style={styles.modalSubtitle}>Choose your role</Text>
                         </View>
 

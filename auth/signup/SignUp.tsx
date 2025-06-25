@@ -101,7 +101,7 @@ export default function SignUpScreen() {
             <Text style={styles.title}>Sign Up as {capitalize(role)}</Text>
             <Text style={styles.subtitle}>
               {role === 'client' 
-                ? 'Join Hobiez to find and book amazing lessons'
+                ? 'Join Hobinet to find and book amazing lessons'
                 : 'Start sharing your expertise with students'}
             </Text>
           </View>

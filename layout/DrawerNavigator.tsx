@@ -36,7 +36,7 @@ const DrawerNavigator = ({ userType, initialScreen }: { userType: string | null;
         headerTitle: () => (
           <View style={styles.headerTitle}>
             <MaterialCommunityIcons name="karate" size={24} color="#fff" />
-            <Text style={styles.headerText}>HOBIEZ</Text>
+            <Text style={styles.headerText}>HOBINET</Text>
           </View>
         ),
       }}

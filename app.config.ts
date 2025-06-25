@@ -6,8 +6,8 @@ const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.EXP
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
-    name: 'Hobiez',
-    slug: 'hobiez-mobile',
+    name: 'Hobinet',
+    slug: 'hobinet-mobile',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -22,12 +22,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     ios: {
         ...config.ios,
-        bundleIdentifier: 'com.dvirs.hobiez',
+        bundleIdentifier: 'com.dvirs.hobinet',
         supportsTablet: true
     },
     android: {
         ...config.android,
-        package: 'com.dvirs.hobiez',
+        package: 'com.dvirs.hobinet',
         edgeToEdgeEnabled: true,
         adaptiveIcon: {
             foregroundImage: './assets/adaptive-icon.png',
@@ -38,10 +38,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         favicon: './assets/favicon.png'
     },
     extra: {
-        apiBaseUrl: 'https://hobiez-backend.onrender.com',
+        apiBaseUrl: 'https://hobinet-backend.onrender.com',
         googleMapsApiKey: 'AIzaSyCJhO6Aret0kyO_YPhtgbb6E-Jn24CvVe8',
         eas: {
-            projectId: '8a9bc157-d1de-499a-a3bd-54b3545170e2'
+            projectId: '608daaa3-e056-4641-80da-2e6b047dc45c'
         }
     },
     plugins: [

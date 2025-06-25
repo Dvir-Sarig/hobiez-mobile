@@ -7,11 +7,11 @@ export default function AboutDashboard() {
 
     const sections = [
         {
-            title: "What is Hobiez?",
+            title: "What is Hobinet?",
             icon: "🎯",
             content: (
                 <Text style={styles.text}>
-                    <Text style={{ fontWeight: 'bold' }}>Hobiez</Text> is a modern platform designed to connect people through hobbies and personalized lessons. Whether you're a client exploring new interests or a coach looking to grow your reach — Hobiez is built to simplify and enrich your experience.
+                    <Text style={{ fontWeight: 'bold' }}>Hobinet</Text> is a modern platform designed to connect people through hobbies and personalized lessons. Whether you're a client exploring new interests or a coach looking to grow your reach — Hobinet is built to simplify and enrich your experience.
                 </Text>
             )
         },
@@ -61,7 +61,7 @@ export default function AboutDashboard() {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Text style={[styles.title, { fontSize: isMobile ? 24 : 30 }]}>About Hobiez</Text>
+            <Text style={[styles.title, { fontSize: isMobile ? 24 : 30 }]}>About Hobinet</Text>
             {sections.map((section, idx) => (
                 <View key={idx} style={styles.card}>
                     <Text style={styles.cardTitle}>{section.icon} {section.title}</Text>

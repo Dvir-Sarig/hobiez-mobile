@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "hobiez-mobile",
-    "slug": "hobiez-mobile",
+    "name": "hobinet-mobile",
+    "slug": "hobinet-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/ios-icon.png",
-      "bundleIdentifier": "com.dvirs.hobiez",
+      "bundleIdentifier": "com.dvirs.hobinet",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -24,21 +24,24 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dvirs.hobiez",
+      "package": "com.dvirs.hobinet",
       "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiBaseUrl": "https://hobiez-backend.onrender.com",
-      "googleMapsApiKey": "AIzaSyCJhO6Aret0kyO_YPhtgbb6E-Jn24CvVe8"
+      "apiBaseUrl": "https://hobinet-backend.onrender.com",
+      "googleMapsApiKey": "AIzaSyCJhO6Aret0kyO_YPhtgbb6E-Jn24CvVe8",
+      "eas": {
+        "projectId": "608daaa3-e056-4641-80da-2e6b047dc45c"
+      }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/8a9bc157-d1de-499a-a3bd-54b3545170e2"
+      "url": "https://u.expo.dev/608daaa3-e056-4641-80da-2e6b047dc45c"
     },
     "privacy": "public",
     "owner": "dvirs"

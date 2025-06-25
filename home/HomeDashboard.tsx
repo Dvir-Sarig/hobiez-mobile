@@ -15,7 +15,7 @@ export default function HomeDashboard() {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <Text style={[styles.title, isMobile && styles.titleMobile]}>
-                👋 Welcome to Hobiez
+                👋 Welcome to Hobinet
             </Text>
 
             <Text style={[styles.subtitle, isMobile && styles.subtitleMobile]}>
@@ -43,7 +43,7 @@ export default function HomeDashboard() {
 
                 <Text style={styles.sectionTitle}>🌟 Coming Soon</Text>
                 <Text style={[styles.text, { fontSize: 14, color: '#555' }]}>
-                    In the next version of Hobiez, your home screen will become your
+                    In the next version of Hobinet, your home screen will become your
                     personal social feed — view shared posts, updates, and lessons from
                     your connections.
                 </Text>

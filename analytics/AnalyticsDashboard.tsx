@@ -43,7 +43,7 @@ export default function AnalyticsDashboard() {
 
                     <Text style={styles.comingTitle}>🚀 Coming Soon</Text>
                     <Text style={styles.comingText}>
-                        In the upcoming version of Hobiez, analytics will become even more powerful —
+                        In the upcoming version of Hobinet, analytics will become even more powerful —
                         including smart summaries, client progress comparisons, and visual trends.
                     </Text>
                 </View>
