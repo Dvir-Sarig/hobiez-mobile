@@ -517,12 +517,12 @@ const styles = StyleSheet.create({
   },
   calendarButton: {
     backgroundColor: '#e8f5e9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 16,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#2e7d32',
-    marginLeft: 8,
+    marginLeft: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -542,10 +542,10 @@ const styles = StyleSheet.create({
   sectionHeaderCard: {
     backgroundColor: '#e3f2fd',
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 12,
     marginBottom: 8,
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -556,11 +556,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flex: 1,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
+    flexShrink: 0,
   },
   registeredHeaderCard: {
     backgroundColor: '#e8f5e9',
@@ -569,6 +571,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#0d47a1',
+    flexShrink: 1,
   },
   registeredHeaderText: {
     color: '#2e7d32',
@@ -578,7 +581,7 @@ const styles = StyleSheet.create({
   },
   calendarButtonText: {
     color: '#2e7d32',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
   },
   refreshButton: {

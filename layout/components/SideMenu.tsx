@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { DrawerContentScrollView, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useAuth } from '../../auth/AuthContext';
 import { logout } from '../../auth/services/authService';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type DrawerParamList = {
   Home: undefined;
@@ -32,7 +33,7 @@ export default function SideMenu(props: DrawerContentComponentProps) {
   };
 
   return (
-    <View style={styles.fullContainer}>
+    <SafeAreaView style={styles.fullContainer} edges={['bottom']}>
       <DrawerContentScrollView {...props} contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
           <View style={styles.header}>
@@ -75,7 +76,7 @@ export default function SideMenu(props: DrawerContentComponentProps) {
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -113,6 +114,7 @@ const styles = StyleSheet.create({
   },
   signOutContainer: {
     padding: 16,
+    paddingBottom: 24,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.2)',
   },

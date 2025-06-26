@@ -63,22 +63,53 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
   };
 
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [lessonTypeModalVisible, setLessonTypeModalVisible] = useState(false);
   const [date, setDate] = useState<Date>(new Date());
+  const [isDatePickerDismissing, setIsDatePickerDismissing] = useState(false);
 
-  const onChangeDate = (_: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      const newDate = new Date(selectedDate);
-      setDate(newDate);
-      // Create a date string that preserves the exact time
-      const year = newDate.getFullYear();
-      const month = newDate.getMonth();
-      const day = newDate.getDate();
-      const hours = newDate.getHours();
-      const minutes = newDate.getMinutes();
-      const exactDate = new Date(year, month, day, hours, minutes);
-      setNewLesson((prev: typeof newLesson) => ({ ...prev, time: exactDate.toISOString() }));
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      // On Android, after selecting date, show time picker
+      if (selectedDate) {
+        const newDate = new Date(selectedDate);
+        setDate(newDate);
+        // Show time picker after a short delay
+        setTimeout(() => setShowTimePicker(true), 100);
+      }
+    } else {
+      // iOS handles both date and time together
+      setShowDatePicker(false);
+      if (selectedDate) {
+        const newDate = new Date(selectedDate);
+        setDate(newDate);
+        const year = newDate.getFullYear();
+        const month = newDate.getMonth();
+        const day = newDate.getDate();
+        const hours = newDate.getHours();
+        const minutes = newDate.getMinutes();
+        const exactDate = new Date(year, month, day, hours, minutes);
+        setNewLesson((prev: typeof newLesson) => ({ ...prev, time: exactDate.toISOString() }));
+      }
+    }
+  };
+
+  const onChangeTime = (event: any, selectedTime?: Date) => {
+    setShowTimePicker(false);
+    if (selectedTime) {
+      const newTime = new Date(selectedTime);
+      // Combine the selected date with the selected time
+      const currentDate = date;
+      const combinedDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate(),
+        newTime.getHours(),
+        newTime.getMinutes()
+      );
+      setDate(combinedDate);
+      setNewLesson((prev: typeof newLesson) => ({ ...prev, time: combinedDate.toISOString() }));
     }
   };
 
@@ -90,6 +121,10 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
       if (!newLesson.time) {
         setNewLesson((prev: typeof newLesson) => ({ ...prev, time: now.toISOString() }));
       }
+    } else {
+      // Clean up date picker when modal closes
+      setShowDatePicker(false);
+      setShowTimePicker(false);
     }
   }, [isOpen]);
 
@@ -110,7 +145,12 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
           >
             <ScrollView
               style={styles.content}
-              contentContainerStyle={{ padding: 16, paddingBottom: 120, flexGrow: 1 }}
+              contentContainerStyle={{ 
+                padding: 16, 
+                paddingBottom: Platform.OS === 'android' ? 160 : 120, 
+                flexGrow: 1 
+              }}
+              showsVerticalScrollIndicator={Platform.OS === 'android'}
             >
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Lesson Type</Text>
@@ -145,12 +185,28 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
                   <Icon name="calendar-today" size={20} color="#1976d2" style={styles.inputIcon} />
                   <Text style={styles.dateText}>{date.toLocaleString()}</Text>
                 </TouchableOpacity>
-                {showDatePicker && (
+                {showDatePicker && Platform.OS === 'ios' && (
                   <DateTimePicker
                     value={date}
                     mode="datetime"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    display="spinner"
                     onChange={onChangeDate}
+                  />
+                )}
+                {showDatePicker && Platform.OS === 'android' && (
+                  <DateTimePicker
+                    value={date}
+                    mode="date"
+                    display="default"
+                    onChange={onChangeDate}
+                  />
+                )}
+                {showTimePicker && Platform.OS === 'android' && (
+                  <DateTimePicker
+                    value={date}
+                    mode="time"
+                    display="default"
+                    onChange={onChangeTime}
                   />
                 )}
               </View>
@@ -289,6 +345,10 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     overflow: 'hidden',
     marginVertical: 20,
+    ...(Platform.OS === 'android' && {
+      maxHeight: '95%',
+      marginVertical: 10,
+    }),
   },
   header: {
     flexDirection: 'row',
@@ -309,15 +369,26 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 80,
+    ...(Platform.OS === 'android' && {
+      paddingBottom: 120,
+      flexGrow: 1,
+    }),
   },
   inputGroup: {
     marginBottom: 16,
+    ...(Platform.OS === 'android' && {
+      marginBottom: 12,
+    }),
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
     color: '#424242',
     marginBottom: 8,
+    ...(Platform.OS === 'android' && {
+      fontSize: 15,
+      marginBottom: 6,
+    }),
   },
   input: {
     borderWidth: 1,
@@ -326,6 +397,11 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: '#f5f5f5',
+    ...(Platform.OS === 'android' && {
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      fontSize: 15,
+    }),
   },
   pickerText: {
     fontSize: 16,
@@ -370,12 +446,20 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#fff',
+    ...(Platform.OS === 'android' && {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+    }),
   },
   saveButton: {
     padding: 12,
     borderRadius: 8,
     backgroundColor: '#1976d2',
     alignItems: 'center',
+    ...(Platform.OS === 'android' && {
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+    }),
   },
   saveButtonText: {
     color: '#fff',

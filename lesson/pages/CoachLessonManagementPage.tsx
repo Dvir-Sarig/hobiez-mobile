@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, ScrollView, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, Pressable, Modal } from 'react-native';
+import { View, Text, Button, ScrollView, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, Pressable, Modal, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { fetchUserInfo } from '../../auth/services/UserInfoUtils';
 import { fetchCoachLessons, createLesson, deleteLesson, fetchSingleLesson, fetchRegisteredClients, editLesson } from '../services/lessonService';
@@ -283,29 +283,31 @@ export default function CoachDashboardScreen() {
       <SectionHeader title="My Lessons" icon="book" />
 
       <View style={styles.buttonContainer}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            style={styles.createButton} 
-            onPress={() => setShowNewLessonModal(true)}
-          >
-            <Icon name="add" size={24} color="#fff" style={styles.buttonIcon} />
-            <Text style={styles.createButtonText}>Create New Lesson</Text>
-          </TouchableOpacity>
+        <View style={styles.buttonRowWrapper}>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={styles.createButton} 
+              onPress={() => setShowNewLessonModal(true)}
+            >
+              <Icon name="add" size={24} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.createButtonText}>New Lesson</Text>
+            </TouchableOpacity>
 
-          <Pressable 
-            style={({ pressed }) => [
-              styles.filterButton,
-              pressed && styles.filterButtonPressed
-            ]}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <View style={styles.filterButtonContent}>
-              <Icon name="calendar-today" size={24} color="#fff" style={styles.buttonIcon} />
-              <Text style={styles.filterButtonText}>
-                {selectedDay ? selectedDay.toLocaleDateString() : 'Filter by Date'}
-              </Text>
-            </View>
-          </Pressable>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.filterButton,
+                pressed && styles.filterButtonPressed
+              ]}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <View style={styles.filterButtonContent}>
+                <Icon name="calendar-today" size={24} color="#fff" style={styles.buttonIcon} />
+                <Text style={styles.filterButtonText}>
+                  {selectedDay ? selectedDay.toLocaleDateString() : 'Filter by Date'}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -552,31 +554,83 @@ const styles = StyleSheet.create({
   buttonContainer: {
     padding: 16,
   },
+  buttonRowWrapper: {
+    width: '100%',
+    paddingHorizontal: 8,
+  },
   buttonRow: {
     flexDirection: 'row',
-    gap: 12,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 16,
   },
   createButton: {
+    flex: 1,
+    minWidth: 0,
     backgroundColor: '#1976d2',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  },
+    ...(Platform.OS === 'ios' && {
+      backgroundColor: 'rgba(25, 118, 210, 0.9)',
+      borderRadius: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+    }),
+    ...(Platform.OS === 'android' && {
+      backgroundColor: '#1976d2',
+      borderRadius: 10,
+      elevation: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.25,
+      shadowRadius: 6,
+    }),
+  },  
   createButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
-    marginLeft: 8,
+    marginLeft: 6,
+    textAlign: 'center',
+    ...(Platform.OS === 'ios' && {
+      fontWeight: '700',
+      fontSize: 14,
+      textShadowColor: 'rgba(0, 0, 0, 0.3)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    }),
+    ...(Platform.OS === 'android' && {
+      fontWeight: '600',
+      fontSize: 11,
+      letterSpacing: 0.5,
+    }),
   },
   buttonIcon: {
-    marginRight: 8,
+    marginRight: 6,
+    fontSize: 18,
+    ...(Platform.OS === 'ios' && {
+      fontSize: 20,
+      textShadowColor: 'rgba(0, 0, 0, 0.3)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    }),
+    ...(Platform.OS === 'android' && {
+      fontSize: 18,
+      marginRight: 8,
+    }),
   },
   loadingContainer: {
     flex: 1,
@@ -604,31 +658,76 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   filterButton: {
+    flex: 1,
+    minWidth: 0,
     backgroundColor: '#1976d2',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    ...(Platform.OS === 'ios' && {
+      backgroundColor: 'rgba(25, 118, 210, 0.9)',
+      borderRadius: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+    }),
+    ...(Platform.OS === 'android' && {
+      backgroundColor: '#1976d2',
+      borderRadius: 10,
+      elevation: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.25,
+      shadowRadius: 6,
+    }),
   },
   filterButtonPressed: {
     backgroundColor: '#1565c0',
     transform: [{ scale: 0.98 }],
+    ...(Platform.OS === 'ios' && {
+      backgroundColor: 'rgba(21, 101, 192, 0.9)',
+      transform: [{ scale: 0.95 }],
+      shadowOpacity: 0.3,
+    }),
+    ...(Platform.OS === 'android' && {
+      backgroundColor: '#1565c0',
+      elevation: 8,
+      transform: [{ scale: 0.97 }],
+    }),
   },
   filterButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
   filterButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
+    textAlign: 'center',
+    ...(Platform.OS === 'ios' && {
+      fontWeight: '700',
+      fontSize: 14,
+      textShadowColor: 'rgba(0, 0, 0, 0.3)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    }),
+    ...(Platform.OS === 'android' && {
+      fontWeight: '600',
+      fontSize: 11,
+      letterSpacing: 0.5,
+    }),
   },
   modalOverlay: {
     flex: 1,

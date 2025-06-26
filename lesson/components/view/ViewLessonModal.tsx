@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Lesson } from '../../types/Lesson';
 import { formatLessonTimeReadable } from '../../../shared/services/formatService';
@@ -48,7 +48,13 @@ const ViewLessonModal: React.FC<ViewLessonModalProps> = ({
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={styles.content}>
+                    <ScrollView 
+                        style={styles.content}
+                        contentContainerStyle={{
+                            paddingBottom: Platform.OS === 'android' ? 40 : 16,
+                        }}
+                        showsVerticalScrollIndicator={Platform.OS === 'android'}
+                    >
                         <InfoCard icon="description" label="Description" value={lesson.description} />
                         <InfoCard icon="calendar-today" label="Time" value={formatLessonTimeReadable(lesson.time)} />
                         {lesson.location && (
@@ -153,6 +159,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 16,
         overflow: 'hidden',
+        ...(Platform.OS === 'android' && {
+            maxHeight: '95%',
+            width: '95%',
+        }),
     },
     header: {
         flexDirection: 'row',
@@ -174,6 +184,10 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: 16,
+        ...(Platform.OS === 'android' && {
+            paddingBottom: 30,
+            flexGrow: 1,
+        }),
     },
     card: {
         flexDirection: 'row',
@@ -182,16 +196,26 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         backgroundColor: '#f8f9fa',
         borderRadius: 8,
+        ...(Platform.OS === 'android' && {
+            padding: 10,
+            marginBottom: 10,
+        }),
     },
     row: {
         flexDirection: 'row',
         gap: 12,
+        ...(Platform.OS === 'android' && {
+            gap: 8,
+        }),
     },
     halfCard: {
         flex: 1,
     },
     cardIcon: {
         marginRight: 12,
+        ...(Platform.OS === 'android' && {
+            marginRight: 10,
+        }),
     },
     cardTextContainer: {
         flex: 1,
@@ -200,15 +224,26 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#666',
         marginBottom: 2,
+        ...(Platform.OS === 'android' && {
+            fontSize: 12,
+            marginBottom: 1,
+        }),
     },
     cardValue: {
         fontSize: 15,
         color: '#333',
         fontWeight: '500',
+        ...(Platform.OS === 'android' && {
+            fontSize: 14,
+        }),
     },
     buttonContainer: {
         gap: 12,
         marginTop: 16,
+        ...(Platform.OS === 'android' && {
+            gap: 8,
+            marginTop: 12,
+        }),
     },
     viewClientsButton: {
         flexDirection: 'row',
@@ -218,6 +253,10 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#1976d2',
+        ...(Platform.OS === 'android' && {
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+        }),
     },
     editButton: {
         flexDirection: 'row',
@@ -226,6 +265,10 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
         backgroundColor: '#1976d2',
+        ...(Platform.OS === 'android' && {
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+        }),
     },
     deleteButton: {
         flexDirection: 'row',
@@ -234,6 +277,10 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
         backgroundColor: '#d32f2f',
+        ...(Platform.OS === 'android' && {
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+        }),
     },
     buttonIcon: {
         marginRight: 8,
@@ -242,16 +289,25 @@ const styles = StyleSheet.create({
         color: '#1976d2',
         fontSize: 15,
         fontWeight: '500',
+        ...(Platform.OS === 'android' && {
+            fontSize: 14,
+        }),
     },
     editButtonText: {
         color: '#fff',
         fontSize: 15,
         fontWeight: '500',
+        ...(Platform.OS === 'android' && {
+            fontSize: 14,
+        }),
     },
     deleteButtonText: {
         color: '#fff',
         fontSize: 15,
         fontWeight: '500',
+        ...(Platform.OS === 'android' && {
+            fontSize: 14,
+        }),
     },
 });
 

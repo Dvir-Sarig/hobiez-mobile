@@ -8,6 +8,7 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types';
@@ -15,19 +16,21 @@ import { fetchCoachProfile, updateCoachProfile } from '../../utils/profileServic
 import { CoachProfile } from '../../types/profile';
 import CoachProfileView from '../view/CoachProfileView';
 import CoachProfileEditForm from './CoachProfileEditForm';
+import DeleteAccountModal from '../modals/DeleteAccountModal';
 import { useAuth } from '../../../auth/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function CoachProfileDashboard() {
   const navigation = useNavigation<NavigationProp>();
-  const { userId } = useAuth();
+  const { userId, signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<CoachProfile | null>(null);
   const [editData, setEditData] = useState<Partial<CoachProfile>>({});
   const [editMode, setEditMode] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -83,6 +86,11 @@ export default function CoachProfileDashboard() {
     }
   };
 
+  const handleAccountDeleted = () => {
+    // Sign out and let the App.tsx handle navigation based on auth state
+    signOut();
+  };
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -130,14 +138,35 @@ export default function CoachProfileDashboard() {
           loading={saving}
         />
       ) : (
-        <CoachProfileView
-          profileData={profile}
-          onEditClick={() => {
-            setEditData(profile);
-            setEditMode(true);
-          }}
-        />
+        <>
+          <CoachProfileView
+            profileData={profile}
+            onEditClick={() => {
+              setEditData(profile);
+              setEditMode(true);
+            }}
+          />
+          
+          {/* Delete Account Button */}
+          <View style={styles.deleteButtonContainer}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => setShowDeleteModal(true)}
+            >
+              <Ionicons name="trash" size={20} color="#dc3545" />
+              <Text style={styles.deleteButtonText}>Delete Account</Text>
+            </TouchableOpacity>
+          </View>
+        </>
       )}
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isVisible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onAccountDeleted={handleAccountDeleted}
+        userType="coach"
+      />
     </View>
   );
 }
@@ -145,72 +174,76 @@ export default function CoachProfileDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#e3f2fd',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  label: {
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 4,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    padding: 8,
-    backgroundColor: 'white',
   },
   errorText: {
-    color: '#d32f2f',
+    color: 'red',
     fontSize: 16,
-    fontWeight: '500',
+    textAlign: 'center',
+    padding: 20,
   },
   noProfileContainer: {
     backgroundColor: '#1565c0',
-    padding: 20,
+    padding: 32,
     borderRadius: 16,
-    width: '90%',
-    maxWidth: 600,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    maxWidth: 400,
+    marginHorizontal: 20,
   },
   noProfileTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 12,
+    marginBottom: 16,
     textAlign: 'center',
   },
   noProfileDescription: {
     fontSize: 16,
     color: '#fff',
-    marginBottom: 24,
     textAlign: 'center',
+    marginBottom: 24,
     lineHeight: 22,
   },
   createProfileButton: {
     backgroundColor: '#fff',
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 32,
     borderRadius: 8,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
   },
   createProfileButtonText: {
     color: '#1565c0',
     fontSize: 16,
     fontWeight: '600',
+  },
+  deleteButtonContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#dc3545',
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  deleteButtonText: {
+    color: '#dc3545',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });

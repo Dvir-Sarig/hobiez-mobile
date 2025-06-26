@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchClientProfile, updateClientProfile } from '../../utils/profileService';
 import { ClientProfile } from '../../types/profile';
 import { useAuth } from '../../../auth/AuthContext';
@@ -15,6 +16,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types';
 import ClientProfileView from '../view/ClientProfileView';
 import ClientProfileEditForm from './ClientProfileEditForm';
+import DeleteAccountModal from '../modals/DeleteAccountModal';
 
 const styles = StyleSheet.create({
   container: {
@@ -108,12 +110,33 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     lineHeight: 24,
   },
+  deleteButtonContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#dc3545',
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  deleteButtonText: {
+    color: '#dc3545',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
 });
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ClientProfileDashboardScreen() {
-  const { userId } = useAuth();
+  const { userId, signOut } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -121,6 +144,7 @@ export default function ClientProfileDashboardScreen() {
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [editData, setEditData] = useState<ClientProfile | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -176,6 +200,11 @@ export default function ClientProfileDashboardScreen() {
     }
   };
 
+  const handleAccountDeleted = () => {
+    // Sign out and let the App.tsx handle navigation based on auth state
+    signOut();
+  };
+
   if (loading) return <ActivityIndicator style={styles.centered} size="large" />;
   if (error) return <Text style={styles.error}>{error}</Text>;
 
@@ -211,14 +240,35 @@ export default function ClientProfileDashboardScreen() {
           loading={saving}
         />
       ) : (
-        <ClientProfileView
-          profileData={profile}
-          onEditClick={() => {
-            setEditData(profile);
-            setEditMode(true);
-          }}
-        />
+        <>
+          <ClientProfileView
+            profileData={profile}
+            onEditClick={() => {
+              setEditData(profile);
+              setEditMode(true);
+            }}
+          />
+          
+          {/* Delete Account Button */}
+          <View style={styles.deleteButtonContainer}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => setShowDeleteModal(true)}
+            >
+              <Ionicons name="trash" size={20} color="#dc3545" />
+              <Text style={styles.deleteButtonText}>Delete Account</Text>
+            </TouchableOpacity>
+          </View>
+        </>
       )}
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isVisible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onAccountDeleted={handleAccountDeleted}
+        userType="client"
+      />
     </View>
-  );  
+  );
 }

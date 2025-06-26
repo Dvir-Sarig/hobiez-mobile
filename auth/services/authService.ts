@@ -63,7 +63,6 @@ export const signIn = async (
 
         return data;
     } catch (error) {
-        console.error('Error signing in:', error);
         throw error;
     }
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -47,14 +47,45 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
   isSubmitting = false
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const currentDate = lessonData.time ? lessonData.time.toDate() : new Date();
   const [date, setDate] = useState<Date>(currentDate);
 
-  const onChangeDate = (_: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setDate(selectedDate);
-      setLessonData({ ...lessonData, time: dayjs(selectedDate) });
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      // On Android, after selecting date, show time picker
+      if (selectedDate) {
+        const newDate = new Date(selectedDate);
+        setDate(newDate);
+        // Show time picker after a short delay
+        setTimeout(() => setShowTimePicker(true), 100);
+      }
+    } else {
+      // iOS handles both date and time together
+      setShowDatePicker(false);
+      if (selectedDate) {
+        setDate(selectedDate);
+        setLessonData({ ...lessonData, time: dayjs(selectedDate) });
+      }
+    }
+  };
+
+  const onChangeTime = (event: any, selectedTime?: Date) => {
+    setShowTimePicker(false);
+    if (selectedTime) {
+      const newTime = new Date(selectedTime);
+      // Combine the selected date with the selected time
+      const currentDate = date;
+      const combinedDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate(),
+        newTime.getHours(),
+        newTime.getMinutes()
+      );
+      setDate(combinedDate);
+      setLessonData({ ...lessonData, time: dayjs(combinedDate) });
     }
   };
 
@@ -62,6 +93,14 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
     const parsed = isFloat ? parseFloat(value) : parseInt(value);
     setLessonData({ ...lessonData, [field]: isNaN(parsed) ? '' : parsed });
   };
+
+  // Clean up date pickers when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowDatePicker(false);
+      setShowTimePicker(false);
+    }
+  }, [isOpen]);
 
   return (
     <Modal visible={isOpen} animationType="slide" transparent>
@@ -78,7 +117,11 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
           >
-            <ScrollView style={styles.content}>
+            <ScrollView 
+              style={styles.content}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={Platform.OS === 'android' ? styles.scrollContent : undefined}
+            >
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Description</Text>
                 <TextInput
@@ -100,12 +143,28 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
                   <Icon name="calendar-today" size={20} color="#1976d2" style={styles.inputIcon} />
                   <Text style={styles.dateText}>{date.toLocaleString()}</Text>
                 </TouchableOpacity>
-                {showDatePicker && (
+                {showDatePicker && Platform.OS === 'ios' && (
                   <DateTimePicker
                     value={lessonData.time.toDate()}
                     mode="datetime"
+                    display="spinner"
+                    onChange={onChangeDate}
+                  />
+                )}
+                {showDatePicker && Platform.OS === 'android' && (
+                  <DateTimePicker
+                    value={lessonData.time.toDate()}
+                    mode="date"
                     display="default"
                     onChange={onChangeDate}
+                  />
+                )}
+                {showTimePicker && Platform.OS === 'android' && (
+                  <DateTimePicker
+                    value={lessonData.time.toDate()}
+                    mode="time"
+                    display="default"
+                    onChange={onChangeTime}
                   />
                 )}
               </View>
@@ -193,6 +252,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     maxHeight: '90%',
     overflow: 'hidden',
+    ...(Platform.OS === 'android' && {
+      maxHeight: '95%',
+      marginVertical: 10,
+      flex: 1,
+    }),
   },
   header: {
     flexDirection: 'row',
@@ -266,6 +330,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
     gap: 12,
+    ...(Platform.OS === 'android' && {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: '#fff',
+      zIndex: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    }),
   },
   cancelButton: {
     flex: 1,
@@ -294,6 +368,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  scrollContent: {
+    paddingBottom: 200,
+    flexGrow: 1,
   },
 });
 

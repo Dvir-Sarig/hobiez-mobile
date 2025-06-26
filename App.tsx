@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 import { RootStackParamList } from './types';
 import DrawerNavigator from './layout/DrawerNavigator';
-import { AuthContext, loadAuthState } from './auth/AuthContext';
+import { AuthContext, loadAuthState, signOut } from './auth/AuthContext';
 import SecureStorage from './auth/services/SecureStorage';
 
 import SignIn from './auth/signin/SignIn';
@@ -21,43 +21,41 @@ import ClientProfileManager from './profile/components/manager/ClientProfileMana
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
-  const [authState, setAuthState] = useState<{
-    userType: string | null;
-    userId: string | null;
-    token: string | null;
-  }>({ userType: null, userId: null, token: null });
-
-  const [loading, setLoading] = useState(true);
+  const [authState, setAuthState] = useState({
+    token: null as string | null,
+    userId: null as string | null,
+    userType: null as string | null,
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const state = await loadAuthState();
-        
-        // Validate the loaded state
-        if (state.userId && !state.userType) {
-          // Invalid state, clear everything
-          await SecureStorage.clearAll();
-          setAuthState({ userType: null, userId: null, token: null });
-        } else {
-          setAuthState(state);
-        }
+        const { token, userId, userType } = await loadAuthState();
+        setAuthState({ token, userId, userType });
       } catch (error) {
-        console.error('Error initializing auth:', error);
-        await SecureStorage.clearAll();
-        setAuthState({ userType: null, userId: null, token: null });
+        console.error('Error loading auth state:', error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     initializeAuth();
   }, []);
 
-  if (loading) {
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setAuthState({ token: null, userId: null, userType: null });
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#1976d2" />
       </View>
     );
   }
@@ -65,7 +63,8 @@ export default function App() {
   return (
     <AuthContext.Provider value={{
       ...authState,
-      setAuthState: (state) => setAuthState(state)
+      setAuthState: (state) => setAuthState(state),
+      signOut: handleSignOut
     }}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
