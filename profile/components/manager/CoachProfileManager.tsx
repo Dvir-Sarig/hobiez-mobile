@@ -123,6 +123,25 @@ export default function CoachProfileDashboard() {
             <Text style={styles.createProfileButtonText}>Create Your Coach Profile</Text>
           </TouchableOpacity>
         </View>
+        
+        {/* Delete Account Button - Even without profile */}
+        <View style={styles.deleteButtonContainer}>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => setShowDeleteModal(true)}
+          >
+            <Ionicons name="trash" size={20} color="#dc3545" />
+            <Text style={styles.deleteButtonText}>Delete Account</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Delete Account Modal */}
+        <DeleteAccountModal
+          isVisible={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onAccountDeleted={handleAccountDeleted}
+          userType="coach"
+        />
       </View>
     );
   }
