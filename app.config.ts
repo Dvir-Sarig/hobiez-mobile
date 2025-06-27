@@ -8,7 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
     name: 'Hobinet',
     slug: 'hobinet-mobile',
-    version: '1.0.1',
+    version: '1.0.2',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -23,7 +23,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ios: {
         ...config.ios,
         bundleIdentifier: 'com.dvirs.hobinet',
-        supportsTablet: true
+        supportsTablet: true,
+        infoPlist: {
+            NSCameraUsageDescription: 'This app needs access to your camera to let you take profile pictures.',
+            NSPhotoLibraryUsageDescription: 'This app needs access to your photo library to let you choose profile pictures.',
+            NSPhotoLibraryAddUsageDescription: 'This app saves images you take to your photo library.',
+            ITSAppUsesNonExemptEncryption: false
+        }
     },
     android: {
         ...config.android,
@@ -32,7 +38,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         adaptiveIcon: {
             foregroundImage: './assets/adaptive-icon.png',
             backgroundColor: '#ffffff'
-        }
+        },
+        permissions: ['CAMERA', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE']
     },
     web: {
         favicon: './assets/favicon.png'

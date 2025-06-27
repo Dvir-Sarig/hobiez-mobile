@@ -2,7 +2,7 @@
   "expo": {
     "name": "hobinet-mobile",
     "slug": "hobinet-mobile",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,7 +16,10 @@
       "icon": "./assets/icon.png",
       "bundleIdentifier": "com.dvirs.hobinet",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "This app needs access to your camera to let you take profile pictures.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to let you choose profile pictures.",
+        "NSPhotoLibraryAddUsageDescription": "This app saves images you take to your photo library."
       }
     },
     "android": {
@@ -25,7 +28,12 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.dvirs.hobinet",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
