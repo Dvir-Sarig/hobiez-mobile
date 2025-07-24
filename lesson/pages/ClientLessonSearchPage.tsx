@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -7,7 +7,7 @@ import {
   Alert,
   Pressable,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../types';
 import { fetchUserInfo } from '../../auth/services/UserInfoUtils';
@@ -55,10 +55,13 @@ export default function ClientDashboardScreen() {
   });
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const route = useRoute<any>();
   const { userId } = useAuth();
 
   // Add polling interval state
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [registeredSectionY, setRegisteredSectionY] = useState(0);
 
   // Function to handle refresh of all lesson data
   const refreshAllLessonData = async () => {
@@ -98,6 +101,12 @@ export default function ClientDashboardScreen() {
       
       // Refresh all lesson data
       await refreshAllLessonData();
+      // Scroll to My Registered Lessons section after a short delay
+      setTimeout(() => {
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollTo({ y: registeredSectionY, animated: true });
+        }
+      }, 500);
     } catch (error) {
       const errorMessage = (error as Error).message;
       if (errorMessage.includes("already registered")) {
@@ -178,6 +187,14 @@ export default function ClientDashboardScreen() {
       // First try to search in cache
       const cachedLessons = await lessonCacheService.getAvailableLessons();
       if (cachedLessons) {
+        // Ensure all coach info is loaded before filtering
+        const coachIds = Array.from(new Set(cachedLessons.map(l => l.coachId)));
+        await Promise.all(
+          coachIds
+            .filter(id => !coachInfoMap[id])
+            .map(id => fetchCoachInfoData(id))
+        );
+
         const filteredLessons = cachedLessons.filter(lesson => {
           // Filter by price
           if (searchRequest.maxPrice && lesson.price > searchRequest.maxPrice) {
@@ -187,6 +204,14 @@ export default function ClientDashboardScreen() {
           // Filter by lesson type
           if (searchRequest.lessonType && lesson.title !== searchRequest.lessonType) {
             return false;
+          }
+
+          // Filter by coach name
+          if (searchRequest.coachName) {
+            const coachName = lesson.coachId && coachInfoMap[lesson.coachId]?.name;
+            if (!coachName || !coachName.toLowerCase().includes(searchRequest.coachName.toLowerCase())) {
+              return false;
+            }
           }
 
           // Filter by max participants
@@ -218,13 +243,8 @@ export default function ClientDashboardScreen() {
           return true;
         });
 
-        if (filteredLessons.length > 0) {
-          setLessons(filteredLessons);
-          filteredLessons.forEach((lesson) => {
-            if (lesson.coachId) fetchCoachInfoData(lesson.coachId);
-          });
-          return;
-        }
+        setLessons(filteredLessons);
+        return;
       }
 
       // If no results in cache or cache is empty, fetch from API
@@ -391,8 +411,35 @@ export default function ClientDashboardScreen() {
     }, [userId])
   );
 
+  useEffect(() => {
+    if (route.params?.reopenRegistrationModal && route.params.lessonId) {
+      const lessonToOpen = lessons.find(l => l.id === route.params.lessonId);
+      if (lessonToOpen) {
+        setSelectedLesson(lessonToOpen);
+        setIsModalOpen(true);
+  
+        // ריקון הפרמטרים כדי למנוע פתיחה חוזרת
+        navigation.setParams({
+          lessonId: undefined
+        });
+      }
+    }
+  }, [route.params, lessons]);  
+
+  useEffect(() => {
+    if (route.params?.reopenUnregisterModal && route.params.lessonId) {
+      // Find the lesson by ID in registered lessons
+      const lessonToOpen = registeredLessons.find(l => l.id === route.params.lessonId);
+      if (lessonToOpen) {
+        setLessonToUnregister(lessonToOpen);
+        setIsUnregisterModalOpen(true);
+      }
+      // Do not clear params to avoid linter error
+    }
+  }, [route.params, registeredLessons]);
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} ref={scrollViewRef}>
       <SearchForm
         searchQuery={searchQuery}
         setSearchQuery={handleSetSearchQuery}
@@ -413,7 +460,7 @@ export default function ClientDashboardScreen() {
         />
       </View>
 
-      <View style={{ marginTop: 32 }}>
+      <View style={{ marginTop: 32 }} onLayout={event => setRegisteredSectionY(event.nativeEvent.layout.y)}>
         <SectionHeader 
           title="My Registered Lessons" 
           icon="✅" 

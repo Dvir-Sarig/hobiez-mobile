@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  Platform,
 } from 'react-native';
 import { Avatar } from 'react-native-paper';
 import { Lesson } from '../../types/Lesson';
@@ -28,12 +29,12 @@ const LoadingSkeleton = () => {
         Animated.timing(animatedValue, {
           toValue: 1,
           duration: 1000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(animatedValue, {
           toValue: 0,
           duration: 1000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ])
     ).start();
@@ -125,6 +126,14 @@ const ClientLessonCards: React.FC<ClientLessonCardsProps> = ({
                 </TouchableOpacity>
                 <Text style={styles.capacity}>👥 {lesson.registeredCount ?? 0}/{lesson.capacityLimit ?? 0}</Text>
               </View>
+              <View style={styles.locationRow}>
+                <Text style={styles.location}>
+                  📍 {lesson.location?.address
+                     ? lesson.location.address
+                     : [lesson.location?.city, lesson.location?.country].filter(Boolean).join(', ')
+                   }
+                 </Text>
+                </View>
             </View>
           );
         })}
@@ -233,6 +242,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#90caf9',
     borderRadius: 4,
     marginTop: 8,
+  },
+  locationRow: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  location: {
+    fontSize: 13,
+    color: '#757575',
+    flexShrink: 1,
   },
 });
 

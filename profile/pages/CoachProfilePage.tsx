@@ -18,6 +18,9 @@ export default function CoachProfilePage() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const coachId = route.params?.coachId;
+  const fromRegistrationModal = route.params?.fromRegistrationModal;
+  const fromUnregisterModal = route.params?.fromUnregisterModal;
+  const lessonId = route.params?.lessonId;
 
   const [profileData, setProfileData] = useState<CoachProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +87,30 @@ export default function CoachProfilePage() {
 
   return (
     <View style={styles.container}>
+      {fromRegistrationModal && lessonId && (
+        <TouchableOpacity
+          style={styles.returnIconButton}
+          onPress={() => {
+            navigation.navigate('SearchLessons', { reopenRegistrationModal: true, lessonId });
+          }}
+          accessibilityLabel="Return to lesson registration"
+          activeOpacity={0.7}
+        >
+          <MaterialIcons name="arrow-back" size={26} color="#1976d2" />
+        </TouchableOpacity>
+      )}
+      {fromUnregisterModal && lessonId && (
+        <TouchableOpacity
+          style={styles.returnIconButton}
+          onPress={() => {
+            navigation.navigate('SearchLessons', { reopenUnregisterModal: true, lessonId });
+          }}
+          accessibilityLabel="Return to unregister lesson"
+          activeOpacity={0.7}
+        >
+          <MaterialIcons name="arrow-back" size={26} color="#1976d2" />
+        </TouchableOpacity>
+      )}
       {profileData ? (
         <ProfileView profileData={profileData} />
       ) : (
@@ -121,5 +148,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     marginLeft: 4,
+  },
+  returnIconButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 18,
+    padding: 4,
+    shadowColor: '#1976d2',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.10,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });

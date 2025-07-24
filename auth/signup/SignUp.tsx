@@ -67,7 +67,6 @@ export default function SignUpScreen() {
     setIsLoading(true);
     try {
       await signUp(formData, role === 'client' ? UserType.CLIENT : UserType.COACH);
-      Alert.alert('Success', `${capitalize(role)} created successfully!`);
       navigation.navigate('SignIn');
     } catch (error: any) {
       setErrors((prev) => ({ ...prev, general: error.message || 'Unexpected error' }));

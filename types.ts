@@ -14,7 +14,7 @@ export type RootStackParamList = {
   
     CoachProfile: { coachId: string };
     ClientProfile: { userId: string };
-    CoachProfilePage: { coachId: string };
+    CoachProfilePage: { coachId: string; fromRegistrationModal?: boolean; fromUnregisterModal?: boolean; lessonId?: number };
     ClientProfilePage: { clientId: string };
     CreateClientProfile: undefined;
     CreateCoachProfile: undefined;

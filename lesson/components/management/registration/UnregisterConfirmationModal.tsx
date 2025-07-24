@@ -36,7 +36,7 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
 
   const handleCoachPress = () => {
     onClose();
-    navigation.navigate('CoachProfilePage', { coachId: lesson.coachId });
+    navigation.navigate('CoachProfilePage', { coachId: lesson.coachId, fromUnregisterModal: true, lessonId: lesson.id });
   };
 
   const handleUnregister = async () => {

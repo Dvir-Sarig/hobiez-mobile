@@ -72,7 +72,12 @@ const RegistrationLessonModal: React.FC<Props> = ({
 
   const handleCoachPress = () => {
     onClose();
-    navigation.navigate('CoachProfilePage', { coachId: lesson.coachId });
+    // @ts-ignore
+    navigation.navigate('CoachProfilePage', {
+      coachId: lesson.coachId,
+      fromRegistrationModal: true,
+      lessonId: lesson.id,
+    });
   };
 
   const handleRegister = async () => {

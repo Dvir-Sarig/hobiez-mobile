@@ -38,22 +38,22 @@ export default function SignInScreen() {
       Animated.timing(shakeAnimation, {
         toValue: 10,
         duration: 100,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(shakeAnimation, {
         toValue: -10,
         duration: 100,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(shakeAnimation, {
         toValue: 10,
         duration: 100,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(shakeAnimation, {
         toValue: 0,
         duration: 100,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
   };
