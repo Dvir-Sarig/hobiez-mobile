@@ -1,6 +1,6 @@
 import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import HomeDashboard from '../home/HomeDashboard';
 import ClientDashboard from '../lesson/pages/ClientLessonSearchPage';
@@ -16,6 +16,7 @@ import ClientCalendarView from '../calendars/client/ClientCalendarView';
 import CoachCalendarView from '../calendars/coach/CoachCalendarView';
 import CreateCoachProfile from '../profile/components/creation/CreateCoachProfile';
 import CreateClientProfile from '../profile/components/creation/CreateClientProfile';
+import { DrawerActions } from '@react-navigation/native';
 
 const Drawer = createDrawerNavigator();
 
@@ -23,7 +24,7 @@ const DrawerNavigator = ({ userType, initialScreen }: { userType: string | null;
   return (
     <Drawer.Navigator
       initialRouteName={initialScreen || "Home"}
-      screenOptions={{ 
+      screenOptions={({navigation}) => ({
         headerShown: true,
         drawerStyle: {
           backgroundColor: '#0d47a1',
@@ -33,13 +34,21 @@ const DrawerNavigator = ({ userType, initialScreen }: { userType: string | null;
           backgroundColor: '#0d47a1',
         },
         headerTintColor: '#fff',
+        headerLeft: () => (
+          <TouchableOpacity
+            onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+            style={{ paddingHorizontal: 16 }}
+          >
+            <MaterialCommunityIcons name="menu" size={28} color="#fff" />
+          </TouchableOpacity>
+        ),
         headerTitle: () => (
           <View style={styles.headerTitle}>
             <MaterialCommunityIcons name="karate" size={24} color="#fff" />
             <Text style={styles.headerText}>HOBINET</Text>
           </View>
         ),
-      }}
+      })}
       drawerContent={(props) => (
         <SideMenu {...props} />
       )}
