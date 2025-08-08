@@ -8,7 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
     name: 'Hobinet',
     slug: 'hobinet-mobile',
-    version: '1.0.2',
+    version: '1.0.4',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',

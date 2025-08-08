@@ -15,6 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { RFValue } from "react-native-responsive-fontsize";
 
 const screen = Dimensions.get('window');
 
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
         marginTop: Platform.OS === 'ios' ? 60 : 40,
     },
     title: {
-        fontSize: 48,
+        fontSize: RFValue(48),
         color: 'white',
         fontWeight: 'bold',
         marginBottom: 12,
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
         textShadowRadius: 4,
     },
     subtitle: {
-        fontSize: 18,
+        fontSize: RFValue(18),
         color: 'rgba(255, 255, 255, 0.9)',
         marginBottom: 32,
     },
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
     },
     featureText: {
         color: 'white',
-        fontSize: 16,
+        fontSize: RFValue(16),
         fontWeight: '500',
     },
     buttonGroup: {
@@ -215,7 +216,7 @@ const styles = StyleSheet.create({
         borderColor: 'white',
     },
     buttonText: {
-        fontSize: 16,
+        fontSize: RFValue(16),
         fontWeight: '600',
     },
     modalBackdrop: {
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     modalTitle: {
-        fontSize: 24,
+        fontSize: RFValue(24),
         fontWeight: '700',
         color: '#1976d2',
         marginBottom: 8,
@@ -280,13 +281,13 @@ const styles = StyleSheet.create({
     },
     optionTitle: {
         fontWeight: '600',
-        fontSize: 16,
+        fontSize: RFValue(16),
         color: '#1976d2',
         marginBottom: 4,
     },
     optionText: {
         color: '#666',
-        fontSize: 14,
+        fontSize: RFValue(14),
     },
     closeButton: {
         marginTop: 8,
@@ -296,6 +297,6 @@ const styles = StyleSheet.create({
     closeButtonText: {
         color: '#1976d2',
         fontWeight: '600',
-        fontSize: 16,
+        fontSize: RFValue(16),
     },
 });
