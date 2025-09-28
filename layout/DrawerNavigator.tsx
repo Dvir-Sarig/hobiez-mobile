@@ -23,6 +23,7 @@ const Drawer = createDrawerNavigator();
 const DrawerNavigator = ({ userType, initialScreen }: { userType: string | null; initialScreen?: string }) => {
   return (
     <Drawer.Navigator
+        useLegacyImplementation={false}
       initialRouteName={initialScreen || "Home"}
       screenOptions={({navigation}) => ({
         headerShown: true,
