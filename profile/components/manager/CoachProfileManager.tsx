@@ -124,17 +124,6 @@ export default function CoachProfileDashboard() {
           </TouchableOpacity>
         </View>
         
-        {/* Delete Account Button - Even without profile */}
-        <View style={styles.deleteButtonContainer}>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => setShowDeleteModal(true)}
-          >
-            <Ionicons name="trash" size={20} color="#dc3545" />
-            <Text style={styles.deleteButtonText}>Delete Account</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Delete Account Modal */}
         <DeleteAccountModal
           isVisible={showDeleteModal}
@@ -166,15 +155,8 @@ export default function CoachProfileDashboard() {
             }}
           />
           
-          {/* Delete Account Button */}
+          {/* Delete Account Button - Moved to Settings screen */}
           <View style={styles.deleteButtonContainer}>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => setShowDeleteModal(true)}
-            >
-              <Ionicons name="trash" size={20} color="#dc3545" />
-              <Text style={styles.deleteButtonText}>Delete Account</Text>
-            </TouchableOpacity>
           </View>
         </>
       )}

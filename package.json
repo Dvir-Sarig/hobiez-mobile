@@ -4,10 +4,13 @@
   "version": "1.0.0",
   "main": "index.tsx",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+  "start": "ENV=DEV NODE_ENV=development expo start",
+  "android": "ENV=DEV NODE_ENV=development expo start --android",
+  "ios": "ENV=DEV NODE_ENV=development expo start --ios",
+  "web": "ENV=DEV NODE_ENV=development expo start --web",
+  "stairt:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --host localhost --clear",
+  "ios:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --host localhost --clear --ios",
+  "android:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --host localhost --clear --android"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

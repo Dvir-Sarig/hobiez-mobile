@@ -45,8 +45,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         favicon: './assets/favicon.png'
     },
     extra: {
-        apiBaseUrl: 'https://hobinet-backend.onrender.com',
-        googleMapsApiKey: 'AIzaSyCJhO6Aret0kyO_YPhtgbb6E-Jn24CvVe8',
+        apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://hobinet-backend.onrender.com',
+        googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyCJhO6Aret0kyO_YPhtgbb6E-Jn24CvVe8',
         eas: {
             projectId: '608daaa3-e056-4641-80da-2e6b047dc45c'
         }

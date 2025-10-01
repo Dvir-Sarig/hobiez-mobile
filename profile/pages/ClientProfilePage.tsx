@@ -85,7 +85,7 @@ export default function ClientProfilePage() {
   return (
     <View style={styles.container}>
       {profileData ? (
-        <ClientProfileView profileData={profileData} />
+        <ClientProfileView profileData={profileData} completionPercent={0.85} />
       ) : (
         <NoProfileModal
           isOpen={showNoProfileModal}

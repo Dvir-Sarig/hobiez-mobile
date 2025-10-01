@@ -3,28 +3,34 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Image,
   useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolate,
+} from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
 import { GenericProfileInfo } from '../../types/profile';
 
 interface BaseProfileViewProps {
-  profileData: {
-    genericProfile: GenericProfileInfo;
-  };
+  profileData: { genericProfile: GenericProfileInfo };
   children?: React.ReactNode;
   onEditClick?: () => void;
+  completionPercent?: number; // 0..1 optional
 }
 
 export default function BaseProfileView({
   profileData,
   children,
   onEditClick,
+  completionPercent,
 }: BaseProfileViewProps) {
   const {
     name,
@@ -34,28 +40,77 @@ export default function BaseProfileView({
     location,
     profilePictureUrl,
   } = profileData.genericProfile;
-
   const { width } = useWindowDimensions();
   const isMobile = width < 600;
 
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
+  const headerAnim = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, 180],
+      [0, -120],
+      Extrapolate.CLAMP
+    );
+    const scale = interpolate(
+      scrollY.value,
+      [0, 180],
+      [1, 0.92],
+      Extrapolate.CLAMP
+    );
+    return {
+      transform: [{ translateY }, { scale }],
+      opacity: interpolate(
+        scrollY.value,
+        [0, 180],
+        [1, 0.4],
+        Extrapolate.CLAMP
+      ),
+    };
+  });
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Animated.View entering={FadeIn.duration(500)}>
-        <LinearGradient colors={['#2196f3', '#1976d2']} style={styles.paper}>
+    <Animated.ScrollView
+      contentContainerStyle={styles.container}
+      onScroll={onScroll}
+      scrollEventThrottle={16}
+      showsVerticalScrollIndicator={false}
+    >
+      <Animated.View
+        entering={FadeIn.duration(500)}
+        style={[styles.heroWrapper, headerAnim]}
+      >
+        <LinearGradient
+          colors={['#0d47a1', '#1976d2', '#42a5f5']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroGradient}
+        >
+          {/* Decorative blobs */}
+          <View style={[styles.blob, { top: -40, left: -30 }]} />
+          <View
+            style={[
+              styles.blob,
+              {
+                bottom: -50,
+                right: -40,
+                backgroundColor: 'rgba(255,255,255,0.08)',
+              },
+            ]}
+          />
+
           <View
             style={[
               styles.header,
-              { flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 24 },
+              { flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 20 : 28 },
             ]}
           >
-            {/* Left Side */}
             <View
               style={[
                 styles.leftSide,
-                {
-                  flexDirection: isMobile ? 'column' : 'row',
-                  alignItems: isMobile ? 'flex-start' : 'center',
-                },
+                { flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center' },
               ]}
             >
               {profilePictureUrl ? (
@@ -65,131 +120,147 @@ export default function BaseProfileView({
                   <Text style={styles.avatarText}>{name.charAt(0)}</Text>
                 </View>
               )}
-
               <View style={{ flex: 1 }}>
                 <View style={styles.nameRow}>
                   <Text style={styles.name}>{name}</Text>
                   {onEditClick && (
-                    <TouchableOpacity onPress={onEditClick} style={styles.editIcon}>
-                      <MaterialIcons name="edit" size={20} color="white" />
+                    <TouchableOpacity onPress={onEditClick} style={styles.editIcon} activeOpacity={0.7}>
+                      <MaterialIcons name="edit" size={20} color="#1976d2" />
                     </TouchableOpacity>
                   )}
                 </View>
-                {!!userDescription && (
-                  <Text style={styles.description}>{userDescription}</Text>
+                {!!userDescription && <Text style={styles.description}>{userDescription}</Text>}
+                {completionPercent !== undefined && (
+                  <View style={styles.progressBarWrapper}>
+                    <View style={styles.progressTrack}>
+                      <View style={[styles.progressFill, { width: `${Math.min(100, Math.round(completionPercent * 100))}%` }]} />
+                    </View>
+                    <Text style={styles.progressLabel}>{Math.round(completionPercent * 100)}% Complete</Text>
+                  </View>
                 )}
               </View>
             </View>
 
-            {/* Right Side */}
             <View style={[styles.rightSide, isMobile && styles.rightSideMobile]}>
-              <View style={styles.infoRow}>
-                <MaterialIcons name="email" size={16} color="white" />
-                <Text style={styles.infoText}>{email}</Text>
-              </View>
-
-              {!!phoneNumber && (
-                <View style={styles.infoRow}>
-                  <MaterialIcons name="phone" size={16} color="white" />
-                  <Text style={styles.infoText}>{phoneNumber}</Text>
-                </View>
-              )}
-
-              <View style={styles.infoRow}>
-                <MaterialIcons name="location-on" size={16} color="white" />
-                <Text style={styles.infoText}>
-                  {location?.city}, {location?.country}
-                </Text>
-              </View>
+              <InfoRow icon="email" value={email} />
+              {!!phoneNumber && <InfoRow icon="phone" value={phoneNumber} />}
+              <InfoRow icon="location-on" value={`${location?.city}, ${location?.country}`} />
             </View>
           </View>
         </LinearGradient>
       </Animated.View>
 
-      {/* Children content */}
       <View style={styles.content}>{children}</View>
-    </ScrollView>
+    </Animated.ScrollView>
+  );
+}
+
+function InfoRow({ icon, value }: { icon: any; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <MaterialIcons name={icon} size={16} color="rgba(255,255,255,0.85)" />
+      <Text style={styles.infoText}>{value}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 40,
     backgroundColor: '#e3f2fd',
     flexGrow: 1,
   },
-  paper: {
-    paddingVertical: 28,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    alignItems: 'center',
+  heroWrapper: {},
+  heroGradient: {
+    paddingVertical: 36,
+    paddingHorizontal: 22,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  blob: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   header: {
     width: '100%',
-    maxWidth: 600,
+    maxWidth: 680,
+    alignSelf: 'center',
   },
   leftSide: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#fff',
     marginBottom: 12,
   },
+  avatar: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#fff',
+    marginRight: 20,
+    marginBottom: 12,
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
   avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 20,
     marginBottom: 12,
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
   avatarText: {
-    fontSize: 40,
+    fontSize: 42,
     color: '#1976d2',
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   name: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: 'white',
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
   editIcon: {
-    marginLeft: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    padding: 6,
-    borderRadius: 20,
+    marginLeft: 10,
+    backgroundColor: '#ffffff',
+    padding: 8,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   description: {
-    color: 'white',
-    marginTop: 8,
+    color: 'rgba(255,255,255,0.92)',
+    marginTop: 10,
     fontSize: 14,
-    textAlign: 'center',
-    maxWidth: 300,
+    lineHeight: 20,
+    maxWidth: 380,
   },
   rightSide: {
     width: '100%',
-    maxWidth: 600,
-    marginTop: 12,
+    maxWidth: 680,
+    marginTop: 16,
   },
   rightSideMobile: {
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.2)',
-    paddingTop: 12,
+    paddingTop: 14,
   },
   infoRow: {
     flexDirection: 'row',
@@ -197,12 +268,35 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   infoText: {
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: 'rgba(255,255,255,0.85)',
     marginLeft: 8,
     fontSize: 15,
+    fontWeight: '500',
   },
   content: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+  },
+  progressBarWrapper: {
+    marginTop: 14,
+  },
+  progressTrack: {
+    height: 10,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#ffffff',
+    borderRadius: 6,
+  },
+  progressLabel: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 6,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
 });

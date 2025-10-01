@@ -21,6 +21,38 @@ import {GestureHandlerRootView} from "react-native-gesture-handler";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// Development fetch logger: logs all fetch requests/responses to help debug "Network request failed" issues.
+if (__DEV__ && !(global as any).__FETCH_LOGGER_INSTALLED) {
+  (global as any).__FETCH_LOGGER_INSTALLED = true;
+  const originalFetch = global.fetch;
+  global.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const method = init?.method || 'GET';
+    const started = Date.now();
+    const url = typeof input === 'string' ? input : (input as any).url || String(input);
+    try {
+      if (init?.body && typeof init.body === 'string') {
+        console.log(`[fetch->] ${method} ${url} body:${init.body.slice(0,200)}`);
+      } else {
+        console.log(`[fetch->] ${method} ${url}`);
+      }
+      const response = await originalFetch(input, init);
+      const ms = Date.now() - started;
+      let preview = '';
+      try {
+        const clone = response.clone();
+        preview = await clone.text();
+        if (preview.length > 300) preview = preview.slice(0, 300) + '…';
+      } catch {}
+      console.log(`[fetch<-] ${method} ${url} ${response.status} (${ms}ms) ${preview ? 'bodyPreview:' + preview : ''}`);
+      return response;
+    } catch (err) {
+      const ms = Date.now() - started;
+      console.log(`[fetchERR] ${method} ${url} (${ms}ms)`, err);
+      throw err;
+    }
+  };
+}
+
 export default function App() {
   const [authState, setAuthState] = useState({
     token: null as string | null,

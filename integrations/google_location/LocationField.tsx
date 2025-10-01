@@ -16,12 +16,14 @@ interface LocationFieldProps {
   location: Location;
   onLocationSelect: (location: Location) => void;
   label?: string;
+  hideLabel?: boolean;
 }
 
 const LocationField: React.FC<LocationFieldProps> = ({
   location,
   onLocationSelect,
   label = 'Location',
+  hideLabel = false,
 }) => {
   const [searchText, setSearchText] = useState('');
   const [predictions, setPredictions] = useState<any[]>([]);
@@ -87,7 +89,7 @@ const LocationField: React.FC<LocationFieldProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      {!hideLabel && <Text style={styles.label}>{label}</Text>}
 
       <View style={styles.searchContainer}>
         <TextInput
