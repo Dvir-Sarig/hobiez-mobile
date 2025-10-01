@@ -6,13 +6,12 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, DrawerActions } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { fetchPublicCoachProfile } from '../utils/profileService';
 import { CoachProfile } from '../types/profile';
 import ProfileView from '../components/view/CoachProfileView';
 import NoProfileModal from '../components/modals/NoProfileModal';
-import { DrawerActions } from '@react-navigation/native';
 
 export default function CoachProfilePage() {
   const route = useRoute<any>();
@@ -21,6 +20,9 @@ export default function CoachProfilePage() {
   const fromRegistrationModal = route.params?.fromRegistrationModal;
   const fromUnregisterModal = route.params?.fromUnregisterModal;
   const lessonId = route.params?.lessonId;
+  const originScreen = route.params?.originScreen; // newly added
+  const originTab = route.params?.originTab; // which tab to restore
+  const returnScrollY = route.params?.returnScrollY ?? 0; // scroll position to restore
 
   const [profileData, setProfileData] = useState<CoachProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,6 +89,16 @@ export default function CoachProfilePage() {
 
   return (
     <View style={styles.container}>
+      {originScreen && !fromRegistrationModal && !fromUnregisterModal && (
+        <TouchableOpacity
+          style={styles.returnIconButton}
+          onPress={() => navigation.dispatch(DrawerActions.jumpTo(originScreen, { restoreTab: originTab, restoreScrollY: returnScrollY }))}
+          accessibilityLabel="Return to previous list"
+          activeOpacity={0.7}
+        >
+          <MaterialIcons name="arrow-back" size={26} color="#1976d2" />
+        </TouchableOpacity>
+      )}
       {fromRegistrationModal && lessonId && (
         <TouchableOpacity
           style={styles.returnIconButton}

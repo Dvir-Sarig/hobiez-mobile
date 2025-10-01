@@ -98,16 +98,21 @@ const SearchLocationField: React.FC<SearchLocationFieldProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Location</Text>
+      {/* Updated label with icon */}
+      <View style={styles.labelRow}> 
+        <MaterialIcons name="location-on" size={18} color="#ffffff" style={{marginTop:1}} />
+        <Text style={styles.label}>Location</Text>
+      </View>
 
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.input}
           placeholder="Search for location"
+          placeholderTextColor="rgba(255,255,255,0.55)"
           value={searchText}
           onChangeText={setSearchText}
         />
-        {isLoading && <ActivityIndicator style={styles.loader} />}
+        {isLoading && <ActivityIndicator style={styles.loader} color="#ffffff" />}
       </View>
 
       {predictions.length > 0 && (
@@ -127,7 +132,7 @@ const SearchLocationField: React.FC<SearchLocationFieldProps> = ({
       {location?.city ? (
         <View style={styles.locationBadge}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <MaterialIcons name="location-on" size={18} color="#0d47a1" />
+            <MaterialIcons name="location-on" size={18} color="#ffffff" />
             <Text style={styles.locationText}>
               {location.city}, {location.country}
               {radiusKm ? ` • ${radiusKm} km` : ''}
@@ -136,7 +141,7 @@ const SearchLocationField: React.FC<SearchLocationFieldProps> = ({
           <TouchableOpacity onPress={() =>
             onLocationSelect({ city: '', country: '', address: null, latitude: null, longitude: null })
           }>
-            <MaterialIcons name="close" size={18} color="#d32f2f" />
+            <MaterialIcons name="close" size={18} color="#ffffff" />
           </TouchableOpacity>
         </View>
       ) : null}
@@ -156,7 +161,7 @@ const SearchLocationField: React.FC<SearchLocationFieldProps> = ({
               ]}
               onPress={() => onRadiusChange(r)}
             >
-              <Text style={{ color: radiusKm === r ? 'white' : '#333' }}>{r} km</Text>
+              <Text style={{ color: radiusKm === r ? '#ffffff' : '#ffffff', fontWeight:'600' }}>{r} km</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -170,10 +175,13 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 10,
   },
+  labelRow:{ flexDirection:'row', alignItems:'center', gap:6, marginBottom:4, marginLeft:2 },
   label: {
-    fontWeight: 'bold',
-    marginBottom: 5,
-    marginLeft: 2,
+    fontWeight: '800',
+    marginBottom: 6,
+    marginLeft: 4,
+    color: '#ffffff',
+    letterSpacing: 0.5,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -181,71 +189,85 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: 42,
+    height: 48,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    borderColor: 'rgba(255,255,255,0.30)',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    color: '#ffffff',
+    fontWeight: '600',
   },
   loader: {
     marginLeft: 10,
   },
   predictionsList: {
     position: 'absolute',
-    top: 45,
+    top: 54,
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.95)',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
-    maxHeight: 200,
+    borderColor: 'rgba(255,255,255,0.55)',
+    borderRadius: 20,
+    maxHeight: 240,
     zIndex: 1000,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
   },
   predictionItem: {
-    padding: 13,
+    padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: 'rgba(13,71,161,0.12)',
   },
   predictionText: {
     fontSize: 14,
+    color: '#0d47a1',
+    fontWeight: '600',
   },
   locationBadge: {
-    marginVertical: 8,
-    padding: 10,
-    backgroundColor: '#e3f2fd',
-    borderRadius: 10,
+    marginVertical: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderRadius: 18,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
   },
   locationText: {
     fontSize: 14,
     marginLeft: 6,
-    color: '#0d47a1',
-    fontWeight: '500',
+    color: '#ffffff',
+    fontWeight: '600',
   },
   radiusSelector: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 6,
+    marginTop: 4,
     paddingHorizontal: 4,
   },
   radiusOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#e0e0e0',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
   },
   radiusOptionSelected: {
     backgroundColor: '#1976d2',
+    borderColor: '#1976d2',
   },
 });
 
