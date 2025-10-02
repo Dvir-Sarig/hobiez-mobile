@@ -11,16 +11,14 @@ import BaseProfileView from './BaseProfileView';
 interface ClientProfileViewProps {
   profileData: ClientProfile;
   onEditClick?: () => void;
-  completionPercent?: number;
 }
 
 export default function ClientProfileView({
   profileData,
   onEditClick,
-  completionPercent,
 }: ClientProfileViewProps) {
   return (
-    <BaseProfileView profileData={profileData} onEditClick={onEditClick} completionPercent={completionPercent}>
+    <BaseProfileView profileData={profileData} onEditClick={onEditClick}>
       {/* Hobbies */}
       <View style={styles.section}>
         <SectionHeader icon="sports" title="Hobbies" />

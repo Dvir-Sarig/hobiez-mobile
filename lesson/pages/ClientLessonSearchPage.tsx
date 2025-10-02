@@ -337,7 +337,7 @@ export default function ClientDashboardScreen() {
     subtitle,
   }: { 
     title: string; 
-    icon: string; 
+    icon: string; // MaterialIcons icon name now
     isRegistered?: boolean;
     onCalendarPress?: () => void;
     onRefresh?: () => void;
@@ -345,8 +345,8 @@ export default function ClientDashboardScreen() {
   }) => (
     <View style={styles.simpleSectionHeader}> 
       <View style={styles.simpleHeaderLeft}> 
-        <View style={[styles.simpleHeaderIconCircle, isRegistered && { backgroundColor:'rgba(76,175,80,0.18)', borderColor:'rgba(129,199,132,0.55)' }]}> 
-          <Text style={styles.simpleHeaderIconText}>{icon}</Text>
+        <View style={[styles.simpleHeaderIconCircle, isRegistered && styles.simpleHeaderIconCircleRegistered]}> 
+          <MaterialIcons name={icon as any} size={22} color="#ffffff" />
         </View>
         <View style={styles.simpleHeaderTitleCol}> 
           <Text style={styles.simpleHeaderTitle}>{title}</Text>
@@ -354,7 +354,7 @@ export default function ClientDashboardScreen() {
         </View>
       </View>
       <View style={styles.simpleActionRow}> 
-        {onRefresh && (
+        {onRefresh && !isRegistered && (
           <Pressable 
             onPress={onRefresh}
             disabled={isLoadingLessons && !isRegistered}
@@ -366,7 +366,7 @@ export default function ClientDashboardScreen() {
         {isRegistered && onCalendarPress && (
           <Pressable 
             onPress={onCalendarPress}
-            style={({ pressed }) => [styles.simpleActionBtnWide, pressed && { opacity:0.7 }]}
+            style={({ pressed }) => [styles.simpleActionBtnWide, pressed && { opacity:0.75 }]}
           >
             <MaterialIcons name="calendar-month" size={16} color="#ffffff" />
             <Text style={styles.simpleActionBtnText}>Calendar</Text>
@@ -541,7 +541,7 @@ export default function ClientDashboardScreen() {
           <View style={styles.sectionWrapper}> 
             <SectionHeader 
               title="Available Lessons" 
-              icon="📚" 
+              icon="event-available" 
               onRefresh={refreshAllLessonData}
               subtitle="Open sessions"
             />
@@ -560,9 +560,9 @@ export default function ClientDashboardScreen() {
           <View style={styles.sectionWrapper} onLayout={event => setRegisteredSectionY(event.nativeEvent.layout.y)}> 
             <SectionHeader 
               title="My Registered Lessons" 
-              icon="✅" 
+              icon="playlist-add-check" 
               isRegistered={true}
-              onCalendarPress={() => navigation.navigate('ClientCalendar' as never)}
+              onCalendarPress={() => (navigation as any).navigate('ClientCalendar', { origin: 'SearchLessons' })}
               subtitle="Booked spots"
             />
             {/* Removed visual wrapper so cards can use full width */}
@@ -689,12 +689,13 @@ const styles = StyleSheet.create({
   sectionCountText:{ color:'#ffffff', fontSize:13, fontWeight:'800' },
   sectionHeaderActions:{ flexDirection:'row', alignItems:'center', gap:8 },
   sectionActionBtn:{ backgroundColor:'rgba(255,255,255,0.20)', borderRadius:14, padding:8, borderWidth:1, borderColor:'rgba(255,255,255,0.35)' },
-  sectionActionBtnWide:{ flexDirection:'row', alignItems:'center', gap:4, backgroundColor:'rgba(255,255,255,0.25)', borderRadius:16, paddingVertical:7, paddingHorizontal:12, borderWidth:1, borderColor:'rgba(255,255,255,0.45)' },
+  sectionActionBtnWide:{ flexDirection:'row', alignItems:'center', gap:4, paddingHorizontal:12, height:38, borderRadius:12, backgroundColor:'rgba(255,255,255,0.22)', borderWidth:1, borderColor:'rgba(255,255,255,0.40)' },
   sectionActionBtnText:{ color:'#ffffff', fontSize:11, fontWeight:'700', letterSpacing:0.5 },
   // --- Simplified Section Header (new styles) ---
   simpleSectionHeader:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginHorizontal:16, marginTop:30, paddingVertical:12, paddingHorizontal:16, borderRadius:20, backgroundColor:'rgba(255,255,255,0.12)', borderWidth:1, borderColor:'rgba(255,255,255,0.22)' },
   simpleHeaderLeft:{ flexDirection:'row', alignItems:'center', flex:1, gap:12 },
-  simpleHeaderIconCircle:{ width:42, height:42, borderRadius:14, backgroundColor:'rgba(25,118,210,0.18)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(144,202,249,0.45)' },
+  simpleHeaderIconCircle:{ width:42, height:42, borderRadius:14, backgroundColor:'rgba(25,118,210,0.22)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(144,202,249,0.55)' },
+  simpleHeaderIconCircleRegistered:{ backgroundColor:'rgba(30,136,229,0.30)', borderColor:'rgba(187,222,251,0.65)' },
   simpleHeaderIconText:{ fontSize:22 },
   simpleHeaderTitleCol:{ flex:1 },
   simpleHeaderTitle:{ fontSize:16, fontWeight:'700', color:'#ffffff', letterSpacing:0.3 },
@@ -703,7 +704,7 @@ const styles = StyleSheet.create({
   simpleCountPillText:{ color:'#ffffff', fontSize:12, fontWeight:'700' },
   simpleActionRow:{ flexDirection:'row', alignItems:'center', gap:8 },
   simpleActionBtn:{ width:38, height:38, borderRadius:12, alignItems:'center', justifyContent:'center', backgroundColor:'rgba(255,255,255,0.18)', borderWidth:1, borderColor:'rgba(255,255,255,0.30)' },
-  simpleActionBtnWide:{ flexDirection:'row', alignItems:'center', gap:4, paddingHorizontal:12, height:38, borderRadius:12, backgroundColor:'rgba(76,175,80,0.28)', borderWidth:1, borderColor:'rgba(129,199,132,0.55)' },
+  simpleActionBtnWide:{ flexDirection:'row', alignItems:'center', gap:4, paddingHorizontal:12, height:38, borderRadius:12, backgroundColor:'rgba(255,255,255,0.22)', borderWidth:1, borderColor:'rgba(255,255,255,0.40)' },
   simpleActionBtnText:{ color:'#ffffff', fontSize:11, fontWeight:'700', letterSpacing:0.5 },
   // Preserve original style keys referenced elsewhere
   container:{ backgroundColor:'#eef3f8' }, header:{}, searchBox:{}, input:{}, button:{}, buttonText:{}, sectionTitle:{}, emptyText:{}, headerRow:{}, headerActions:{ flexDirection:'row', alignItems:'center', gap:8 }, calendarIcon:{ fontSize:20 },

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, ScrollView, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, Pressable, Modal, Platform } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { fetchUserInfo } from '../../auth/services/UserInfoUtils';
 import { fetchCoachLessons, createLesson, deleteLesson, fetchSingleLesson, fetchRegisteredClients, editLesson } from '../services/lessonService';
 import { fetchClientGlobalInfo } from '../../profile/services/clientService';
@@ -40,6 +40,7 @@ export default function CoachDashboardScreen() {
 
   const { userId } = useAuth();
   const navigation = useNavigation();
+  const route = useRoute<any>();
 
   const defaultLocation = { city: '', country: '' };
 
@@ -288,9 +289,27 @@ export default function CoachDashboardScreen() {
     </View>
   );
 
+  useEffect(()=>{
+    const unsubscribe = navigation.addListener('focus', ()=>{
+      const reopen = route.params?.reopenRegisteredClientsModal;
+      const lid = route.params?.lessonId;
+      if (reopen && lid) {
+        const lesson = lessons.find(l=> l.id === lid);
+        if (lesson) {
+          setSelectedLessonForClients(lesson);
+          setShowRegisteredClientsModal(true);
+        }
+      }
+    });
+    return unsubscribe;
+  },[navigation, route.params, lessons]);
+
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#0d47a1','#1976d2','#42a5f5']} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.gradientBackground}>
+      <LinearGradient colors={['#0d47a1','#1565c0','#1e88e5']} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.gradientBackground}> 
+        <View pointerEvents='none' style={styles.decorBubbleOne} />
+        <View pointerEvents='none' style={styles.decorBubbleTwo} />
+        <View pointerEvents='none' style={styles.decorBubbleThree} />
         <ScrollView contentContainerStyle={styles.scrollInner} showsVerticalScrollIndicator={false}>
           <SectionHeader title="My Lessons" />
 
@@ -313,31 +332,12 @@ export default function CoachDashboardScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={styles.lessonsWrapper}>
+            <View style={styles.lessonsWrapper}> 
               <LessonCard
                 lessons={filteredLessons}
                 onEdit={(lesson: Lesson) => {
                   setLessonToView(lesson);
                   setShowViewLessonModal(true);
-                }}
-                onEditLesson={(lesson: Lesson) => {
-                  setSelectedLesson(lesson);
-                  setEditLessonData({
-                    description: lesson.description || '',
-                    time: dayjs(lesson.time),
-                    capacityLimit: lesson.capacityLimit.toString() || '',
-                    duration: lesson.duration || 0,
-                    location: lesson.location || defaultLocation
-                  });
-                  setShowEditLessonModal(true);
-                }}
-                onDelete={(lesson: Lesson) => {
-                  setSelectedLesson(lesson);
-                  setShowDeleteConfirmationModal(true);
-                }}
-                onViewClients={(lesson: Lesson) => {
-                  setSelectedLessonForClients(lesson);
-                  setShowRegisteredClientsModal(true);
                 }}
               />
             </View>
@@ -345,8 +345,6 @@ export default function CoachDashboardScreen() {
 
           <View style={{height:140}} />
         </ScrollView>
-
-        {/* Floating Action Bar */}
         <View style={styles.fabBar}> 
           <TouchableOpacity style={styles.secondaryFab} onPress={()=>setShowDatePicker(true)} activeOpacity={0.85}>
             <Icon name="calendar-today" size={22} color="#1976d2" />
@@ -463,6 +461,7 @@ export default function CoachDashboardScreen() {
         lessonId={selectedLessonForClients?.id || 0}
         registeredClients={registeredClients}
         isLoading={loadingRegisteredClients}
+        onNavigateProfile={()=>{ setShowRegisteredClientsModal(false); }}
       />
       <DeleteConfirmationModal
         isOpen={showDeleteConfirmationModal}
@@ -507,8 +506,11 @@ export default function CoachDashboardScreen() {
 const styles = StyleSheet.create({
   container:{ flex:1 },
   gradientBackground:{ flex:1 },
+  decorBubbleOne:{ position:'absolute', top:-70, left:-50, width:180, height:180, borderRadius:90, backgroundColor:'rgba(255,255,255,0.08)' },
+  decorBubbleTwo:{ position:'absolute', top:140, right:-60, width:220, height:220, borderRadius:110, backgroundColor:'rgba(255,255,255,0.05)' },
+  decorBubbleThree:{ position:'absolute', bottom:-80, left:-40, width:160, height:160, borderRadius:80, backgroundColor:'rgba(255,255,255,0.06)' },
   scrollInner:{ paddingBottom:0, paddingTop:4 },
-  lessonsWrapper:{ paddingHorizontal:14, paddingTop:4 },
+  lessonsWrapper:{ paddingHorizontal:4, paddingTop:4 },
   sectionHeaderCard:{ backgroundColor:'rgba(255,255,255,0.15)', padding:20, borderBottomLeftRadius:28, borderBottomRightRadius:28, shadowColor:'#000', shadowOffset:{width:0,height:4}, shadowOpacity:0.15, shadowRadius:10, elevation:6, borderWidth:1, borderColor:'rgba(255,255,255,0.25)', marginBottom:10 },
   headerContent:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center' },
   sectionHeaderText:{ fontSize:28, fontWeight:'800', color:'#fff', letterSpacing:0.5 },

@@ -8,10 +8,7 @@ import { getLessonIcon } from '../../types/LessonType';
 
 interface LessonCardsProps {
   lessons: Lesson[];
-  onEdit: (lesson: Lesson) => void; // view details modal
-  onEditLesson: (lesson: Lesson) => void; // open edit modal
-  onDelete: (lesson: Lesson) => void;
-  onViewClients: (lesson: Lesson) => void;
+  onEdit: (lesson: Lesson) => void; // tap card to open view modal
 }
 
 const getCapacityColor = (registered: number, capacity: number) => {
@@ -22,7 +19,7 @@ const getCapacityColor = (registered: number, capacity: number) => {
   return '#2e7d32';
 };
 
-const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit, onEditLesson, onDelete, onViewClients }) => {
+const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit }) => {
   const sorted = useMemo(() => lessons
     .filter(l => l.time && !isNaN(new Date(l.time).getTime()))
     .sort((a,b)=> new Date(a.time).getTime() - new Date(b.time).getTime()), [lessons]);
@@ -39,11 +36,17 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit, onEditL
         const locationLabel = hasLocation ? (lesson.location.address || `${lesson.location.city}${lesson.location.city && lesson.location.country ? ', ' : ''}${lesson.location.country}`) : null;
 
         return (
-          <View key={lesson.id} style={styles.card}> 
+          <TouchableOpacity
+            key={lesson.id}
+            style={styles.card}
+            activeOpacity={0.85}
+            accessibilityLabel={`Open details for lesson ${lesson.title}`}
+            onPress={() => onEdit(lesson)}
+          >
             <View style={styles.topRow}> 
               <Avatar.Icon
-                size={40}
-                icon={() => <IconComponent name={iconName} size={20} color="#fff" />}
+                size={44}
+                icon={() => <IconComponent name={iconName} size={22} color="#fff" />}
                 style={styles.avatar}
               />
               <View style={styles.infoBlock}> 
@@ -53,7 +56,7 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit, onEditL
                 </View>
                 {hasLocation && (
                   <View style={styles.locationInline}> 
-                    <Icon name="location-on" size={12} color="#1976d2" style={{marginRight:3}} />
+                    <Icon name="location-on" size={12} color="#bbdefb" style={{marginRight:4}} />
                     <Text style={styles.locationText} numberOfLines={1}>{locationLabel}</Text>
                   </View>
                 )}
@@ -62,25 +65,11 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit, onEditL
                     <Text style={[styles.capacityPillText,{color:capColor}]}>{registered}/{capacity||0}</Text>
                   </View>
                   <View style={styles.progressTrack}><View style={[styles.progressFill,{width:`${pct}%`, backgroundColor:capColor}]} /></View>
-                  <Text style={[styles.pctText,{color:capColor}]}>{pct}%</Text>
+                  <Text style={styles.pctText}>{pct}%</Text>
                 </View>
               </View>
             </View>
-            <View style={styles.actionsRow}> 
-              <TouchableOpacity accessibilityLabel="View lesson" style={styles.actionBtn} onPress={()=>onEdit(lesson)}>
-                <Icon name="visibility" size={18} color="#1976d2" />
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityLabel="Clients" style={styles.actionBtn} onPress={()=>onViewClients(lesson)}>
-                <Icon name="people" size={18} color="#1565c0" />
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityLabel="Edit lesson" style={styles.actionBtn} onPress={()=>onEditLesson(lesson)}>
-                <Icon name="edit" size={16} color="#2e7d32" />
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityLabel="Delete lesson" style={styles.actionBtn} onPress={()=>onDelete(lesson)}>
-                <Icon name="delete" size={18} color="#d32f2f" />
-              </TouchableOpacity>
-            </View>
-          </View>
+          </TouchableOpacity>
         );
       })}
       {sorted.length === 0 && (
@@ -91,25 +80,23 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit, onEditL
 };
 
 const styles = StyleSheet.create({
-  container:{ paddingVertical:4 },
-  card:{ backgroundColor:'rgba(255,255,255,0.82)', borderRadius:18, padding:12, marginBottom:10, shadowColor:'#0d47a1', shadowOpacity:0.06, shadowRadius:8, shadowOffset:{width:0,height:3}, borderWidth:1, borderColor:'rgba(255,255,255,0.45)' },
+  container:{ paddingHorizontal:12, paddingTop:4 },
+  card:{ backgroundColor:'rgba(255,255,255,0.08)', borderRadius:20, padding:14, marginBottom:14, borderWidth:1, borderColor:'rgba(255,255,255,0.18)', shadowColor:'#000', shadowOpacity:0.25, shadowRadius:12, shadowOffset:{width:0,height:4} },
   topRow:{ flexDirection:'row', alignItems:'flex-start' },
-  avatar:{ backgroundColor:'#1976d2', marginRight:10 },
+  avatar:{ backgroundColor:'#1976d2', marginRight:12, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:6, shadowOffset:{width:0,height:3} },
   infoBlock:{ flex:1 },
-  titleRow:{ flexDirection:'row', alignItems:'center' },
-  title:{ flex:1, fontSize:15.5, fontWeight:'800', color:'#0d47a1', letterSpacing:0.3, paddingRight:6 },
-  time:{ fontSize:11.5, fontWeight:'700', color:'#0f355e', marginLeft:4 },
+  titleRow:{ flexDirection:'row', alignItems:'center', marginBottom:2 },
+  title:{ flex:1, fontSize:15.5, fontWeight:'800', color:'#ffffff', letterSpacing:0.3, paddingRight:6 },
+  time:{ fontSize:11.5, fontWeight:'600', color:'rgba(255,255,255,0.78)' },
   locationInline:{ flexDirection:'row', alignItems:'center', marginTop:4 },
-  locationText:{ fontSize:11, fontWeight:'600', color:'#0f172a', flex:1 },
-  capacityRow:{ flexDirection:'row', alignItems:'center', marginTop:6 },
-  capacityPill:{ paddingHorizontal:6, paddingVertical:2, borderRadius:9, borderWidth:1.2, marginRight:6, minWidth:48, alignItems:'center' },
-  capacityPillText:{ fontSize:10.5, fontWeight:'700', letterSpacing:0.3 },
-  progressTrack:{ flex:1, height:5, backgroundColor:'#e3eef7', borderRadius:3, overflow:'hidden', marginRight:6 },
-  progressFill:{ height:'100%', borderRadius:3 },
-  pctText:{ fontSize:10.5, fontWeight:'700', width:34, textAlign:'right' },
-  actionsRow:{ flexDirection:'row', justifyContent:'flex-end', marginTop:8 },
-  actionBtn:{ width:34, height:34, borderRadius:12, backgroundColor:'#ffffff', alignItems:'center', justifyContent:'center', marginLeft:6, shadowColor:'#000', shadowOpacity:0.07, shadowRadius:4, shadowOffset:{width:0,height:2}, borderWidth:1, borderColor:'rgba(25,118,210,0.12)' },
-  emptyHint:{ textAlign:'center', color:'#607d8b', fontSize:13, fontStyle:'italic', marginTop:16 }
+  locationText:{ fontSize:11.5, fontWeight:'600', color:'rgba(255,255,255,0.70)', flex:1 },
+  capacityRow:{ flexDirection:'row', alignItems:'center', marginTop:8 },
+  capacityPill:{ paddingHorizontal:8, paddingVertical:4, borderRadius:12, borderWidth:1.5, marginRight:8, minWidth:54, alignItems:'center', backgroundColor:'rgba(0,0,0,0.25)' },
+  capacityPillText:{ fontSize:11, fontWeight:'800', letterSpacing:0.4 },
+  progressTrack:{ flex:1, height:6, backgroundColor:'rgba(255,255,255,0.22)', borderRadius:4, overflow:'hidden', marginRight:8 },
+  progressFill:{ height:'100%', borderRadius:4 },
+  pctText:{ fontSize:11, fontWeight:'700', width:40, textAlign:'right', color:'#ffffff' },
+  emptyHint:{ textAlign:'center', color:'rgba(255,255,255,0.75)', fontSize:13, fontStyle:'italic', marginTop:16 }
 });
 
 export default React.memo(CoachLessonCards);

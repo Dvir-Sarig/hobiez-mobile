@@ -18,6 +18,9 @@ export default function ClientProfilePage() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const clientId = route.params?.clientId;
+  const fromRegisteredClientsModal = route.params?.fromRegisteredClientsModal;
+  const lessonId = route.params?.lessonId;
+  const originScreen = route.params?.originScreen; // optionally provided
 
   const [profileData, setProfileData] = useState<ClientProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,8 +87,21 @@ export default function ClientProfilePage() {
 
   return (
     <View style={styles.container}>
+      {fromRegisteredClientsModal && lessonId && (
+        <TouchableOpacity
+          style={styles.returnIconButton}
+          onPress={() => {
+            // Navigate back and set a param so origin can reopen modal
+            navigation.navigate('CoachLessons', { reopenRegisteredClientsModal: true, lessonId });
+          }}
+          accessibilityLabel="Return to registered clients"
+          activeOpacity={0.7}
+        >
+          <MaterialIcons name="arrow-back" size={26} color="#1976d2" />
+        </TouchableOpacity>
+      )}
       {profileData ? (
-        <ClientProfileView profileData={profileData} completionPercent={0.85} />
+        <ClientProfileView profileData={profileData} />
       ) : (
         <NoProfileModal
           isOpen={showNoProfileModal}
@@ -121,5 +137,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     marginLeft: 4,
+  },
+  returnIconButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 18,
+    padding: 4,
+    shadowColor: '#1976d2',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.10,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });

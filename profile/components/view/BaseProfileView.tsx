@@ -23,14 +23,12 @@ interface BaseProfileViewProps {
   profileData: { genericProfile: GenericProfileInfo };
   children?: React.ReactNode;
   onEditClick?: () => void;
-  completionPercent?: number; // 0..1 optional
 }
 
 export default function BaseProfileView({
   profileData,
   children,
   onEditClick,
-  completionPercent,
 }: BaseProfileViewProps) {
   const {
     name,
@@ -130,14 +128,6 @@ export default function BaseProfileView({
                   )}
                 </View>
                 {!!userDescription && <Text style={styles.description}>{userDescription}</Text>}
-                {completionPercent !== undefined && (
-                  <View style={styles.progressBarWrapper}>
-                    <View style={styles.progressTrack}>
-                      <View style={[styles.progressFill, { width: `${Math.min(100, Math.round(completionPercent * 100))}%` }]} />
-                    </View>
-                    <Text style={styles.progressLabel}>{Math.round(completionPercent * 100)}% Complete</Text>
-                  </View>
-                )}
               </View>
             </View>
 
@@ -278,25 +268,15 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   progressBarWrapper: {
-    marginTop: 14,
+    display:'none'
   },
   progressTrack: {
-    height: 10,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius: 6,
-    overflow: 'hidden',
+    display:'none'
   },
   progressFill: {
-    height: '100%',
-    backgroundColor: '#ffffff',
-    borderRadius: 6,
+    display:'none'
   },
   progressLabel: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-    marginTop: 6,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    display:'none'
   },
 });

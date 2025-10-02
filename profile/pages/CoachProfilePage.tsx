@@ -124,7 +124,7 @@ export default function CoachProfilePage() {
         </TouchableOpacity>
       )}
       {profileData ? (
-        <ProfileView profileData={profileData} completionPercent={0.9} />
+        <ProfileView profileData={profileData} />
       ) : (
         <NoProfileModal
           isOpen={showNoProfileModal}

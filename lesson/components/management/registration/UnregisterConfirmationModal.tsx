@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -7,20 +7,34 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import { Lesson } from '../../../../lesson/types/Lesson';
-import { formatLessonTimeReadable } from '../../../../shared/services/formatService';
-import { MaterialIcons, Entypo } from '@expo/vector-icons';
+import { formatLessonTimeReadable, formatPrice } from '../../../../shared/services/formatService';
+import { MaterialIcons, Entypo, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { Avatar } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { fetchCoachGlobalInfo, CoachGlobalInfo } from '../../../../profile/services/coachService';
+import { getLessonIcon } from '../../../../lesson/types/LessonType';
 
 interface Props {
   lesson: Lesson | null;
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   coachInfo?: { name: string };
 }
+
+// Capacity color (shared logic with registration)
+const getCapacityColor = (registered: number, limit: number): string => {
+  const ratio = limit ? registered / limit : 0;
+  if (!limit) return '#90a4ae';
+  if (ratio >= 0.95) return '#ff5252';
+  if (ratio >= 0.75) return '#ffa726';
+  return '#64b5f6';
+};
 
 const UnregisterConfirmationModal: React.FC<Props> = ({
   lesson,
@@ -31,8 +45,36 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
 }) => {
   const navigation = useNavigation<any>();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCoachInfo, setIsLoadingCoachInfo] = useState(false);
+  const [coachGlobalInfo, setCoachGlobalInfo] = useState<CoachGlobalInfo | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!lesson?.coachId) return;
+      setIsLoadingCoachInfo(true);
+      try {
+        const info = await fetchCoachGlobalInfo(lesson.coachId);
+        setCoachGlobalInfo(info);
+      } catch (e) {
+        console.error('Error fetching coach info', e);
+      } finally {
+        setIsLoadingCoachInfo(false);
+      }
+    };
+    if (isOpen) load();
+  }, [isOpen, lesson?.coachId]);
 
   if (!lesson) return null;
+
+  const registered = lesson.registeredCount ?? 0;
+  const capacity = lesson.capacityLimit ?? 0;
+  const capacityColor = getCapacityColor(registered, capacity);
+  const timeDate = new Date(lesson.time);
+  const dateStr = timeDate.toLocaleDateString();
+  const timeStr = timeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const coachName = coachGlobalInfo?.name || coachInfo?.name || 'Coach';
+  const locationText = lesson.location?.address || [lesson.location?.city, lesson.location?.country].filter(Boolean).join(', ');
+  const { IconComponent, iconName } = getLessonIcon(lesson.title);
 
   const handleCoachPress = () => {
     onClose();
@@ -48,82 +90,120 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
     }
   };
 
+  const renderCoachAvatar = () => {
+    if (isLoadingCoachInfo) return <Avatar.Text label={coachName.charAt(0)} size={34} style={{ backgroundColor:'rgba(255,255,255,0.25)' }} labelStyle={{ color:'#0d47a1' }} />;
+    if (coachGlobalInfo?.profilePictureUrl) {
+      return <Avatar.Image source={{ uri: coachGlobalInfo.profilePictureUrl }} size={34} style={{ backgroundColor:'rgba(255,255,255,0.18)' }} />;
+    }
+    return <Avatar.Text label={coachName.charAt(0)} size={34} style={{ backgroundColor:'#1976d2' }} />;
+  };
+
   return (
     <Modal visible={isOpen} animationType="fade" transparent>
       <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Avatar.Icon 
-              icon="alert" 
-              size={50} 
-              style={styles.avatar}
-              color="#fff"
-            />
-            <Text style={styles.title}>Confirm Unregistration</Text>
-            <Text style={styles.subtitle}>Are you sure you want to leave this lesson?</Text>
-          </View>
-
-          <View style={styles.content}>
-            <View style={styles.lessonInfo}>
-              <Text style={styles.lessonTitle}>{lesson.title}</Text>
-              
-              <View style={styles.infoRow}>
-                <MaterialIcons name="access-time" size={20} color="#666" />
-                <Text style={styles.infoText}>
-                  {formatLessonTimeReadable(lesson.time)}
-                </Text>
+        <View style={styles.shell}>
+          <LinearGradient colors={['#0d47a1','#1976d2']} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerBar}>
+            <View style={styles.headerLeft}>
+              <View style={styles.lessonIconWrap}>
+                <Avatar.Icon size={42} style={styles.lessonIconAvatar} icon={() => <IconComponent name={iconName} size={22} color="#ffffff" />} />
               </View>
-
-              {coachInfo?.name && (
-                <TouchableOpacity 
-                  style={styles.coachRow} 
-                  onPress={handleCoachPress} 
-                  disabled={isLoading}
-                >
-                  <MaterialIcons name="person" size={20} color="#666" />
-                  <Text style={styles.infoText}>
-                    Coach: <Text style={styles.coachName}>{coachInfo.name}</Text>
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              {lesson.location && (
-                <View style={styles.infoRow}>
-                  <Entypo name="location-pin" size={20} color="#666" />
-                  <Text style={styles.infoText}>
-                    {lesson.location.address || `${lesson.location.city}, ${lesson.location.country}`}
-                  </Text>
+              <View style={styles.headerTextCol}>
+                <Text style={styles.headerTitle} numberOfLines={1}>{lesson.title}</Text>
+                <View style={styles.headerMetaRow}>
+                  <MaterialIcons name="event" size={14} color="#bbdefb" />
+                  <Text style={styles.headerMetaText}>{dateStr}</Text>
+                  <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginLeft:10 }} />
+                  <Text style={styles.headerMetaText}>{timeStr}</Text>
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close unregister modal">
+              <MaterialIcons name="close" size={22} color="#ffffff" />
+            </TouchableOpacity>
+          </LinearGradient>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.metricRow}>
+              {typeof lesson.price === 'number' && (
+                <View style={[styles.metricChip, styles.metricChipEmphasisDanger]}>
+                  <MaterialIcons name="attach-money" size={16} color="#0d47a1" />
+                  <Text style={[styles.metricChipText, styles.metricChipTextEmphasisDanger]}>{formatPrice(lesson.price)}</Text>
                 </View>
               )}
+              {lesson.duration ? (
+                <View style={[styles.metricChip, styles.metricChipEmphasisDanger]}>
+                  <Ionicons name="timer-outline" size={16} color="#0d47a1" />
+                  <Text style={[styles.metricChipText, styles.metricChipTextEmphasisDanger]}>{lesson.duration}m</Text>
+                </View>
+              ) : null}
             </View>
 
-            <View style={styles.actions}>
-              <TouchableOpacity 
-                style={[styles.button, styles.cancelButton, isLoading && styles.disabledButton]} 
-                onPress={onClose}
-                disabled={isLoading}
-              >
-                <Text style={[styles.buttonText, styles.cancelText]}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.button, styles.unregisterButton, isLoading && styles.unregisterButtonDisabled]} 
-                onPress={handleUnregister}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator color="#fff" size="small" />
-                    <Text style={[styles.buttonText, styles.loadingText]}>Unregistering...</Text>
+            {/* Capacity */}
+            {capacity > 0 && (
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <FontAwesome5 name="users" size={16} color={capacityColor} />
+                    <Text style={styles.sectionTitle}>Capacity</Text>
                   </View>
-                ) : (
-                  <>
-                    <MaterialIcons name="exit-to-app" size={20} color="#fff" />
-                    <Text style={[styles.buttonText, styles.unregisterText]}> Unregister</Text>
-                  </>
-                )}
+                  <View style={[styles.capacityPill, { borderColor: capacityColor }]}> 
+                    <Text style={[styles.capacityPillText, { color: capacityColor }]}>{registered}/{capacity}</Text>
+                  </View>
+                </View>
+                <Text style={styles.capacityHint}>{registered >= capacity ? 'Fully booked' : capacity - registered <= 2 ? 'Almost full — last spots' : registered === 0 ? 'Be the first to join' : 'Spots available'}</Text>
+              </View>
+            )}
+
+            {/* Description */}
+            {!!lesson.description && (
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionLabel}>Description</Text>
+                <Text style={styles.bodyText}>{lesson.description}</Text>
+              </View>
+            )}
+
+            {/* Location */}
+            {locationText ? (
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionLabel}>Location</Text>
+                <View style={styles.inlineRow}>
+                  <Entypo name="location-pin" size={18} color="#b71c1c" style={{ marginRight:6 }} />
+                  <Text style={styles.bodyText} numberOfLines={2}>{locationText}</Text>
+                </View>
+              </View>
+            ) : null}
+
+            {/* Coach */}
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionLabel}>Coach</Text>
+              <TouchableOpacity onPress={handleCoachPress} style={styles.coachRow} accessibilityLabel="View coach profile">
+                {renderCoachAvatar()}
+                <Text style={styles.coachNameText} numberOfLines={1}>{isLoadingCoachInfo ? 'Loading...' : coachName}</Text>
+                <MaterialIcons name="chevron-right" size={20} color="#b71c1c" />
               </TouchableOpacity>
             </View>
+
+            {/* Warning / Confirmation */}
+            <View style={[styles.sectionCard, styles.warningCard]}> 
+              <View style={styles.warningHeaderRow}> 
+                <MaterialIcons name="warning" size={20} color="#ff8f00" />
+                <Text style={styles.warningTitle}>Leaving this Lesson</Text>
+              </View>
+              <Text style={styles.warningBody}>You will lose your secured spot. If the lesson fills you might not be able to rejoin. This action cannot be undone.</Text>
+            </View>
+
+            <View style={{ height: 110 }} />
+          </ScrollView>
+          <View style={styles.footerBar}> 
+            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} disabled={isLoading} accessibilityLabel="Cancel unregistration"> 
+              <Text style={[styles.cancelBtnText, isLoading && { opacity:0.5 }]}>Keep Spot</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.dangerBtn, isLoading && styles.dangerBtnDisabled]} onPress={handleUnregister} disabled={isLoading} accessibilityLabel="Confirm unregistration"> 
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={styles.dangerBtnText}>Unregister</Text>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -134,122 +214,45 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
 const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  container: {
-    width: width * 0.9,
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    overflow: 'hidden',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  header: {
-    backgroundColor: '#fff3e0',
-    padding: 24,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ffe0b2',
-  },
-  avatar: {
-    backgroundColor: '#ff9800',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#e65100',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-  content: {
-    padding: 24,
-  },
-  lessonInfo: {
-    marginBottom: 24,
-  },
-  lessonTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  coachRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  infoText: {
-    fontSize: 15,
-    color: '#666',
-    marginLeft: 8,
-  },
-  coachName: {
-    color: '#1976d2',
-    fontWeight: '500',
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#f5f5f5',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  unregisterButton: {
-    backgroundColor: '#f44336',
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cancelText: {
-    color: '#666',
-  },
-  unregisterText: {
-    color: '#fff',
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  unregisterButtonDisabled: {
-    backgroundColor: '#ef9a9a',
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    marginLeft: 8,
-    color: '#fff',
-  },
+  overlay:{ flex:1, backgroundColor:'rgba(0,0,0,0.55)', justifyContent:'center', padding:20 },
+  shell:{ width: width * 0.92, backgroundColor:'rgba(255,255,255,0.96)', borderRadius:30, overflow:'hidden', maxHeight:'92%', alignSelf:'center', ...Platform.select({ ios:{ shadowColor:'#000', shadowOpacity:0.25, shadowRadius:18, shadowOffset:{width:0,height:8}}, android:{ elevation:10 } }) },
+  headerBar:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', paddingHorizontal:18, paddingVertical:16 },
+  headerLeft:{ flexDirection:'row', alignItems:'center', flex:1, gap:12 },
+  headerTextCol:{ flex:1 },
+  lessonIconWrap:{},
+  lessonIconAvatar:{ backgroundColor:'#1976d2' },
+  headerTitle:{ fontSize:20, fontWeight:'800', color:'#ffffff', letterSpacing:0.4 },
+  headerMetaRow:{ flexDirection:'row', alignItems:'center', marginTop:4 },
+  headerMetaText:{ fontSize:12.5, fontWeight:'700', color:'#ffffff', marginLeft:4, letterSpacing:0.5 },
+  closeBtn:{ width:40, height:40, borderRadius:14, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.4)' },
+  scrollContent:{ padding:20, paddingBottom:0 },
+  metricRow:{ flexDirection:'row', flexWrap:'wrap', gap:8, marginBottom:22 },
+  metricChip:{ flexDirection:'row', alignItems:'center', gap:4, backgroundColor:'#f1f5f9', paddingVertical:6, paddingHorizontal:10, borderRadius:14, borderWidth:1, borderColor:'rgba(13,71,161,0.12)' },
+  metricChipEmphasisDanger:{ backgroundColor:'#ffffff', paddingVertical:8, paddingHorizontal:14, borderWidth:1, borderColor:'rgba(13,71,161,0.25)', shadowColor:'#0d47a1', shadowOpacity:0.08, shadowRadius:6, shadowOffset:{width:0,height:3} },
+  metricChipText:{ fontSize:12, fontWeight:'700', color:'#0d47a1', letterSpacing:0.3 },
+  metricChipTextEmphasisDanger:{ fontSize:14, fontWeight:'800', letterSpacing:0.5 },
+  sectionCard:{ backgroundColor:'#ffffff', borderRadius:22, padding:18, marginBottom:18, borderWidth:1, borderColor:'rgba(13,71,161,0.08)', shadowColor:'#0d47a1', shadowOpacity:0.05, shadowRadius:10, shadowOffset:{width:0,height:4} },
+  sectionHeaderRow:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:10 },
+  sectionHeaderLeft:{ flexDirection:'row', alignItems:'center', gap:8 },
+  sectionTitle:{ fontSize:14, fontWeight:'700', color:'#0d47a1', letterSpacing:0.4 },
+  sectionLabel:{ fontSize:12, fontWeight:'800', color:'#0d47a1', marginBottom:8, letterSpacing:0.6, textTransform:'uppercase' },
+  bodyText:{ fontSize:14, fontWeight:'500', color:'#0f172a', lineHeight:20 },
+  inlineRow:{ flexDirection:'row', alignItems:'center' },
+  capacityPill:{ paddingHorizontal:12, paddingVertical:6, borderRadius:18, borderWidth:1, backgroundColor:'#fef2f2', minWidth:70, alignItems:'center' },
+  capacityPillText:{ fontSize:13, fontWeight:'800', letterSpacing:0.5 },
+  capacityHint:{ fontSize:11, fontWeight:'600', color:'rgba(183,28,28,0.75)', letterSpacing:0.4 },
+  coachRow:{ flexDirection:'row', alignItems:'center', gap:12, paddingVertical:4 },
+  coachNameText:{ fontSize:15, fontWeight:'700', color:'#0d47a1', flex:1 },
+  warningCard:{ backgroundColor:'#fff8e1', borderColor:'rgba(255,143,0,0.35)' },
+  warningHeaderRow:{ flexDirection:'row', alignItems:'center', gap:10, marginBottom:10 },
+  warningTitle:{ fontSize:15, fontWeight:'800', color:'#ff8f00', letterSpacing:0.5 },
+  warningBody:{ fontSize:13, fontWeight:'600', color:'#7a5d00', lineHeight:19 },
+  footerBar:{ flexDirection:'row', alignItems:'center', gap:14, padding:18, borderTopWidth:1, borderTopColor:'rgba(13,71,161,0.12)', backgroundColor:'rgba(255,255,255,0.94)' },
+  cancelBtn:{ flex:1, backgroundColor:'rgba(255,255,255,0.55)', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:14, borderWidth:1.5, borderColor:'rgba(25,118,210,0.25)' },
+  cancelBtnText:{ color:'#0d47a1', fontSize:14, fontWeight:'700', letterSpacing:0.4 },
+  dangerBtn:{ flex:1.4, backgroundColor:'#1976d2', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:14, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{width:0,height:4} },
+  dangerBtnDisabled:{ backgroundColor:'#90a4ae' },
+  dangerBtnText:{ color:'#ffffff', fontSize:15, fontWeight:'800', letterSpacing:0.5 },
 });
 
 export default UnregisterConfirmationModal;

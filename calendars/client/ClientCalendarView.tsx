@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, Alert, StyleSheet, TouchableOpacity, ScrollView, Platform, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar } from 'react-native-big-calendar';
 import dayjs from 'dayjs';
@@ -36,6 +36,8 @@ const ClientCalendarView: React.FC = () => {
 
   const { userId } = useAuth();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<any>();
+  const origin = route.params?.origin;
 
   const handleOpenModal = (lesson: Lesson) => {
     setSelectedLesson(lesson);
@@ -208,7 +210,13 @@ const ClientCalendarView: React.FC = () => {
       <View style={styles.overlayLayer}> 
         {/* Header */}
         <View style={styles.headerPolished}> 
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIconBtn} accessibilityLabel="Back"> 
+          <TouchableOpacity onPress={() => {
+            if (origin === 'SearchLessons') {
+              navigation.navigate('SearchLessons' as never);
+            } else {
+              navigation.goBack();
+            }
+          }} style={styles.headerIconBtn} accessibilityLabel="Back"> 
             <Icon name="arrow-back" size={20} color="#ffffff" />
           </TouchableOpacity>
           <View style={{flex:1}}>

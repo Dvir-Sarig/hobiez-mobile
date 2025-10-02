@@ -7,12 +7,11 @@ import BaseProfileView from './BaseProfileView';
 interface CoachProfileViewProps {
   profileData: CoachProfile;
   onEditClick?: () => void;
-  completionPercent?: number;
 }
 
-export default function CoachProfileView({ profileData, onEditClick, completionPercent }: CoachProfileViewProps) {
+export default function CoachProfileView({ profileData, onEditClick }: CoachProfileViewProps) {
   return (
-    <BaseProfileView profileData={profileData} onEditClick={onEditClick} completionPercent={completionPercent}>
+    <BaseProfileView profileData={profileData} onEditClick={onEditClick}>
       <View style={styles.section}>
         <SectionHeader icon="work" title="Experience" />
         <Text style={styles.longText}>{profileData.experience || 'No experience info yet'}</Text>

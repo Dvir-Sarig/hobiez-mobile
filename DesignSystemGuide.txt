@@ -1,0 +1,224 @@
+HOBIEZ MOBILE DESIGN SYSTEM (Captured Oct 2 2025)
+=================================================
+Purpose: Reference for consistent UI when extending the app. Covers color palette, elevation, spacing, typography, shapes, components, interaction patterns and reusable tokens derived from current implemented screens:
+- Search Lessons Page (ClientLessonSearchPage + SearchForm + Lesson Cards)
+- Registration / Creation / Profile flows (Create Lesson Modal, Create Coach Profile, Lesson Cards, Registered Lessons)
+
+--------------------------------------------------
+1. CORE DESIGN PRINCIPLES
+--------------------------------------------------
+Glassy Layering: Foreground surfaces use semi‑transparent whites (rgba(255,255,255,0.07–0.18)) over deep blue gradients.
+Contrast Hierarchy: Primary actionable or focus elements use solid or high-opacity color (solid gradients, #1976d2 backgrounds) vs subdued neutrals for secondary info.
+Compact Density: Cards are concise (14–18px internal vertical spacing) with micro‑chips and pills instead of large blocks.
+Soft Elevation: Shadows subtle, blur implied via translucency instead of heavy drop shadows. Occasional stronger shadow for primary buttons / active tabs.
+Reduced Clutter: Only essential info surfaced in cards (title, time, coach, location, capacity). Extended info appears in expanded modals.
+Motion for Feedback: Light scale (0.97) on press; animated skeleton shimmer loops; expand/collapse height animation (320ms cubic) for advanced filters.
+
+--------------------------------------------------
+2. COLOR SYSTEM
+--------------------------------------------------
+Primary Gradient: #0d47a1 -> #1565c0 -> #1e88e5 (background) or #0d47a1 -> #1976d2 -> #42a5f5 (profile creation).
+Primary Solid: #1976d2 (icons, chips icon color, key CTAs background).
+Primary Dark Accent: #0d47a1 (titles, strong emphasis on light surfaces).
+Support / Semantic:
+  Success / Capacity OK: #64b5f6 (used as neutral-calm accent also) and #66bb6a (optional alt)
+  Warning / High Capacity: #ffa726 or #ffb300
+  Danger / Full: #ff5252 or #d32f2f
+  Neutral Borders: rgba(255,255,255,0.20–0.35) on dark; #e2e8f0 on light cards.
+  Text Subtle Light Mode-On-Dark: rgba(255,255,255,0.70–0.85)
+Translucent Surfaces (Dark BG):
+  Layer 1: rgba(255,255,255,0.07)
+  Layer 2: rgba(255,255,255,0.10)
+  Layer 3 highlight: rgba(255,255,255,0.12–0.18)
+Light Surfaces: #ffffff base with subtle tint (#f0f7ff / #f1f5f9 background inputs).
+Focus / Selection Outline (light contexts): rgba(13,71,161,0.28–0.45)
+Danger Accent (validation): #dc3545
+
+--------------------------------------------------
+3. TYPOGRAPHY
+--------------------------------------------------
+Font Weights (usage):
+  800: Hero titles, key section headings, tab active text, primary numeric metrics.
+  700: Modal titles, card headings, buttons, section headers (uppercase small).
+  600: Secondary labels, interactive chip text.
+  500: Body / supporting lines (time, location, helper descriptions).
+Sizes (approx px):
+  Hero Page Title: 26
+  Large Modal / Flow Title: 24–26 (move toward 22–24 in future for consistency)
+  Section / Card Title: 15–16
+  Body: 13–15
+  Meta / Caption / Pills: 11–13
+Uppercase Micro Labels: 11–12.5 letterSpacing 0.5–0.8
+LetterSpacing: Titles 0.3–0.6; micro labels 0.5–0.8; numeric emphasis 0.5
+
+--------------------------------------------------
+4. SPACING & LAYOUT
+--------------------------------------------------
+Global Scroll Padding Bottom: 40
+Hero Header Vertical Padding: Top iOS 58 / Android 40; bottom 28
+Card Internal Padding: 14–20 depending density
+Section Separation: 26–30 top margin
+Inline Gutter / Gap Small: 6–8
+Inline Gutter Medium: 10–12
+Edge Horizontal Page Padding (cards / filters): 16–20
+Container Max Modal Width: ~92% viewport (mobile), capped at 480 when refactored.
+
+--------------------------------------------------
+5. SHAPES & RADII
+--------------------------------------------------
+Primary Rounded Corners:
+  Large Surfaces / Glass Cards: 26–34
+  Standard Cards: 18
+  Pills / Chips: 14–20 (circular ends when capacity / count)
+  Avatars: circular or 14–18 radius wrappers
+Inputs (light surfaces): 14–16 radius
+
+--------------------------------------------------
+6. COMPONENT PATTERNS
+--------------------------------------------------
+Lesson Cards (Available & Registered):
+  - Translucent background: rgba(255,255,255,0.07)
+  - Border: 1px rgba(255,255,255,0.12)
+  - Content: Icon (Avatar.Icon colored), Title, Time (🕒 prefix), Capacity pill with color-coded border.
+  - Second row: Coach (tap -> profile), Location (right aligned). Optional chips row in registered list.
+  - Press effect: scale 0.97 spring + ripple (Android).
+  - Skeleton: pulsing blocks matching layout.
+
+Search Filter Form:
+  - Glass card wrapper: rgba(255,255,255,0.10) + border rgba(255,255,255,0.28) + deep shadow 0,6.
+  - Header row: icon + title + active filters badge + Clear button when >0.
+  - Inputs: dark-on-translucent stylings; advanced collapses with Animated height & opacity.
+  - Chips row summarizing active filters; closable chips with x icon.
+  - Primary action gradient button (blue tri-tone) with icon.
+
+Create Lesson Modal (reference style for future modals):
+  - Glass-light hybrid card (nearly opaque white) radius 30.
+  - Gradient header bar (#0d47a1→#1976d2) with close button and title.
+  - Section cards (#ffffff, border rgba(13,71,161,0.08), subtle shadow) grouped by content.
+  - Metric row (duration / capacity / price) using compact inline pill-input rows.
+  - Footer persistent action bar (Cancel light / Create primary).
+
+Profile Creation (Coach):
+  - Scroll sections: white high-opacity cards “floating” on gradient.
+  - Section header micro uppercase (13 / 700 / letterSpacing 1).
+  - Inputs: filled light (#f1f5f9) with 1.5px border #e2e8f0; error border #dc3545.
+  - Primary action: large white pill button with #1976d2 text (contrast vs blue gradient background).
+
+Registered Lesson Cards Differences:
+  - Additional unregister (x) circle button.
+  - Detail chips (duration, price) below top row.
+  - Same glass/backdrop style as Available.
+
+Modals (Current Legacy Style - To Harmonize):
+  - RegistrationLessonModal uses single white container; target redesign should align to CreateLesson pattern (gradient header + segmented sections or smaller glass blocks) with capacity visualization.
+
+--------------------------------------------------
+7. INTERACTION & MOTION
+--------------------------------------------------
+Press Feedback: Animated.spring scale to 0.97 then back; ripple on Android (rgba(255,255,255,0.08)).
+Skeleton Loading: Loop fade 0.35→0.75 every ~1100ms (two-step sequence).
+Advanced Filter Panel: Animated.timing height 0→180ms over 320ms cubic (Easing.out(Easing.cubic)).
+Return Navigation: Pass scroll position & active tab to restore state after profile view.
+Auto Refresh: Polling every 3 minutes for lessons refresh (lightweight experience, silent).
+
+--------------------------------------------------
+8. ICONOGRAPHY
+--------------------------------------------------
+Lesson Type Icons: Derived via getLessonIcon(type) – shown inside Avatar.Icon size 42 with 22 sized internal glyph.
+Secondary Icons: MaterialIcons for tunable uniformity (search, filter, calendar, close, refresh, etc.).
+Emoji Accents: Time (🕒), capacity (👥), location (📍), coach (👤) used inline to increase scannability.
+
+--------------------------------------------------
+9. STATES & FEEDBACK
+--------------------------------------------------
+Empty States: Card with translucent background, centered headline + supportive message.
+Disabled Buttons: Reduced opacity OR lighter background (#90caf9). Cancel retains base text color with lowered opacity.
+Capacity Coloring: green/blue (#64b5f6 / #66bb6a) normal, amber (#ffa726) mid-high, red (#ff5252/#d32f2f) full.
+Loading in Buttons: Inline ActivityIndicator + text swap (e.g., “Registering...” or “Creating...”).
+Validation Errors: Red border + small red text (#dc3545) beneath input.
+
+--------------------------------------------------
+10. TOKENS (PROPOSED CENTRAL VARIABLES)
+--------------------------------------------------
+Colors:
+  COLOR_BG_GRADIENT: [#0d47a1,#1565c0,#1e88e5]
+  COLOR_PRIMARY: #1976d2
+  COLOR_PRIMARY_DARK: #0d47a1
+  COLOR_SURFACE_LIGHT: #ffffff
+  COLOR_SURFACE_LIGHT_ALT: #f0f7ff
+  COLOR_INPUT_BG: #f1f5f9
+  COLOR_ERROR: #dc3545
+  COLOR_WARN: #ffa726
+  COLOR_DANGER: #ff5252
+  COLOR_CAPACITY_OK: #64b5f6
+  COLOR_TEXT_ON_DARK: #ffffff
+  COLOR_TEXT_SUBTLE: rgba(255,255,255,0.70)
+  COLOR_BORDER_GLASS: rgba(255,255,255,0.28)
+  COLOR_SURFACE_GLASS_LOW: rgba(255,255,255,0.07)
+  COLOR_SURFACE_GLASS_MED: rgba(255,255,255,0.12)
+  COLOR_SURFACE_GLASS_HIGH: rgba(255,255,255,0.18)
+Radii:
+  RADIUS_XL: 34
+  RADIUS_LG: 26
+  RADIUS_MD: 18
+  RADIUS_SM: 14
+  RADIUS_PILL: 40
+Spacing (px):
+  SPACE_XS: 4
+  SPACE_SM: 8
+  SPACE_MD: 12
+  SPACE_LG: 18
+  SPACE_XL: 26
+  SPACE_2XL: 34
+Typography (weights): W800, W700, W600, W500
+Animation Durations: FAST = 180ms, MED = 320ms, SLOW = 500ms
+Spring Press: toValue 0.97, speed 40, bounciness 6
+
+--------------------------------------------------
+11. ACCESSIBILITY & USABILITY NOTES
+--------------------------------------------------
+Contrast: White text on gradient maintained; translucent surfaces must ensure text color uses near-full white (≥0.85 opacity) for readability.
+Touch Targets: Minimum ~38–42 size for pills/buttons (capacity pill, action icons, unregister button).
+Dynamic Text: Use numberOfLines for truncation (title, coach name) to avoid layout breaks.
+Animation Reduce Option (future): Provide fallback for users with reduced motion (skip scale + shimmer).
+
+--------------------------------------------------
+12. FUTURE IMPROVEMENTS (BACKLOG)
+--------------------------------------------------
+- Centralize tokens in a design-tokens.ts file to import instead of inlining.
+- Introduce BlurView (expo-blur) for deeper glassmorphism on high-end devices.
+- Create unified ModalHeader component (gradient + close + optional meta chips).
+- Implement capacity micro progress bar (4px) in registration modal.
+- Add haptic feedback (expo-haptics) for register/unregister and filter apply.
+- Dark/Light adaptive mode (current design assumes dark gradient base).
+- Internationalization for date & numeric formatting.
+
+--------------------------------------------------
+13. QUICK IMPLEMENTATION CHECKLIST
+--------------------------------------------------
+When adding a new screen/component:
+[ ] Use gradient background or appropriate white surface card layering.
+[ ] Keep spacing tokens: vertical sections separated by SPACE_XL.
+[ ] Use uppercase micro header label (size ~12, weight 700, letterSpacing 0.5–0.8).
+[ ] Reuse glass surface style: backgroundColor: COLOR_SURFACE_GLASS_LOW + border COLOR_BORDER_GLASS.
+[ ] Primary button either solid #1976d2 on light OR white on gradient.
+[ ] Press feedback: scale 0.97 + ripple (Android).
+[ ] Show skeleton for async lists if load >300ms.
+[ ] Limit card info to essentials; move detail to modal.
+[ ] Use capacity/pill semantics consistently.
+[ ] Apply consistent icon sizes (22 inside 42 avatar; 14 for micro chips).
+
+--------------------------------------------------
+14. SAMPLE STYLE SNIPPET (SUGGESTED CENTRALIZATION)
+--------------------------------------------------
+export const tokens = {
+  colors: {
+    primary: '#1976d2', primaryDark: '#0d47a1', gradient: ['#0d47a1','#1565c0','#1e88e5'], glassLow: 'rgba(255,255,255,0.07)', glassMed: 'rgba(255,255,255,0.12)', glassHigh:'rgba(255,255,255,0.18)', borderGlass:'rgba(255,255,255,0.28)', light:'#ffffff', input:'#f1f5f9', error:'#dc3545', warn:'#ffa726', danger:'#ff5252', capacityOk:'#64b5f6'
+  },
+  radius:{ xl:34, lg:26, md:18, sm:14, pill:40 },
+  space:{ xs:4, sm:8, md:12, lg:18, xl:26, xxl:34 },
+  fontWeight:{ heavy:'800', bold:'700', semibold:'600', medium:'500' },
+  motion:{ press:{ toValue:0.97, speed:40, bounciness:6 }, durations:{ fast:180, med:320, slow:500 } }
+};
+
+End of document.
