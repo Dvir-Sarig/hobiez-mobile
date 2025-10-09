@@ -14,12 +14,13 @@ export const signIn = async (
     userType: UserType
 ): Promise<any> => {
     try {
+        const payload: any = { email, password, userType };
         const response = await fetch(`${API_BASE_URL}/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password, userType })
+            body: JSON.stringify(payload)
         });
 
         let data;
@@ -165,7 +166,7 @@ export const logout = async () => {
     } catch (error) {
         console.error('Logout error:', error);
     } finally {
-        await SecureStorage.clearAll();
+        await SecureStorage.clearAuthState();
     }
 };
 
@@ -175,7 +176,7 @@ export const signOut = async () => {
         if (userId) {
             await profileCacheService.clearUserProfile(userId);
         }
-        await SecureStorage.clearAll();
+        await SecureStorage.clearAuthState();
     } catch (error) {
         console.error('Error signing out:', error);
         throw error;

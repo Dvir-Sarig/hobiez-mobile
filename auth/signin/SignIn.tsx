@@ -1,16 +1,5 @@
 import React, { useState, useContext } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  Animated,
-  Pressable
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Animated, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { signIn, UserType } from '../services/authService';
@@ -21,6 +10,8 @@ import { Ionicons } from '@expo/vector-icons';
 import SecureStorage from '../services/SecureStorage';
 import { tokens, surfaces, utils } from '../../shared/design/tokens';
 import AuthLayout from '../components/AuthLayout';
+import { getOrFetchDeviceToken, onDeviceTokenReady } from '../../shared/services/deviceTokenService';
+import { registerDeviceIfNeeded } from '../services/deviceApiService';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
@@ -54,11 +45,17 @@ export default function SignInScreen() {
     setIsLoading(true);
     setError('');
     try {
+      const platformValue = Platform.OS?.toUpperCase?.() || undefined;
+      const tokenPromise = getOrFetchDeviceToken();
       const data = await signIn(email, password, userType);
       await SecureStorage.storeToken(data.token);
       await SecureStorage.storeUserId(data.userId.toString());
       await SecureStorage.storeUserType(userType.toLowerCase());
       setAuthState({ userId: data.userId.toString(), userType: userType.toLowerCase(), token: data.token });
+      tokenPromise.then(async (token) => {
+        if (!token) return;
+        await registerDeviceIfNeeded({ token, userType, platform: platformValue });
+      }).catch(()=>{});
     } catch (error: any) {
       let errorMessage = 'Invalid email or password';
       if (error.message?.includes('Network')) errorMessage = 'Network issue. Try again';

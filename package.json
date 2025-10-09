@@ -8,7 +8,7 @@
   "android": "ENV=DEV NODE_ENV=development expo start --android",
   "ios": "ENV=DEV NODE_ENV=development expo start --ios",
   "web": "ENV=DEV NODE_ENV=development expo start --web",
-  "stairt:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --host localhost --clear",
+  "start:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --host localhost --clear",
   "ios:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --host localhost --clear --ios",
   "android:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --host localhost --clear --android"
   },
@@ -28,6 +28,7 @@
     "expo-constants": "~18.0.9",
     "expo-image-picker": "~17.0.8",
     "expo-linear-gradient": "~15.0.7",
+  "expo-notifications": "~0.28.19",
     "expo-location": "~19.0.7",
     "expo-secure-store": "~15.0.7",
     "expo-status-bar": "~3.0.8",
