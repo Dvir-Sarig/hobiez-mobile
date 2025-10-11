@@ -5,9 +5,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 interface NoProfileModalProps {
     isOpen: boolean;
     onClose: () => void;
+    userType?: 'coach' | 'client';
 }
 
-const NoProfileModal: React.FC<NoProfileModalProps> = ({ isOpen, onClose }) => {
+const NoProfileModal: React.FC<NoProfileModalProps> = ({ isOpen, onClose, userType = 'coach' }) => {
+    const noun = userType === 'coach' ? 'coach' : 'client';
     return (
         <Modal
             visible={isOpen}
@@ -20,7 +22,7 @@ const NoProfileModal: React.FC<NoProfileModalProps> = ({ isOpen, onClose }) => {
                     <MaterialIcons name="person-off" size={48} color="#1976d2" />
                     <Text style={styles.title}>Profile Not Available</Text>
                     <Text style={styles.message}>
-                        This coach hasn't created their profile yet. Please check back later.
+                        This {noun} hasn't created a profile yet. Please check back later.
                     </Text>
                     <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                         <Text style={styles.closeButtonText}>Close</Text>

@@ -27,6 +27,23 @@ export default function ClientProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [showNoProfileModal, setShowNoProfileModal] = useState(false);
 
+  const handleNoProfileClose = () => {
+    setShowNoProfileModal(false);
+    if (fromRegisteredClientsModal && lessonId) {
+      navigation.navigate('CoachLessons', { reopenRegisteredClientsModal: true, lessonId });
+      return;
+    }
+    if (originScreen) {
+      navigation.navigate(originScreen);
+      return;
+    }
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('Home');
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -34,14 +51,23 @@ export default function ClientProfilePage() {
         setError(null);
         if (!clientId) throw new Error('No client ID provided');
         const profile = await fetchPublicClientProfile(clientId);
-        if (!profile) {
+        const invalid = !profile || (profile && Object.keys(profile).length === 0); // removed id property requirement
+        if (invalid) {
+          setProfileData(null);
           setShowNoProfileModal(true);
         } else {
           setProfileData(profile as ClientProfile);
+          setShowNoProfileModal(false);
         }
       } catch (error: any) {
         console.error('Error fetching profile:', error);
-        setError(error.message || 'An error occurred while fetching profile data');
+        if (error?.message?.toLowerCase().includes('not found')) {
+          setProfileData(null);
+            setShowNoProfileModal(true);
+            setError(null);
+        } else {
+          setError(error.message || 'An error occurred while fetching profile data');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -49,6 +75,15 @@ export default function ClientProfilePage() {
 
     fetchProfile();
   }, [clientId]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (!profileData && !isLoading) {
+        setShowNoProfileModal(true);
+      }
+    });
+    return unsubscribe;
+  }, [navigation, profileData, isLoading]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -105,7 +140,8 @@ export default function ClientProfilePage() {
       ) : (
         <NoProfileModal
           isOpen={showNoProfileModal}
-          onClose={() => navigation.goBack()}
+          onClose={handleNoProfileClose}
+          userType='client'
         />
       )}
     </View>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, ScrollView, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, Pressable, Modal, Platform } from 'react-native';
+import { View, Text, Button, ScrollView, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, Pressable, Modal, Platform, RefreshControl } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { fetchUserInfo } from '../../auth/services/UserInfoUtils';
 import { fetchCoachLessons, createLesson, deleteLesson, fetchSingleLesson, fetchRegisteredClients, editLesson } from '../services/lessonService';
@@ -15,6 +15,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { Lesson } from '../types/Lesson';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { lessonCacheService } from '../services/lessonCacheService';
 
 export default function CoachDashboardScreen() {
   const [coachInfo, setCoachInfo] = useState<{ name: string; email: string } | null>(null);
@@ -37,6 +38,7 @@ export default function CoachDashboardScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [filteredLessons, setFilteredLessons] = useState<Lesson[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [refreshing, setRefreshing] = useState(false);
 
   const { userId } = useAuth();
   const navigation = useNavigation();
@@ -64,7 +66,7 @@ export default function CoachDashboardScreen() {
 
   const [returnAfter, setReturnAfter] = useState({ edit:false, clients:false, delete:false });
 
-  const fetchLessonsData = async () => {
+  const fetchLessonsData = async (force:boolean=false) => {
     if (!userId) return;
     try {
       setLoading(true);
@@ -305,16 +307,28 @@ export default function CoachDashboardScreen() {
   },[navigation, route.params, lessons]);
 
   useEffect(() => {
-    if (route.params?.openCoachLessonModal && route.params.lessonId) {
-      const lesson = lessons.find(l => l.id === route.params.lessonId);
-      if (lesson) {
-        setLessonToView(lesson);
-        setShowViewLessonModal(true);
-        // clear param to avoid re-open
-        (navigation as any).setParams({ openCoachLessonModal: undefined, lessonId: undefined });
-      }
+    if (route.params?.openCoachLessonModal && route.params.lessonId && userId) {
+      (async () => {
+        try { await lessonCacheService.clearAllCache(userId as any); } catch {}
+        await fetchLessonsData();
+        const lesson = lessons.find(l => l.id === route.params.lessonId) || lessons.find(l => l.id === route.params.lessonId);
+        if (lesson) {
+          setLessonToView(lesson);
+          setShowViewLessonModal(true);
+        }
+        (navigation as any).setParams({ openCoachLessonModal: undefined });
+      })();
     }
-  }, [route.params, lessons]);
+  }, [route.params?.openCoachLessonModal, route.params?.lessonId]);
+
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await fetchLessonsData(true);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -322,7 +336,9 @@ export default function CoachDashboardScreen() {
         <View pointerEvents='none' style={styles.decorBubbleOne} />
         <View pointerEvents='none' style={styles.decorBubbleTwo} />
         <View pointerEvents='none' style={styles.decorBubbleThree} />
-        <ScrollView contentContainerStyle={styles.scrollInner} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scrollInner} showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl tintColor="#ffffff" refreshing={refreshing} onRefresh={handleRefresh} />}
+        >
           <SectionHeader title="My Lessons" />
 
           {/* Old top buttons replaced by floating action bar */}
@@ -537,15 +553,15 @@ const styles = StyleSheet.create({
   emptyStateIcon:{ marginBottom:14 },
   emptyStateTitle:{ fontSize:24, fontWeight:'800', color:'#0d47a1', marginBottom:10 },
   emptyStateText:{ fontSize:14, color:'#455a64', textAlign:'center', lineHeight:20 },
-  emptyCtaButton:{ marginTop:18, backgroundColor:'#1976d2', paddingVertical:14, paddingHorizontal:24, borderRadius:18, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:8, shadowOffset:{width:0,height:4} },
+  emptyCtaButton:{ marginTop:18, backgroundColor:'#1976d2', paddingVertical:14, paddingHorizontal:24, borderRadius:18, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:8, shadowOffset:{ width:0, height:4 } },
   emptyCtaText:{ color:'#fff', fontWeight:'700', fontSize:15, letterSpacing:0.5 },
   fabBar:{ position:'absolute', bottom:24, left:0, right:0, flexDirection:'row', justifyContent:'center', gap:16, paddingHorizontal:24 },
-  primaryFab:{ flex:1, backgroundColor:'#ffffff', paddingVertical:18, borderRadius:20, alignItems:'center', flexDirection:'row', justifyContent:'center', shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{width:0,height:4} },
+  primaryFab:{ flex:1, backgroundColor:'#ffffff', paddingVertical:18, borderRadius:20, alignItems:'center', flexDirection:'row', justifyContent:'center', shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{ width:0, height:4 } },
   primaryFabText:{ color:'#1976d2', fontSize:15, fontWeight:'700', marginLeft:8 },
   secondaryFab:{ flex:1, backgroundColor:'rgba(255,255,255,0.35)', paddingVertical:18, borderRadius:20, alignItems:'center', flexDirection:'row', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.55)', shadowColor:'#000', shadowOpacity:0.15, shadowRadius:8, shadowOffset:{width:0,height:3} },
   secondaryFabText:{ color:'#fff', fontSize:15, fontWeight:'700', marginLeft:8 },
   modalOverlay:{ flex:1, backgroundColor:'rgba(0,0,0,0.55)', justifyContent:'center', alignItems:'center', padding:24 },
-  modalContentEnhanced:{ backgroundColor:'rgba(255,255,255,0.97)', borderRadius:28, padding:22, width:'90%', maxHeight:'80%', shadowColor:'#000', shadowOpacity:0.3, shadowRadius:18, shadowOffset:{width:0,height:10}, borderWidth:1, borderColor:'rgba(255,255,255,0.6)' },
+  modalContentEnhanced:{ backgroundColor:'rgba(255,255,255,0.97)', borderRadius:28, padding:22, width:'90%', maxHeight:'80%', shadowColor:'#000', shadowOpacity:0.3, shadowRadius:18, shadowOffset:{ width:0, height:10 }, borderWidth:1, borderColor:'rgba(255,255,255,0.6)' },
   modalHeader:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:20, paddingBottom:12, borderBottomWidth:1, borderBottomColor:'rgba(13,71,161,0.15)' },
   modalTitle:{ fontSize:22, fontWeight:'800', color:'#0d47a1' },
   closeButton:{ fontSize:26, color:'#607d8b', padding:4 },
@@ -563,7 +579,7 @@ const styles = StyleSheet.create({
   dateNumberNew:{ fontSize:14, fontWeight:'600', color:'#0f172a' },
   selectedDateTextNew:{ color:'#fff' },
   todayDateTextNew:{ color:'#1976d2', fontWeight:'700' },
-  clearButtonNew:{ marginTop:14, paddingVertical:12, borderRadius:16, backgroundColor:'#1976d2', alignItems:'center', shadowColor:'#000', shadowOpacity:0.2, shadowRadius:6, shadowOffset:{width:0,height:3} },
-  clearButtonTextNew:{ color:'#fff', fontWeight:'700', letterSpacing:0.5 },
+  clearButtonNew:{ marginTop:14, paddingVertical:12, borderRadius:16, backgroundColor:'#1976d2', alignItems:'center', shadowColor:'#000', shadowOpacity:0.2, shadowRadius:6, shadowOffset:{ width:0, height:3 } },
+  clearButtonTextNew:{ color:'#1976d2', fontWeight:'700' },
   emptyDateItem:{ width:'13%', aspectRatio:1, marginBottom:6 },
 });

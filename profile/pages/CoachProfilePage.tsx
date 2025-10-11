@@ -29,6 +29,30 @@ export default function CoachProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [showNoProfileModal, setShowNoProfileModal] = useState(false);
 
+  const handleNoProfileClose = () => {
+    setShowNoProfileModal(false);
+    // Priority: specific modal origins
+    if (fromRegistrationModal && lessonId) {
+      navigation.navigate('SearchLessons', { reopenRegistrationModal: true, lessonId });
+      return;
+    }
+    if (fromUnregisterModal && lessonId) {
+      navigation.navigate('SearchLessons', { reopenUnregisterModal: true, lessonId });
+      return;
+    }
+    if (originScreen) {
+      // restore tab / scroll if provided
+      navigation.navigate(originScreen, { restoreTab: originTab, restoreScrollY: returnScrollY });
+      return;
+    }
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    // Final fallback
+    navigation.navigate('Home');
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -36,14 +60,24 @@ export default function CoachProfilePage() {
         setError(null);
         if (!coachId) throw new Error('No coach ID provided');
         const profile = await fetchPublicCoachProfile(coachId);
-        if (!profile) {
+        const invalid = !profile || (profile && Object.keys(profile).length === 0); // removed id requirement
+        if (invalid) {
+          setProfileData(null);
           setShowNoProfileModal(true);
         } else {
           setProfileData(profile as CoachProfile);
+          setShowNoProfileModal(false);
         }
       } catch (error: any) {
         console.error('Error fetching profile:', error);
-        setError(error.message || 'An error occurred while fetching profile data');
+        // Treat 404 (profile not found) as no profile modal instead of generic error screen
+        if (error?.message?.toLowerCase().includes('not found')) {
+          setProfileData(null);
+          setShowNoProfileModal(true);
+          setError(null);
+        } else {
+          setError(error.message || 'An error occurred while fetching profile data');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -51,6 +85,17 @@ export default function CoachProfilePage() {
 
     fetchProfile();
   }, [coachId]);
+
+  // Re-run validation each time screen gains focus (user may create profile meanwhile)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (!profileData && !isLoading) {
+        // Trigger refetch to re-open modal if still missing
+        setShowNoProfileModal(true);
+      }
+    });
+    return unsubscribe;
+  }, [navigation, profileData, isLoading]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -128,7 +173,8 @@ export default function CoachProfilePage() {
       ) : (
         <NoProfileModal
           isOpen={showNoProfileModal}
-          onClose={() => navigation.goBack()}
+          onClose={handleNoProfileClose}
+          userType='coach'
         />
       )}
     </View>

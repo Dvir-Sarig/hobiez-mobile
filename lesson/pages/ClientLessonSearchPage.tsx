@@ -69,11 +69,13 @@ export default function ClientDashboardScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [registeredSectionY, setRegisteredSectionY] = useState(0);
   const [currentScrollY, setCurrentScrollY] = useState(0); // track scroll
+  const pendingScrollLessonIdRef = useRef<number | null>(null);
+  const pendingScrollAfterRefreshRef = useRef<boolean>(false);
 
   // Function to handle refresh of all lesson data
-  const refreshAllLessonData = async () => {
+  const refreshAllLessonData = async (forceRegisteredRefresh: boolean = false) => {
     await fetchLessonsData(true);
-    await fetchClientRegisteredLessonsData();
+    await fetchClientRegisteredLessonsData(forceRegisteredRefresh);
   };
 
   const fetchCoachInfoData = async (coachId: string) => {
@@ -148,25 +150,25 @@ export default function ClientDashboardScreen() {
     }
   };
 
-  const fetchClientRegisteredLessonsData = async () => {
+  const fetchClientRegisteredLessonsData = async (forceRefresh: boolean = false) => {
     try {
       setIsLoadingRegisteredLessons(true);
       if (!userId) return;
 
-      // Try to get from cache first
-      const cachedRegisteredLessons = await lessonCacheService.getRegisteredLessons(userId);
-      if (cachedRegisteredLessons) {
-        setRegisteredLessons(cachedRegisteredLessons);
-        return;
+      if (!forceRefresh) {
+        // Try to get from cache first
+        const cachedRegisteredLessons = await lessonCacheService.getRegisteredLessons(userId);
+        if (cachedRegisteredLessons) {
+          setRegisteredLessons(cachedRegisteredLessons);
+          return;
+        }
       }
 
-      // If not in cache, fetch from API
+      // Fetch from API
       const data = await fetchClientRegisteredLessons(userId);
       const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(data);
-      
-      // Cache the results
+      // Cache the results (overwrite when forceRefresh too)
       await lessonCacheService.setRegisteredLessons(userId, lessonsWithCounts);
-      
       setRegisteredLessons(lessonsWithCounts);
     } catch (e) {
       console.error('Error fetching registered lessons', e);
@@ -462,13 +464,47 @@ export default function ClientDashboardScreen() {
     }
   }, [route.params?.restoreTab]);
 
+  // Triggered by notification navigation
+  useEffect(() => {
+    if ((route.params?.focusRegistered || route.params?.scrollToLessonId) && userId) {
+      setActiveTab('registered');
+      if (route.params?.scrollToLessonId) {
+        pendingScrollLessonIdRef.current = route.params.scrollToLessonId;
+      }
+      // Force fresh data: clear caches then refresh both lists
+      (async () => {
+        try { await lessonCacheService.clearAllCache(userId); } catch {}
+        pendingScrollAfterRefreshRef.current = true;
+        await refreshAllLessonData();
+      })();
+    }
+  }, [route.params?.focusRegistered, route.params?.scrollToLessonId, userId]);
+
+  // After registeredLessons refreshed, perform pending scroll
+  useEffect(() => {
+    if (pendingScrollAfterRefreshRef.current && registeredLessons.length) {
+      const lessonId = pendingScrollLessonIdRef.current;
+      if (lessonId) {
+        const idx = registeredLessons.findIndex(l => l.id === lessonId);
+        if (idx >= 0) {
+          const EST_CARD_HEIGHT = 140;
+            const y = registeredSectionY + idx * EST_CARD_HEIGHT - 20;
+            requestAnimationFrame(() => {
+              scrollViewRef.current?.scrollTo({ y: y < 0 ? 0 : y, animated: true });
+            });
+        }
+      }
+      pendingScrollAfterRefreshRef.current = false;
+    }
+  }, [registeredLessons, registeredSectionY]);
+
   const availableCount = lessons.length;
   const registeredCount = registeredLessons.length;
 
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      await refreshAllLessonData();
+      await refreshAllLessonData(true);
     } finally {
       setRefreshing(false);
     }
@@ -553,7 +589,7 @@ export default function ClientDashboardScreen() {
             <SectionHeader 
               title="Available Lessons" 
               icon="event-available" 
-              onRefresh={refreshAllLessonData}
+              onRefresh={() => refreshAllLessonData(true)}
               subtitle="Open sessions"
             />
             {/* Removed visual wrapper so cards can use full width */}
