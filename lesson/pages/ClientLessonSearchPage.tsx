@@ -413,10 +413,21 @@ export default function ClientDashboardScreen() {
       if (lessonToOpen) {
         setSelectedLesson(lessonToOpen);
         setIsModalOpen(true);
-  
-        // ריקון הפרמטרים כדי למנוע פתיחה חוזרת
-        navigation.setParams({
-          lessonId: undefined
+        navigation.setParams({ lessonId: undefined });
+      }
+    }
+    if (route.params?.focusRegistered) {
+      setActiveTab('registered');
+    }
+    // Scroll-to-lesson behavior after update/delete
+    if (route.params?.scrollToLessonId && registeredLessons.length) {
+      const idx = registeredLessons.findIndex(l => l.id === route.params.scrollToLessonId);
+      if (idx >= 0) {
+        // Estimate card height (approx). Could refine later with onLayout caching.
+        const EST_CARD_HEIGHT = 140; // adjust if layout differs
+        const y = registeredSectionY + idx * EST_CARD_HEIGHT - 20;
+        requestAnimationFrame(() => {
+          scrollViewRef.current?.scrollTo({ y: y < 0 ? 0 : y, animated: true });
         });
       }
     }

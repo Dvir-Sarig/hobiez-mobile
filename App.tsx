@@ -18,6 +18,9 @@ import CreateClientProfile from './profile/components/creation/CreateClientProfi
 import CoachProfileManager from './profile/components/manager/CoachProfileManager';
 import ClientProfileManager from './profile/components/manager/ClientProfileManager';
 import {GestureHandlerRootView} from "react-native-gesture-handler";
+import * as Notifications from 'expo-notifications';
+import { useNavigationContainerRef } from '@react-navigation/native';
+import { setNavigationRef, markNavigationReady, setAuthSnapshotProvider, handleNotificationResponse, handleColdStartNotification } from './shared/services/notificationNavigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -60,6 +63,7 @@ export default function App() {
     userType: null as string | null,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const navigationRef = useNavigationContainerRef<RootStackParamList>();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -75,6 +79,31 @@ export default function App() {
 
     initializeAuth();
   }, []);
+
+  // Provide auth snapshot to notification handler
+  useEffect(() => {
+    setAuthSnapshotProvider(() => ({ userId: authState.userId, userType: authState.userType }));
+  }, [authState.userId, authState.userType]);
+
+  // Set up notification listeners
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+    handleColdStartNotification();
+    return () => { sub.remove(); };
+  }, []);
+
+  // Navigation ref ready handling
+  useEffect(() => {
+    if (navigationRef.isReady()) {
+      setNavigationRef(navigationRef);
+      markNavigationReady();
+    } else {
+      const timeout = setTimeout(() => {
+        if (navigationRef.isReady()) { setNavigationRef(navigationRef); markNavigationReady(); }
+      }, 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [navigationRef]);
 
   const handleSignOut = async () => {
     try {
@@ -100,7 +129,7 @@ export default function App() {
           setAuthState: (state) => setAuthState(state),
           signOut: handleSignOut
         }}>
-          <NavigationContainer>
+          <NavigationContainer ref={navigationRef}>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
               {!authState.userId || !authState.token ? (
                 // Auth Stack

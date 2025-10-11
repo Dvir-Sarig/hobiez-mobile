@@ -9,6 +9,11 @@ export type RootStackParamList = {
       params?: {
         coachId?: string;
         clientId?: string;
+        lessonId?: number; // for opening specific lesson via notification
+        reopenRegistrationModal?: boolean; // client lesson modal
+        openCoachLessonModal?: boolean;
+        focusRegistered?: boolean; // focus registered tab
+        scrollToLessonId?: number; // scroll to lesson in registered list after update
       };
     }; 
   
@@ -21,4 +26,3 @@ export type RootStackParamList = {
     ClientCalendar: undefined;
     CoachCalendarView: undefined;
   };
-  

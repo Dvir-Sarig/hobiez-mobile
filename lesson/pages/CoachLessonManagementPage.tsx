@@ -304,6 +304,18 @@ export default function CoachDashboardScreen() {
     return unsubscribe;
   },[navigation, route.params, lessons]);
 
+  useEffect(() => {
+    if (route.params?.openCoachLessonModal && route.params.lessonId) {
+      const lesson = lessons.find(l => l.id === route.params.lessonId);
+      if (lesson) {
+        setLessonToView(lesson);
+        setShowViewLessonModal(true);
+        // clear param to avoid re-open
+        (navigation as any).setParams({ openCoachLessonModal: undefined, lessonId: undefined });
+      }
+    }
+  }, [route.params, lessons]);
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#0d47a1','#1565c0','#1e88e5']} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.gradientBackground}> 

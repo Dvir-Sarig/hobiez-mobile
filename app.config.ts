@@ -35,11 +35,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ...config.android,
         package: 'com.dvirs.hobinet',
         edgeToEdgeEnabled: true,
+        permissions: ['CAMERA', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE', 'POST_NOTIFICATIONS'],
         adaptiveIcon: {
             foregroundImage: './assets/adaptive-icon.png',
             backgroundColor: '#ffffff'
-        },
-        permissions: ['CAMERA', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE']
+        }
     },
     web: {
         favicon: './assets/favicon.png'
@@ -51,8 +51,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             projectId: '608daaa3-e056-4641-80da-2e6b047dc45c'
         }
     },
+    notification: {
+        icon: './assets/notification-icon.png', 
+        color: '#1976D2',
+        iosDisplayInForeground: true
+    },
     plugins: [
-        'expo-secure-store'
+        'expo-secure-store',
+        'expo-notifications'
     ]
 });
 
