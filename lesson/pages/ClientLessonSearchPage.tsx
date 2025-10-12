@@ -420,6 +420,8 @@ export default function ClientDashboardScreen() {
     }
     if (route.params?.focusRegistered) {
       setActiveTab('registered');
+      // clear flag so subsequent pull-to-refresh does not force tab switch
+      try { (navigation as any).setParams({ focusRegistered: undefined }); } catch {}
     }
     // Scroll-to-lesson behavior after update/delete
     if (route.params?.scrollToLessonId && registeredLessons.length) {
@@ -476,6 +478,8 @@ export default function ClientDashboardScreen() {
         try { await lessonCacheService.clearAllCache(userId); } catch {}
         pendingScrollAfterRefreshRef.current = true;
         await refreshAllLessonData();
+        // clear params after handling
+        try { (navigation as any).setParams({ focusRegistered: undefined, scrollToLessonId: undefined }); } catch {}
       })();
     }
   }, [route.params?.focusRegistered, route.params?.scrollToLessonId, userId]);

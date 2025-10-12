@@ -310,13 +310,25 @@ export default function CoachDashboardScreen() {
     if (route.params?.openCoachLessonModal && route.params.lessonId && userId) {
       (async () => {
         try { await lessonCacheService.clearAllCache(userId as any); } catch {}
-        await fetchLessonsData();
-        const lesson = lessons.find(l => l.id === route.params.lessonId) || lessons.find(l => l.id === route.params.lessonId);
-        if (lesson) {
-          setLessonToView(lesson);
+        // Force fetch fresh lessons
+        await fetchLessonsData(true);
+        // Fetch the single lesson to ensure we have most up-to-date registration counts / details
+        try {
+          const fresh = await fetchSingleLesson(route.params.lessonId);
+          // Find existing registeredCount from list (if present) otherwise default
+          const inList = lessons.find(l=> l.id === route.params.lessonId);
+          const registeredCount = inList?.registeredCount ?? fresh.registeredCount ?? 0;
+          setLessonToView({ ...fresh, registeredCount });
           setShowViewLessonModal(true);
+        } catch (e) {
+          // fallback: attempt from lessons array after refresh
+          const fallback = lessons.find(l=> l.id === route.params.lessonId);
+          if (fallback) {
+            setLessonToView(fallback);
+            setShowViewLessonModal(true);
+          }
         }
-        (navigation as any).setParams({ openCoachLessonModal: undefined });
+        (navigation as any).setParams({ openCoachLessonModal: undefined, lessonId: undefined });
       })();
     }
   }, [route.params?.openCoachLessonModal, route.params?.lessonId]);
