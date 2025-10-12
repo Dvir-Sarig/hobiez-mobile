@@ -19,7 +19,15 @@ export type RootStackParamList = {
   
     CoachProfile: { coachId: string };
     ClientProfile: { userId: string };
-    CoachProfilePage: { coachId: string; fromRegistrationModal?: boolean; fromUnregisterModal?: boolean; lessonId?: number };
+    CoachProfilePage: { 
+      coachId: string; 
+      fromRegistrationModal?: boolean; 
+      fromUnregisterModal?: boolean; 
+      lessonId?: number;
+      originScreen?: string; // e.g. 'ClientCalendar', 'SearchLessons'
+      weekAnchorDate?: string; // ISO date to restore calendar anchor
+      selectedDate?: string; // ISO date for precise selected day restoration
+    };
     ClientProfilePage: { clientId: string };
     CreateClientProfile: undefined;
     CreateCoachProfile: undefined;

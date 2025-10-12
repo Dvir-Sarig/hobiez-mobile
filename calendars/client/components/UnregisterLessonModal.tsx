@@ -81,7 +81,14 @@ const UnregisterLessonModal: React.FC<Props> = ({
     onClose();
     // navigate to profile
     // @ts-ignore
-    navigation.navigate('CoachProfilePage', { coachId: lesson.coachId, fromUnregisterViewModal: true, lessonId: lesson.id });
+    navigation.navigate('CoachProfilePage', { 
+      coachId: lesson.coachId,
+      originScreen: 'ClientCalendar',
+      lessonId: lesson.id,
+      // pass context to restore calendar view precisely
+      weekAnchorDate: dayjs(lesson.time).startOf('week').add(1,'day').toISOString(),
+      selectedDate: dayjs(lesson.time).toISOString()
+    });
   };
 
   const renderCoachAvatar = () => {

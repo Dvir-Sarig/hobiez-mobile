@@ -103,7 +103,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQu
   };
 
   const formatDate = (date: Date | null | undefined) => {
-    if (!date) return 'Select Day';
+    if (!date) return 'Date';
     return date.toLocaleDateString();
   };
 
@@ -127,120 +127,98 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQu
     });
   };
 
-  // Removed quick lesson type pills
-  const advancedHeight = animatedAdvanced.interpolate({ inputRange:[0,1], outputRange:[0, 180] });
+  // Advanced filters animation (opacity only to let height wrap content)
   const advancedOpacity = animatedAdvanced.interpolate({ inputRange:[0,1], outputRange:[0,1] });
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.wrapper} keyboardShouldPersistTaps="handled">
-        <View style={styles.cardGlass}> 
-          <View style={styles.cardHeaderRow}> 
-            <View style={styles.headerLeft}> 
-              <MaterialIcons name="tune" size={20} color="#ffffff" />
-              <Text style={styles.title}>Filters</Text>
-              <View style={styles.badgeCount}> 
-                <Text style={styles.badgeCountText}>{activeFilterCount}</Text>
-              </View>
-            </View>
-            {activeFilterCount>0 && (
-              <Pressable onPress={clearAllFilters} style={({pressed})=>[styles.clearAllFiltersBtn, pressed && {opacity:0.6}]}> 
-                <MaterialIcons name="close" size={16} color="#ffffff" />
-                <Text style={styles.clearAllFiltersText}>Clear</Text>
-              </Pressable>
-            )}
-          </View>
-
-          {/* Quick lesson type pills removed per design simplification */}
-
-          <View style={styles.inlineRow}> 
+        <View style={styles.compactContainer}>
+          {/* Compact Row */}
+          <View style={styles.compactRow}> 
             <TextInput
-              style={[styles.input, focusedField==='coachName' && styles.inputFocused]}
-              placeholder="Coach Name"
-              placeholderTextColor="#90a4ae"
+              style={[styles.compactInput, focusedField==='coachName' && styles.compactInputFocused]}
+              placeholder="Coach"
+              placeholderTextColor="#78909c"
               value={searchQuery.coachName}
               onFocus={()=>setFocusedField('coachName')}
               onBlur={()=>setFocusedField(null)}
               onChangeText={(text) => setSearchQuery({ ...searchQuery, coachName: text })}
+              returnKeyType="search"
+              onSubmitEditing={handleSearchClick}
             />
-            <Pressable
-              style={[styles.input, styles.pickerInput]}
-              onPress={() => setLessonTypeModalVisible(true)}
-            >
-              <Text style={[styles.pickerText, !searchQuery.lessonType && styles.placeholderText]}>
-                {searchQuery.lessonType || 'Any Lesson'}
+            <Pressable style={styles.typeSelector} onPress={()=> setLessonTypeModalVisible(true)}>
+              <MaterialIcons name="apps" size={18} color="#1565c0" />
+              <Text style={[styles.typeSelectorText, !searchQuery.lessonType && styles.typeSelectorPlaceholder]} numberOfLines={1}>
+                {searchQuery.lessonType || 'Any'}
               </Text>
-              <MaterialIcons name="arrow-drop-down" size={22} color="#1976d2" />
+              <MaterialIcons name="expand-more" size={18} color="#1565c0" />
+            </Pressable>
+            <TouchableOpacity style={styles.searchBtn} onPress={handleSearchClick} activeOpacity={0.85}>
+              <MaterialIcons name="search" size={20} color="#fff" />
+            </TouchableOpacity>
+            <Pressable onPress={()=> setShowAdvanced(p=>!p)} style={styles.moreBtn} accessibilityLabel={showAdvanced? 'Hide advanced filters':'Show advanced filters'}>
+              <MaterialIcons name={showAdvanced? 'expand-less':'tune'} size={20} color="#1565c0" />
+              {activeFilterCount>0 && <View style={styles.countBubble}><Text style={styles.countBubbleText}>{activeFilterCount}</Text></View>}
             </Pressable>
           </View>
 
-          <View style={styles.locationWrapper}> 
-            <SearchLocationField
-              location={searchQuery.location || { city: '', country: '', address: null, latitude: null, longitude: null }}
-              onLocationSelect={(loc) => setSearchQuery({ ...searchQuery, location: loc })}
-              radiusKm={searchQuery.radiusKm}
-              onRadiusChange={(r) => setSearchQuery({ ...searchQuery, radiusKm: r })}
-            />
-          </View>
+          {/* (Chips moved to bottom) */}
+          {!showAdvanced && activeFilterCount>0 && (
+            <View style={styles.collapsedChipsBar}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.collapsedChipsRow}>
+                {!!searchQuery.lessonType && (
+                  <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, lessonType:''})}>
+                    <Text style={styles.compactChipText}>{searchQuery.lessonType}</Text>
+                    <MaterialIcons name="close" size={14} color="#0d47a1" />
+                  </Pressable>
+                )}
+                {!!searchQuery.maxPrice && (
+                  <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, maxPrice:''})}>
+                    <Text style={styles.compactChipText}>≤ ${searchQuery.maxPrice}</Text>
+                    <MaterialIcons name="close" size={14} color="#0d47a1" />
+                  </Pressable>
+                )}
+                {!!searchQuery.maxParticipants && (
+                  <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, maxParticipants:''})}>
+                    <Text style={styles.compactChipText}>Max {searchQuery.maxParticipants}</Text>
+                    <MaterialIcons name="close" size={14} color="#0d47a1" />
+                  </Pressable>
+                )}
+                {!!searchQuery.day && (
+                  <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, day:null})}>
+                    <Text style={styles.compactChipText}>{formatDate(searchQuery.day)}</Text>
+                    <MaterialIcons name="close" size={14} color="#0d47a1" />
+                  </Pressable>
+                )}
+                {!!searchQuery.location && searchQuery.location.latitude && (
+                  <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, location:null, radiusKm: null})}>
+                    <Text style={styles.compactChipText}>📍 {searchQuery.location.city || 'Location'}{typeof searchQuery.radiusKm==='number' ? ` • ${searchQuery.radiusKm}km` : ''}</Text>
+                    <MaterialIcons name="close" size={14} color="#0d47a1" />
+                  </Pressable>
+                )}
+              </ScrollView>
+              <Pressable onPress={clearAllFilters} style={styles.clearCollapsedBtn}>
+                <MaterialIcons name="delete-sweep" size={16} color="#1565c0" />
+              </Pressable>
+            </View>
+          )}
 
-          {/* Filter summary chips */}
-          <View style={styles.chipsRow}>
-            {!!searchQuery.lessonType && (
-              <Pressable style={styles.chip} onPress={()=>setSearchQuery({...searchQuery, lessonType:''})}>
-                <Text style={styles.chipText}>{searchQuery.lessonType}</Text>
-                <MaterialIcons name="close" size={14} color="#0d47a1" />
-              </Pressable>
-            )}
-            {!!searchQuery.maxPrice && (
-              <Pressable style={styles.chip} onPress={()=>setSearchQuery({...searchQuery, maxPrice:''})}>
-                <Text style={styles.chipText}>≤ ${searchQuery.maxPrice}</Text>
-                <MaterialIcons name="close" size={14} color="#0d47a1" />
-              </Pressable>
-            )}
-            {!!searchQuery.maxParticipants && (
-              <Pressable style={styles.chip} onPress={()=>setSearchQuery({...searchQuery, maxParticipants:''})}>
-                <Text style={styles.chipText}>Max {searchQuery.maxParticipants}</Text>
-                <MaterialIcons name="close" size={14} color="#0d47a1" />
-              </Pressable>
-            )}
-            {!!searchQuery.day && (
-              <Pressable style={styles.chip} onPress={()=>setSearchQuery({...searchQuery, day:null})}>
-                <Text style={styles.chipText}>{formatDate(searchQuery.day)}</Text>
-                <MaterialIcons name="close" size={14} color="#0d47a1" />
-              </Pressable>
-            )}
-            {!!searchQuery.location && searchQuery.location.latitude && (
-              <Pressable style={styles.chip} onPress={()=>setSearchQuery({...searchQuery, location:null})}>
-                <Text style={styles.chipText}>📍 {searchQuery.location.city || 'Location'}</Text>
-                <MaterialIcons name="close" size={14} color="#0d47a1" />
-              </Pressable>
-            )}
-          </View>
-
-          {/* Animated Advanced Section */}
-          <Animated.View style={[styles.advancedAnimatedContainer,{height:advancedHeight, opacity:advancedOpacity}]}> 
-            {showAdvanced && (
+          {/* Advanced Section */}
+          {showAdvanced && (
+            <Animated.View style={[styles.advancedAnimatedContainer,{ opacity:advancedOpacity }]}> 
               <View style={styles.advancedBlockInner}> 
-                <Pressable
-                  style={[styles.input, styles.dateInput]}
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <View style={styles.datePickerContainer}>
-                    <MaterialIcons name="calendar-today" size={20} color="#1976d2" />
-                    <Text style={[styles.pickerText, !searchQuery.day && styles.placeholderText]}>
+                <View style={styles.advancedRowWrap}>
+                  <Pressable style={[styles.compactInput, styles.dateTrigger]} onPress={()=> setShowDatePicker(true)}>
+                    <MaterialIcons name="calendar-today" size={18} color="#1565c0" />
+                    <Text style={[styles.typeSelectorText, !searchQuery.day && styles.typeSelectorPlaceholder]}>
                       {formatDate(searchQuery.day)}
                     </Text>
-                  </View>
-                </Pressable>
-                {/* New compact row for price & participants */}
-                <View style={styles.advancedInlineRow}> 
+                  </Pressable>
                   <TextInput
-                    style={[styles.input, styles.inputHalf, focusedField==='maxPrice' && styles.inputFocused]}
+                    style={[styles.compactInput, focusedField==='maxPrice' && styles.compactInputFocused]}
                     placeholder="Max Price"
-                    placeholderTextColor="#ffffff"
+                    placeholderTextColor="#78909c"
                     keyboardType="numeric"
                     value={searchQuery.maxPrice}
                     onFocus={()=>setFocusedField('maxPrice')}
@@ -248,9 +226,9 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQu
                     onChangeText={(text) => setSearchQuery({ ...searchQuery, maxPrice: text })}
                   />
                   <TextInput
-                    style={[styles.input, styles.inputHalf, focusedField==='maxParticipants' && styles.inputFocused]}
-                    placeholder="Max Participants"
-                    placeholderTextColor="#ffffff"
+                    style={[styles.compactInput, focusedField==='maxParticipants' && styles.compactInputFocused]}
+                    placeholder="Max People"
+                    placeholderTextColor="#78909c"
                     keyboardType="numeric"
                     value={searchQuery.maxParticipants}
                     onFocus={()=>setFocusedField('maxParticipants')}
@@ -258,27 +236,60 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQu
                     onChangeText={(text) => setSearchQuery({ ...searchQuery, maxParticipants: text })}
                   />
                 </View>
-                <TouchableOpacity style={styles.clearAllBtn} onPress={()=>{
-                  setSearchQuery({ ...searchQuery, maxPrice:'', maxParticipants:'', day:null });
-                }}>
-                  <MaterialIcons name="refresh" size={18} color="#1976d2" />
-                  <Text style={styles.clearAllText}>Reset Advanced</Text>
-                </TouchableOpacity>
+                <View style={styles.locationWrapperCompact}> 
+                  <SearchLocationField
+                    location={searchQuery.location || { city: '', country: '', address: null, latitude: null, longitude: null }}
+                    onLocationSelect={(loc) => setSearchQuery({ ...searchQuery, location: loc })}
+                    radiusKm={searchQuery.radiusKm}
+                    onRadiusChange={(r) => setSearchQuery({ ...searchQuery, radiusKm: r })}
+                  />
+                </View>
+                <View style={styles.bottomChipsWrap}> 
+                  {activeFilterCount===0 && (
+                    <Text style={styles.noFiltersText}>No filters selected</Text>
+                  )}
+                  <View style={styles.chipsRowCompact}>
+                    {!!searchQuery.lessonType && (
+                      <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, lessonType:''})}>
+                        <Text style={styles.compactChipText}>{searchQuery.lessonType}</Text>
+                        <MaterialIcons name="close" size={14} color="#0d47a1" />
+                      </Pressable>
+                    )}
+                    {!!searchQuery.maxPrice && (
+                      <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, maxPrice:''})}>
+                        <Text style={styles.compactChipText}>≤ ${searchQuery.maxPrice}</Text>
+                        <MaterialIcons name="close" size={14} color="#0d47a1" />
+                      </Pressable>
+                    )}
+                    {!!searchQuery.maxParticipants && (
+                      <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, maxParticipants:''})}>
+                        <Text style={styles.compactChipText}>Max {searchQuery.maxParticipants}</Text>
+                        <MaterialIcons name="close" size={14} color="#0d47a1" />
+                      </Pressable>
+                    )}
+                    {!!searchQuery.day && (
+                      <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, day:null})}>
+                        <Text style={styles.compactChipText}>{formatDate(searchQuery.day)}</Text>
+                        <MaterialIcons name="close" size={14} color="#0d47a1" />
+                      </Pressable>
+                    )}
+                    {!!searchQuery.location && searchQuery.location.latitude && (
+                      <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, location:null, radiusKm:null})}>
+                        <Text style={styles.compactChipText}>📍 {searchQuery.location.city || 'Location'}{typeof searchQuery.radiusKm==='number' ? ` • ${searchQuery.radiusKm}km` : ''}</Text>
+                        <MaterialIcons name="close" size={14} color="#0d47a1" />
+                      </Pressable>
+                    )}
+                    {activeFilterCount>0 && (
+                      <Pressable onPress={clearAllFilters} style={[styles.clearInlineBtn, styles.clearInlineBtnRight]}>
+                        <MaterialIcons name="delete-sweep" size={14} color="#1565c0" />
+                        <Text style={styles.clearInlineText}>Clear All</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                </View>
               </View>
-            )}
-          </Animated.View>
-
-          <Pressable onPress={() => setShowAdvanced((prev) => !prev)} style={styles.advancedToggleBtn}> 
-            <MaterialIcons name={showAdvanced? 'expand-less':'expand-more'} size={22} color="#ffffff" />
-            <Text style={styles.advancedToggleText}>{showAdvanced ? 'Hide Advanced' : 'Advanced Filters'}</Text>
-          </Pressable>
-
-          <LinearGradient colors={['#64b5f6','#2196f3','#1976d2']} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.searchButtonGradient}> 
-            <TouchableOpacity style={styles.searchButtonInner} onPress={handleSearchClick} activeOpacity={0.85}>
-              <MaterialIcons name="search" size={20} color="#ffffff" />
-              <Text style={styles.searchButtonText}>Search Lessons</Text>
-            </TouchableOpacity>
-          </LinearGradient>
+            </Animated.View>
+          )}
         </View>
 
         {/* Lesson Type Modal */}
@@ -390,11 +401,35 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQu
 };
 
 const styles = StyleSheet.create({
-  wrapper:{ padding:0 },
-  cardGlass:{ backgroundColor:'rgba(255,255,255,0.10)', borderRadius:34, padding:18, borderWidth:1, borderColor:'rgba(255,255,255,0.28)', shadowColor:'#000', shadowOpacity:0.18, shadowRadius:16, shadowOffset:{width:0,height:6} },
-  title:{ fontSize:18, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
+  wrapper:{ paddingHorizontal:0 },
+  compactContainer:{ backgroundColor:'rgba(255,255,255,0.08)', borderRadius:22, padding:12, borderWidth:1, borderColor:'rgba(255,255,255,0.18)' },
+  compactRow:{ flexDirection:'row', alignItems:'stretch', gap:8 },
+  compactInput:{ flex:1, backgroundColor:'#ffffff', borderRadius:14, paddingHorizontal:14, paddingVertical:10, borderWidth:1, borderColor:'#d5dde5', fontSize:14, color:'#0f172a', fontWeight:'500', height:46 },
+  compactInputFocused:{ borderColor:'#1565c0', shadowColor:'#1565c0', shadowOpacity:0.18, shadowRadius:5, shadowOffset:{width:0,height:2} },
+  typeSelector:{ flexDirection:'row', alignItems:'center', backgroundColor:'#ffffff', borderRadius:14, paddingHorizontal:12, paddingVertical:10, borderWidth:1, borderColor:'#d5dde5', maxWidth:104, flexShrink:1, gap:6, height:46 },
+  typeSelectorText:{ fontSize:13.5, fontWeight:'600', color:'#0f172a', flexShrink:1 },
+  typeSelectorPlaceholder:{ color:'#78909c', fontWeight:'500' },
+  searchBtn:{ backgroundColor:'#1565c0', borderRadius:14, paddingHorizontal:14, paddingVertical:10, alignItems:'center', justifyContent:'center', height:46, minWidth:46 },
+  moreBtn:{ backgroundColor:'#ffffff', borderRadius:14, paddingHorizontal:12, paddingVertical:10, flexDirection:'row', alignItems:'center', position:'relative', height:46 },
+  countBubble:{ position:'absolute', top:-6, right:-6, backgroundColor:'#1565c0', borderRadius:10, paddingHorizontal:5, paddingVertical:2 },
+  countBubbleText:{ color:'#ffffff', fontSize:10, fontWeight:'700' },
+  chipsRowCompact:{ flexDirection:'row', flexWrap:'wrap', gap:6, marginTop:10 },
+  compactChip:{ flexDirection:'row', alignItems:'center', backgroundColor:'#e3f2fd', paddingHorizontal:10, paddingVertical:6, borderRadius:14, gap:4, borderWidth:1, borderColor:'#bbdefb' },
+  compactChipText:{ color:'#0d47a1', fontSize:11.5, fontWeight:'700' },
+  collapsedChipsBar:{ marginTop:10, flexDirection:'row', alignItems:'center', gap:8 },
+  collapsedChipsRow:{ flexDirection:'row', alignItems:'center', gap:6, paddingRight:4 },
+  clearCollapsedBtn:{ backgroundColor:'#ffffff', borderRadius:14, padding:8, borderWidth:1, borderColor:'#d5dde5', alignItems:'center', justifyContent:'center' },
+  bottomChipsWrap:{ marginTop:16, borderTopWidth:1, borderTopColor:'#e2e8f0', paddingTop:12 },
+  clearInlineBtn:{ flexDirection:'row', alignItems:'center', backgroundColor:'#ffffff', paddingHorizontal:8, paddingVertical:4, borderRadius:12, gap:2, borderWidth:1, borderColor:'#e0e6eb' },
+  clearInlineBtnRight:{ marginLeft:'auto' },
+  clearInlineText:{ fontSize:11, fontWeight:'700', color:'#1565c0' },
+  noFiltersText:{ fontSize:11, color:'#607d8b', fontWeight:'600' },
+  advancedRowWrap:{ flexDirection:'row', gap:8, marginTop:12, flexWrap:'wrap' },
+  dateTrigger:{ flexDirection:'row', alignItems:'center', gap:6, backgroundColor:'#ffffff', borderRadius:14, paddingHorizontal:12, paddingVertical:10, borderWidth:1, borderColor:'#d5dde5', flex:1, height:46 },
+  locationWrapperCompact:{ marginTop:12 },
+  title:{ fontSize:18, fontWeight:'800', color:'#0d47a1', letterSpacing:0.5 },
   // Newly added header / badge styles
-  cardHeaderRow:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:8 },
+  cardHeaderRow:{ display:'none' },
   headerLeft:{ flexDirection:'row', alignItems:'center', gap:8 },
   badgeCount:{ backgroundColor:'rgba(255,255,255,0.20)', paddingHorizontal:8, paddingVertical:4, borderRadius:12 },
   badgeCountText:{ color:'#ffffff', fontSize:11, fontWeight:'800' },
@@ -405,7 +440,7 @@ const styles = StyleSheet.create({
   typePillActive:{ backgroundColor:'#ffffff', borderColor:'#ffffff' },
   typePillText:{ color:'#ffffff', fontWeight:'700', fontSize:12, letterSpacing:0.4 },
   typePillTextActive:{ color:'#0d47a1' },
-  input:{ borderWidth:1, borderColor:'rgba(255,255,255,0.30)', borderRadius:16, paddingHorizontal:14, paddingVertical:9, marginBottom:12, backgroundColor:'rgba(255,255,255,0.16)', color:'#ffffff', fontWeight:'600' },
+  input:{},
   dateInput:{},
   inputFocused:{ borderColor:'#ffffff', backgroundColor:'rgba(255,255,255,0.25)' },
   pickerInput:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between' },
@@ -414,10 +449,10 @@ const styles = StyleSheet.create({
   locationWrapper:{ marginTop:-6, marginBottom:10 },
   pickerText:{ color:'#ffffff', fontWeight:'600' },
   datePickerContainer:{ flexDirection:'row', alignItems:'center', gap:8 },
-  chipsRow:{ flexDirection:'row', flexWrap:'wrap', gap:8, marginBottom:14 },
+  chipsRow:{},
   chip:{ flexDirection:'row', alignItems:'center', backgroundColor:'rgba(255,255,255,0.18)', paddingHorizontal:10, paddingVertical:6, borderRadius:16, gap:4, shadowColor:'#000', shadowOpacity:0.10, shadowRadius:4, shadowOffset:{width:0,height:2}, borderWidth:1, borderColor:'rgba(255,255,255,0.28)' },
   chipText:{ color:'#ffffff', fontWeight:'600', fontSize:12 },
-  advancedAnimatedContainer:{ overflow:'hidden', width:'100%', marginTop:2 },
+  advancedAnimatedContainer:{ overflow:'visible', width:'100%', marginTop:2, zIndex:80 },
   advancedBlockInner:{ backgroundColor:'transparent', padding:0, borderRadius:0, borderWidth:0, borderColor:'transparent', flex:1 },
   advancedInlineRow:{ flexDirection:'row', gap:10, marginBottom:2 },
   inputHalf:{ flex:1, marginBottom:12 },

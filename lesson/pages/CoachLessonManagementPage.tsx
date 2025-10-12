@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useReducer, useCallback } from 'react';
 import { View, Text, Button, ScrollView, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, Pressable, Modal, Platform, RefreshControl } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { fetchUserInfo } from '../../auth/services/UserInfoUtils';
@@ -21,14 +21,44 @@ export default function CoachDashboardScreen() {
   const [coachInfo, setCoachInfo] = useState<{ name: string; email: string } | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [showNewLessonModal, setShowNewLessonModal] = useState(false);
-  const [showEditLessonModal, setShowEditLessonModal] = useState(false);
-  const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
-  const [showRegisteredClientsModal, setShowRegisteredClientsModal] = useState(false);
-  const [selectedLessonForClients, setSelectedLessonForClients] = useState<Lesson | null>(null);
+  // Unified modal state machine
+  type ModalState =
+    | { screen: 'none' }
+    | { screen: 'create' }
+    | { screen: 'view'; lesson: Lesson }
+    | { screen: 'edit'; lesson: Lesson }
+    | { screen: 'delete'; lesson: Lesson }
+    | { screen: 'registered'; lesson: Lesson };
+
+  type ModalAction =
+    | { type: 'OPEN_CREATE' }
+    | { type: 'OPEN_VIEW'; lesson: Lesson }
+    | { type: 'OPEN_EDIT'; lesson: Lesson }
+    | { type: 'OPEN_DELETE'; lesson: Lesson }
+    | { type: 'OPEN_REGISTERED'; lesson: Lesson }
+    | { type: 'CLOSE' };
+
+  const modalReducer = (state: ModalState, action: ModalAction): ModalState => {
+    switch (action.type) {
+      case 'OPEN_CREATE': return { screen: 'create' };
+      case 'OPEN_VIEW': return { screen: 'view', lesson: action.lesson };
+      case 'OPEN_EDIT': return { screen: 'edit', lesson: action.lesson };
+      case 'OPEN_DELETE': return { screen: 'delete', lesson: action.lesson };
+      case 'OPEN_REGISTERED': return { screen: 'registered', lesson: action.lesson };
+      case 'CLOSE': return { screen: 'none' };
+      default: return state;
+    }
+  };
+
+  const [modalState, dispatchModal] = useReducer(modalReducer, { screen: 'none' });
+  const lessonToView = modalState.screen === 'view' || modalState.screen === 'edit' || modalState.screen === 'delete' || modalState.screen === 'registered' ? modalState.lesson : null;
+  const selectedLessonForClients = modalState.screen === 'registered' ? modalState.lesson : null;
+  const showNewLessonModal = modalState.screen === 'create';
+  const showViewLessonModal = modalState.screen === 'view';
+  const showEditLessonModal = modalState.screen === 'edit';
+  const showDeleteConfirmationModal = modalState.screen === 'delete';
+  const showRegisteredClientsModal = modalState.screen === 'registered';
   const [registeredClients, setRegisteredClients] = useState<{ id: string; name: string }[]>([]);
-  const [lessonToView, setLessonToView] = useState<Lesson | null>(null);
-  const [showViewLessonModal, setShowViewLessonModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingRegisteredClients, setLoadingRegisteredClients] = useState(false);
   const [isCreatingLesson, setIsCreatingLesson] = useState(false);
@@ -64,8 +94,9 @@ export default function CoachDashboardScreen() {
     location: defaultLocation
   });
 
-  const [returnAfter, setReturnAfter] = useState({ edit:false, clients:false, delete:false });
   const [viewLessonLoading, setViewLessonLoading] = useState(false);
+  // track desired re-open target when returning from nested screens
+  const [pendingReturn, setPendingReturn] = useState<'view' | null>(null);
 
   const fetchLessonsData = async (force:boolean=false) => {
     if (!userId) return;
@@ -134,8 +165,8 @@ export default function CoachDashboardScreen() {
         time: exactTime
       };
 
-      const createdLesson = await createLesson(lessonData, userId);
-      setShowNewLessonModal(false);
+      await createLesson(lessonData, userId);
+      dispatchModal({ type:'CLOSE' });
       await fetchLessonsData();
     } catch (error) {
       Alert.alert('Error', (error as Error).message || 'Failed to create lesson');
@@ -166,20 +197,15 @@ export default function CoachDashboardScreen() {
       };
 
       await editLesson(selectedLesson.id, editData);
-      setShowEditLessonModal(false);
+      dispatchModal({ type:'CLOSE' });
       const updatedLesson = await fetchSingleLesson(selectedLesson.id);
       setLessons(prev =>
         prev.map(lesson =>
           lesson.id === updatedLesson.id ? { ...updatedLesson, registeredCount: lesson.registeredCount } : lesson
         )
       );
-      if (returnAfter.edit) {
-        // restore view modal with updated lesson
-        const prevRegistered = lessons.find(l=> l.id === updatedLesson.id)?.registeredCount || 0;
-        setLessonToView({ ...updatedLesson, registeredCount: prevRegistered });
-        setShowViewLessonModal(true);
-        setReturnAfter(r=>({...r, edit:false}));
-      }
+      // After editing, reopen view modal automatically
+      dispatchModal({ type:'OPEN_VIEW', lesson: { ...updatedLesson, registeredCount: (lessons.find(l=> l.id===updatedLesson.id)?.registeredCount) || updatedLesson.registeredCount } as Lesson });
     } catch (error) {
       Alert.alert('Error', (error as Error).message || 'Failed to edit lesson');
     } finally {
@@ -196,7 +222,7 @@ export default function CoachDashboardScreen() {
       Alert.alert('Error', (error as Error).message || 'Failed to delete lesson');
     } finally {
       setIsDeletingLesson(false);
-      setShowDeleteConfirmationModal(false);
+      dispatchModal({ type:'CLOSE' });
       setSelectedLesson(null);
     }
   };
@@ -275,17 +301,30 @@ export default function CoachDashboardScreen() {
   const SectionHeader = ({ title }: { title: string }) => (
     <View style={styles.sectionHeaderCard}>
       <View style={styles.headerContent}>
-        <Text style={styles.sectionHeaderText}>{title}</Text>
+        <Text
+          style={styles.sectionHeaderText}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          maxFontSizeMultiplier={1.1}
+          minimumFontScale={0.9}
+        >{title}</Text>
         <Pressable
           style={({ pressed }) => [
             styles.calendarButton,
             pressed && styles.calendarButtonPressed,
           ]}
           onPress={() => navigation.navigate('CoachCalendar' as never)}
+          android_ripple={{ color: 'rgba(255,255,255,0.25)', borderless: true }}
         >
           <View style={styles.calendarButtonContent}>
-            <Icon name="calendar-today" size={18} color="#ffffff" style={styles.calendarIcon} />
-            <Text style={styles.calendarButtonText}>View Calendar</Text>
+            <Icon name="calendar-today" size={16} color="#ffffff" style={styles.calendarIcon} />
+            <Text
+              style={styles.calendarButtonText}
+              adjustsFontSizeToFit
+              maxFontSizeMultiplier={1.1}
+              numberOfLines={1}
+              minimumFontScale={0.9}
+            >Calendar</Text>
           </View>
         </Pressable>
       </View>
@@ -294,18 +333,21 @@ export default function CoachDashboardScreen() {
 
   useEffect(()=>{
     const unsubscribe = navigation.addListener('focus', ()=>{
-      const reopen = route.params?.reopenRegisteredClientsModal;
+      const reopenClients = route.params?.reopenRegisteredClientsModal; // legacy param support
       const lid = route.params?.lessonId;
-      if (reopen && lid) {
+      if ((route.params?.openCoachLessonModal || reopenClients) && lid) {
         const lesson = lessons.find(l=> l.id === lid);
         if (lesson) {
-          setSelectedLessonForClients(lesson);
-          setShowRegisteredClientsModal(true);
+          dispatchModal({ type:'OPEN_VIEW', lesson });
         }
+        (navigation as any).setParams({ openCoachLessonModal: undefined, reopenRegisteredClientsModal: undefined });
+      } else if (pendingReturn === 'view' && lessonToView) {
+        dispatchModal({ type:'OPEN_VIEW', lesson: lessonToView });
+        setPendingReturn(null);
       }
     });
     return unsubscribe;
-  },[navigation, route.params, lessons]);
+  },[navigation, route.params, lessons, pendingReturn, lessonToView]);
 
   useEffect(() => {
     if (route.params?.openCoachLessonModal && route.params.lessonId && userId) {
@@ -328,15 +370,13 @@ export default function CoachDashboardScreen() {
             if (exists) return prev.map(l=> l.id === fresh!.id ? { ...fresh!, registeredCount: fresh!.registeredCount } : l);
             return [...prev, fresh!];
           });
-          setLessonToView(fresh);
-          setShowViewLessonModal(true);
+          dispatchModal({ type:'OPEN_VIEW', lesson: fresh });
         } else {
           // fallback to whatever we have
-            const fallback = lessons.find(l=> l.id === route.params.lessonId);
-            if (fallback) {
-              setLessonToView(fallback);
-              setShowViewLessonModal(true);
-            }
+          const fallback = lessons.find(l=> l.id === route.params.lessonId);
+          if (fallback) {
+            dispatchModal({ type:'OPEN_VIEW', lesson: fallback });
+          }
         }
         setViewLessonLoading(false);
         (navigation as any).setParams({ openCoachLessonModal: undefined, lessonId: undefined });
@@ -378,7 +418,7 @@ export default function CoachDashboardScreen() {
               <Text style={styles.emptyStateText}>
                 {selectedDay ? 'No lessons scheduled for this day.' : 'Create your first lesson to start coaching clients.'}
               </Text>
-              <TouchableOpacity style={styles.emptyCtaButton} onPress={()=>setShowNewLessonModal(true)}>
+              <TouchableOpacity style={styles.emptyCtaButton} onPress={()=>dispatchModal({ type:'OPEN_CREATE' })}>
                 <Text style={styles.emptyCtaText}>Create Lesson</Text>
               </TouchableOpacity>
             </View>
@@ -386,10 +426,7 @@ export default function CoachDashboardScreen() {
             <View style={styles.lessonsWrapper}> 
               <LessonCard
                 lessons={filteredLessons}
-                onEdit={(lesson: Lesson) => {
-                  setLessonToView(lesson);
-                  setShowViewLessonModal(true);
-                }}
+                onEdit={(lesson: Lesson) => dispatchModal({ type:'OPEN_VIEW', lesson })}
               />
             </View>
           )}
@@ -401,7 +438,7 @@ export default function CoachDashboardScreen() {
             <Icon name="calendar-today" size={22} color="#1976d2" />
             <Text style={styles.secondaryFabText}>{selectedDay ? selectedDay.toLocaleDateString() : 'Filter Date'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.primaryFab} onPress={()=>setShowNewLessonModal(true)} activeOpacity={0.9}>
+          <TouchableOpacity style={styles.primaryFab} onPress={()=>dispatchModal({ type:'OPEN_CREATE' })} activeOpacity={0.9}>
             <Icon name="add" size={22} color="#1976d2" />
             <Text style={styles.primaryFabText}>New Lesson</Text>
           </TouchableOpacity>
@@ -454,8 +491,14 @@ export default function CoachDashboardScreen() {
               ))}
             </View>
             {selectedDay && (
-              <TouchableOpacity style={styles.clearButtonNew} onPress={()=>{ setSelectedDay(null); setShowDatePicker(false); }}>
-                <Text style={styles.clearButtonTextNew}>Clear Filter</Text>
+              <TouchableOpacity
+                style={styles.clearButtonNew}
+                onPress={()=>{ setSelectedDay(null); setShowDatePicker(false); }}
+                accessibilityLabel="Clear selected date filter"
+                activeOpacity={0.85}
+              >
+                <Icon name="close" size={16} color="#ffffff" style={{marginRight:6}} />
+                <Text style={styles.clearButtonTextNew}>Clear Date Filter</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -464,7 +507,7 @@ export default function CoachDashboardScreen() {
 
       <CoachLessonModal
         isOpen={showNewLessonModal}
-        onClose={() => setShowNewLessonModal(false)}
+        onClose={() => dispatchModal({ type:'CLOSE' })}
         onSubmit={handleCreateLesson}
         newLesson={newLesson}
         setNewLesson={setNewLesson}
@@ -472,12 +515,10 @@ export default function CoachDashboardScreen() {
       />
       <ViewLessonModal
         isOpen={showViewLessonModal}
-        onClose={() => setShowViewLessonModal(false)}
+        onClose={() => dispatchModal({ type:'CLOSE' })}
         lesson={lessonToView}
         onEditClick={() => {
-          setShowViewLessonModal(false);
-          setReturnAfter(r=>({...r, edit:true}));
-          setSelectedLesson(lessonToView);
+          if (lessonToView) setSelectedLesson(lessonToView);
           setEditLessonData({
             description: lessonToView?.description || '',
             time: dayjs(lessonToView?.time),
@@ -485,19 +526,14 @@ export default function CoachDashboardScreen() {
             duration: lessonToView?.duration || 0,
             location: lessonToView?.location || defaultLocation
           });
-          setShowEditLessonModal(true);
+          if (lessonToView) dispatchModal({ type:'OPEN_EDIT', lesson: lessonToView });
         }}
         onViewClients={() => {
-          setShowViewLessonModal(false);
-          setReturnAfter(r=>({...r, clients:true}));
-          setSelectedLessonForClients(lessonToView);
-          setShowRegisteredClientsModal(true);
+          if (lessonToView) dispatchModal({ type:'OPEN_REGISTERED', lesson: lessonToView });
         }}
         onDelete={(lesson) => {
-          setShowViewLessonModal(false);
-            setReturnAfter(r=>({...r, delete:true}));
           setSelectedLesson(lesson);
-          setShowDeleteConfirmationModal(true);
+          dispatchModal({ type:'OPEN_DELETE', lesson });
         }}
       />
       {viewLessonLoading && (
@@ -508,34 +544,23 @@ export default function CoachDashboardScreen() {
       )}
       <RegisteredClientsModal
         isOpen={showRegisteredClientsModal}
-        onClose={() => {
-          setShowRegisteredClientsModal(false);
-          if (returnAfter.clients && lessonToView) {
-            setShowViewLessonModal(true);
-          }
-          setReturnAfter(r=>({...r, clients:false}));
-        }}
+        onClose={() => dispatchModal({ type:'CLOSE' })}
         lessonId={selectedLessonForClients?.id || 0}
         registeredClients={registeredClients}
         isLoading={loadingRegisteredClients}
-        onNavigateProfile={()=>{ setShowRegisteredClientsModal(false); }}
+        onNavigateProfile={()=>{
+          // After viewing profile, we want to come back to lesson view modal
+          setPendingReturn('view');
+          dispatchModal({ type:'CLOSE' });
+        }}
+        originScreen="CoachLessons"
       />
       <DeleteConfirmationModal
         isOpen={showDeleteConfirmationModal}
-        onClose={() => {
-          setShowDeleteConfirmationModal(false);
-          if (returnAfter.delete && selectedLesson) {
-            // user canceled delete, return to view
-            setLessonToView(selectedLesson);
-            setShowViewLessonModal(true);
-          }
-          setReturnAfter(r=>({...r, delete:false}));
-        }}
+        onClose={() => dispatchModal({ type:'CLOSE' })}
         onConfirmDelete={async () => {
           if (selectedLesson) {
             await handleDeleteLesson(selectedLesson.id);
-            // if deletion originated from view, do NOT return
-            setReturnAfter(r=>({...r, delete:false}));
           }
         }}
         lesson={selectedLesson}
@@ -543,14 +568,7 @@ export default function CoachDashboardScreen() {
       />
       <EditLessonModal
         isOpen={showEditLessonModal}
-        onClose={() => {
-          setShowEditLessonModal(false);
-          if (returnAfter.edit && lessonToView) {
-            // user canceled edit, just reopen original view
-            setShowViewLessonModal(true);
-            setReturnAfter(r=>({...r, edit:false}));
-          }
-        }}
+        onClose={() => dispatchModal({ type:'CLOSE' })}
         onSubmit={handleEditLesson}
         lessonData={editLessonData}
         setLessonData={setEditLessonData}
@@ -566,16 +584,17 @@ const styles = StyleSheet.create({
   decorBubbleOne:{ position:'absolute', top:-70, left:-50, width:180, height:180, borderRadius:90, backgroundColor:'rgba(255,255,255,0.08)' },
   decorBubbleTwo:{ position:'absolute', top:140, right:-60, width:220, height:220, borderRadius:110, backgroundColor:'rgba(255,255,255,0.05)' },
   decorBubbleThree:{ position:'absolute', bottom:-80, left:-40, width:160, height:160, borderRadius:80, backgroundColor:'rgba(255,255,255,0.06)' },
-  scrollInner:{ paddingBottom:0, paddingTop:4 },
+  // Reduce top padding so the custom section header visually touches the app header
+  scrollInner:{ paddingBottom:0, paddingTop:0 },
   lessonsWrapper:{ paddingHorizontal:4, paddingTop:4 },
-  sectionHeaderCard:{ backgroundColor:'rgba(255,255,255,0.15)', padding:20, borderBottomLeftRadius:28, borderBottomRightRadius:28, shadowColor:'#000', shadowOffset:{width:0,height:4}, shadowOpacity:0.15, shadowRadius:10, elevation:6, borderWidth:1, borderColor:'rgba(255,255,255,0.25)', marginBottom:10 },
-  headerContent:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center' },
-  sectionHeaderText:{ fontSize:28, fontWeight:'800', color:'#fff', letterSpacing:0.5 },
-  calendarButton:{ backgroundColor:'rgba(255,255,255,0.35)', paddingHorizontal:14, paddingVertical:10, borderRadius:18, borderWidth:1, borderColor:'rgba(255,255,255,0.55)', shadowColor:'#000', shadowOpacity:0.15, shadowRadius:6, shadowOffset:{width:0,height:3} },
+  sectionHeaderCard:{ backgroundColor:'rgba(255,255,255,0.15)', paddingVertical:14, paddingHorizontal:18, borderBottomLeftRadius:24, borderBottomRightRadius:24, shadowColor:'#000', shadowOffset:{width:0,height:3}, shadowOpacity:0.13, shadowRadius:8, elevation:5, borderWidth:1, borderColor:'rgba(255,255,255,0.25)', marginBottom:8, marginTop:0 },
+  headerContent:{ flexDirection:'row', alignItems:'center' },
+  sectionHeaderText:{ flex:1, fontSize:26, fontWeight:'800', color:'#fff', letterSpacing:0.5, marginRight:14 },
+  calendarButton:{ flexShrink:0, backgroundColor:'rgba(255,255,255,0.32)', paddingHorizontal:12, paddingVertical:8, borderRadius:16, borderWidth:1, borderColor:'rgba(255,255,255,0.55)', shadowColor:'#000', shadowOpacity:0.12, shadowRadius:5, shadowOffset:{width:0,height:3}, maxWidth:140 },
   calendarButtonPressed:{ backgroundColor:'rgba(255,255,255,0.55)' },
-  calendarButtonContent:{ flexDirection:'row', alignItems:'center' },
-  calendarIcon:{ fontSize:18, marginRight:6 },
-  calendarButtonText:{ color:'#ffffff', fontWeight:'700', fontSize:13, letterSpacing:0.5 },
+  calendarButtonContent:{ flexDirection:'row', alignItems:'center', justifyContent:'center' },
+  calendarIcon:{ fontSize:16, marginRight:4 },
+  calendarButtonText:{ color:'#ffffff', fontWeight:'700', fontSize:12.5, letterSpacing:0.5 },
   buttonContainerHidden:{ display:'none' },
   loadingContainer:{ flex:1, justifyContent:'center', alignItems:'center', paddingTop:100 },
   emptyStateCard:{ margin:18, backgroundColor:'rgba(255,255,255,0.95)', borderRadius:26, padding:26, alignItems:'center', shadowColor:'#0d47a1', shadowOpacity:0.12, shadowRadius:16, shadowOffset:{width:0,height:6}, borderWidth:1, borderColor:'rgba(255,255,255,0.6)' },
@@ -608,8 +627,8 @@ const styles = StyleSheet.create({
   dateNumberNew:{ fontSize:14, fontWeight:'600', color:'#0f172a' },
   selectedDateTextNew:{ color:'#fff' },
   todayDateTextNew:{ color:'#1976d2', fontWeight:'700' },
-  clearButtonNew:{ marginTop:14, paddingVertical:12, borderRadius:16, backgroundColor:'#1976d2', alignItems:'center', shadowColor:'#000', shadowOpacity:0.2, shadowRadius:6, shadowOffset:{ width:0, height:3 } },
-  clearButtonTextNew:{ color:'#1976d2', fontWeight:'700' },
+  clearButtonNew:{ marginTop:14, paddingVertical:12, paddingHorizontal:18, borderRadius:18, backgroundColor:'#1976d2', alignItems:'center', justifyContent:'center', flexDirection:'row', shadowColor:'#000', shadowOpacity:0.2, shadowRadius:6, shadowOffset:{ width:0, height:3 }, borderWidth:1, borderColor:'rgba(255,255,255,0.35)' },
+  clearButtonTextNew:{ color:'#ffffff', fontWeight:'700', letterSpacing:0.4, fontSize:13 },
   emptyDateItem:{ width:'13%', aspectRatio:1, marginBottom:6 },
   inlineLoadingOverlay:{ position:'absolute', top:0, left:0, right:0, bottom:0, backgroundColor:'rgba(0,0,0,0.45)', justifyContent:'center', alignItems:'center', zIndex:50 },
   inlineLoadingText:{ marginTop:16, color:'#ffffff', fontSize:14, fontWeight:'600', letterSpacing:0.4 },

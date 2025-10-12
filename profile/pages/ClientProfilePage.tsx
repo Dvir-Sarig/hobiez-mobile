@@ -30,7 +30,12 @@ export default function ClientProfilePage() {
   const handleNoProfileClose = () => {
     setShowNoProfileModal(false);
     if (fromRegisteredClientsModal && lessonId) {
-      navigation.navigate('CoachLessons', { reopenRegisteredClientsModal: true, lessonId });
+      // Decide destination based on originScreen (calendar vs lessons)
+      if (originScreen === 'CoachCalendar') {
+        navigation.navigate('CoachCalendar', { openCoachCalendarLessonModal: true, lessonId });
+      } else {
+        navigation.navigate('CoachLessons', { openCoachLessonModal: true, lessonId });
+      }
       return;
     }
     if (originScreen) {
@@ -126,8 +131,11 @@ export default function ClientProfilePage() {
         <TouchableOpacity
           style={styles.returnIconButton}
           onPress={() => {
-            // Navigate back and set a param so origin can reopen modal
-            navigation.navigate('CoachLessons', { reopenRegisteredClientsModal: true, lessonId });
+            if (originScreen === 'CoachCalendar') {
+              navigation.navigate('CoachCalendar', { openCoachCalendarLessonModal: true, lessonId });
+            } else {
+              navigation.navigate('CoachLessons', { openCoachLessonModal: true, lessonId });
+            }
           }}
           accessibilityLabel="Return to registered clients"
           activeOpacity={0.7}

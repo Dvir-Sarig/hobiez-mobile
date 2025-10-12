@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, Alert, StyleSheet, TouchableOpacity, ScrollView, Platform, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar } from 'react-native-big-calendar';
 import dayjs from 'dayjs';
@@ -45,6 +45,8 @@ const CoachCalendarView = () => {
 
   const { userId: coachId } = useAuth();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<any>();
+  const [pendingReturn, setPendingReturn] = useState<'view'|null>(null);
 
   const typeColors: Record<string,{abbr:string; bg:string; border:string}> = {
     Tennis:{ abbr:'TN', bg:'#fff3e0', border:'#ffb74d' },
@@ -208,10 +210,42 @@ const CoachCalendarView = () => {
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
+      // Refresh always
       fetchLessons();
+      // Handle param-driven reopen (coming back from client profile)
+      const openCalendarLessonModal = route.params?.openCoachCalendarLessonModal;
+      const lessonId = route.params?.lessonId;
+      if (openCalendarLessonModal && lessonId) {
+        // Find lesson either in selectedDateLessons or events
+        const ev = events.find(e=> e.id === lessonId);
+        if (ev) {
+          const lesson: Lesson = {
+            id: ev.id as number,
+            title: ev.title,
+            description: ev.description || '',
+            time: dayjs(ev.start).format('YYYY-MM-DDTHH:mm:ss'),
+            duration: ev.duration,
+            price: ev.price,
+            location: ev.location,
+            coachId: ev.coachId,
+            capacityLimit: ev.capacityLimit,
+            registeredCount: ev.registeredCount,
+          };
+          setSelectedLesson(lesson);
+          setIsModalOpen(true);
+          // clear params
+          (navigation as any).setParams({ openCoachCalendarLessonModal: undefined });
+        } else if (pendingReturn === 'view' && selectedLesson) {
+          setIsModalOpen(true);
+          setPendingReturn(null);
+        }
+      } else if (pendingReturn === 'view' && selectedLesson) {
+        setIsModalOpen(true);
+        setPendingReturn(null);
+      }
     });
     return unsubscribe;
-  }, [navigation, fetchLessons]);
+  }, [navigation, fetchLessons, route.params, events, pendingReturn, selectedLesson]);
 
   const renderLessonCard = (lesson: Lesson) => (
     <TouchableOpacity
@@ -377,9 +411,9 @@ const CoachCalendarView = () => {
         }}
         onViewClients={(lesson) => {
           setSelectedLesson(lesson);
-            loadRegisteredClients(lesson.id);
-            setShowRegisteredClientsModal(true);
-            setIsModalOpen(false);
+          loadRegisteredClients(lesson.id);
+          setShowRegisteredClientsModal(true);
+          setIsModalOpen(false);
         }}
         onDelete={(lesson) => {
           setSelectedLesson(lesson);
@@ -414,6 +448,12 @@ const CoachCalendarView = () => {
         lessonId={selectedLesson?.id || 0}
         registeredClients={registeredClients}
         isLoading={isLoadingClients}
+        onNavigateProfile={() => {
+          // When navigating to client profile from calendar, request reopening view modal on return.
+            setPendingReturn('view');
+            setShowRegisteredClientsModal(false);
+        }}
+        originScreen="CoachCalendar"
       />
     </LinearGradient>
   );

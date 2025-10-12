@@ -31,7 +31,12 @@ export default function CoachProfilePage() {
 
   const handleNoProfileClose = () => {
     setShowNoProfileModal(false);
-    // Priority: specific modal origins
+    // Highest priority: explicit calendar origin to force calendar reopen
+    if (originScreen === 'ClientCalendar' && lessonId) {
+      navigation.navigate('ClientCalendar', { openClientCalendarLessonModal: true, lessonId, weekAnchorDate: route.params?.weekAnchorDate, selectedDate: route.params?.selectedDate });
+      return;
+    }
+    // Next: specific modal origins from search lessons
     if (fromRegistrationModal && lessonId) {
       navigation.navigate('SearchLessons', { reopenRegistrationModal: true, lessonId });
       return;
@@ -137,7 +142,13 @@ export default function CoachProfilePage() {
       {originScreen && !fromRegistrationModal && !fromUnregisterModal && (
         <TouchableOpacity
           style={styles.returnIconButton}
-          onPress={() => navigation.dispatch(DrawerActions.jumpTo(originScreen, { restoreTab: originTab, restoreScrollY: returnScrollY }))}
+          onPress={() => {
+            if (originScreen === 'ClientCalendar' && lessonId) {
+              navigation.navigate('ClientCalendar', { openClientCalendarLessonModal: true, lessonId, weekAnchorDate: route.params?.weekAnchorDate, selectedDate: route.params?.selectedDate });
+            } else {
+              navigation.dispatch(DrawerActions.jumpTo(originScreen, { restoreTab: originTab, restoreScrollY: returnScrollY }));
+            }
+          }}
           accessibilityLabel="Return to previous list"
           activeOpacity={0.7}
         >

@@ -22,6 +22,7 @@ interface RegisteredClientsModalProps {
   registeredClients: { id: string; name: string }[];
   isLoading: boolean; // external loading of registrations
   onNavigateProfile?: () => void; // new callback
+  originScreen?: 'CoachLessons' | 'CoachCalendar';
 }
 
 const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
@@ -31,6 +32,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
   registeredClients,
   isLoading,
   onNavigateProfile,
+  originScreen = 'CoachLessons',
 }) => {
   const navigation = useNavigation<any>();
   const [clientInfos, setClientInfos] = useState<{ [key: string]: ClientGlobalInfo | null }>({});
@@ -63,7 +65,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
     onNavigateProfile?.();
     setTimeout(()=>{
       onClose();
-      navigation.navigate('ClientProfilePage', { clientId, fromRegisteredClientsModal: true, lessonId, originScreen: 'CoachLessons' });
+      navigation.navigate('ClientProfilePage', { clientId, fromRegisteredClientsModal: true, lessonId, originScreen });
     },10);
   };
 

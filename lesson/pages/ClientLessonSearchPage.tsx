@@ -530,25 +530,7 @@ export default function ClientDashboardScreen() {
       </Pressable>
     </View>
   );
-
-  const SummaryBar = () => (
-    <View style={styles.summaryBar}>
-      <View style={styles.summaryItem}>
-        <Text style={styles.summaryLabel}>Total Lessons</Text>
-        <Text style={styles.summaryValue}>{availableCount}</Text>
-      </View>
-      <View style={styles.summaryDivider} />
-      <View style={styles.summaryItem}>
-        <Text style={styles.summaryLabel}>My Spots</Text>
-        <Text style={styles.summaryValue}>{registeredCount}</Text>
-      </View>
-      <View style={styles.summaryDivider} />
-      <View style={styles.summaryItem}>
-        <Text style={styles.summaryLabel}>Filters</Text>
-        <Text style={styles.summaryValue}>{[searchQuery.lessonType, searchQuery.maxPrice, searchQuery.maxParticipants, searchQuery.day, searchQuery.location?.city].filter(Boolean).length}</Text>
-      </View>
-    </View>
-  );
+  // Summary bar removed (Total Lessons | My Spots) to simplify UI
 
   // Replace return layout with polished UI
   return (
@@ -584,8 +566,7 @@ export default function ClientDashboardScreen() {
           />
         </View>
 
-        <SummaryBar />
-        <TabSwitcher />
+  <TabSwitcher />
 
         {/* Conditional Sections */}
         {activeTab === 'available' && (
@@ -665,16 +646,7 @@ export default function ClientDashboardScreen() {
         )}
       </ScrollView>
 
-      {/* Floating Filter Shortcut */}
-      <Pressable
-        style={({pressed})=>[styles.fabFilter, pressed && styles.fabFilterPressed]}
-        onPress={()=>{
-          scrollViewRef.current?.scrollTo({y:0, animated:true});
-        }}
-      >
-        <Text style={styles.fabFilterIcon}>🎯</Text>
-        <Text style={styles.fabFilterText}>Filters</Text>
-      </Pressable>
+      {/* Removed floating Filters shortcut for cleaner UI */}
     </LinearGradient>
   );
 }
@@ -684,13 +656,13 @@ const styles = StyleSheet.create({
   gradientBg:{ flex:1 },
   scrollOverlay:{ flex:1, backgroundColor:'transparent' },
   scrollContent:{ paddingBottom:40 },
-  heroHeader:{ paddingTop:Platform.OS==='ios'? 58:40, paddingHorizontal:20, paddingBottom:28 },
+  heroHeader:{ paddingTop:Platform.OS==='ios'? 40:28, paddingHorizontal:18, paddingBottom:16 },
   heroTitleRow:{ flexDirection:'row', alignItems:'center', gap:10 },
   heroTitleIcon:{ opacity:0.95 },
   heroTitle:{ fontSize:26, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
   heroSubtitle:{ marginTop:6, fontSize:13, fontWeight:'600', color:'rgba(255,255,255,0.85)' },
   filterCard:{ marginHorizontal:16, padding:0, backgroundColor:'transparent', borderWidth:0, borderColor:'transparent', shadowColor:'transparent' },
-  sectionWrapper:{ marginTop:30 },
+  sectionWrapper:{ marginTop:8 },
   // Removed sectionBodyCard visual container to allow cards to expand
   // sectionBodyCard:{},
   // Tweak existing header cards inside SectionHeader via overrides
@@ -707,24 +679,15 @@ const styles = StyleSheet.create({
   // Newly added: missing headerContent style used in SectionHeader
   headerContent:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', gap:12 },
   // Newly added tab and summary styles
-  tabSwitcherContainer:{ marginTop:26, flexDirection:'row', marginHorizontal:16, backgroundColor:'rgba(255,255,255,0.12)', padding:6, borderRadius:24, borderWidth:1, borderColor:'rgba(255,255,255,0.28)', gap:6 },
+  tabSwitcherContainer:{ marginTop:26, flexDirection:'row', marginHorizontal:16, backgroundColor:'rgba(255,255,255,0.12)', padding:6, borderRadius:24, borderWidth:1, borderColor:'rgba(255,255,255,0.28)', gap:6, marginBottom:4 },
   tabButton:{ flex:1, paddingVertical:10, borderRadius:16, alignItems:'center', justifyContent:'center' },
   tabButtonActive:{ backgroundColor:'rgba(255,255,255,0.85)', shadowColor:'#000', shadowOpacity:0.15, shadowRadius:6, shadowOffset:{width:0,height:3} },
   tabButtonText:{ color:'#e3f2fd', fontWeight:'700', fontSize:13, letterSpacing:0.3 },
   tabButtonTextActive:{ color:'#0d47a1' },
-  summaryBar:{ flexDirection:'row', marginTop:26, marginHorizontal:16, backgroundColor:'rgba(255,255,255,0.12)', paddingVertical:14, paddingHorizontal:20, borderRadius:28, borderWidth:1, borderColor:'rgba(255,255,255,0.25)', shadowColor:'#000', shadowOpacity:0.12, shadowRadius:10, shadowOffset:{width:0,height:4}, gap:18 },
-  summaryItem:{ flex:1, alignItems:'center' },
-  summaryLabel:{ fontSize:11, fontWeight:'700', color:'rgba(255,255,255,0.8)', letterSpacing:0.5 },
-  summaryValue:{ marginTop:4, fontSize:18, fontWeight:'800', color:'#ffffff' },
-  summaryDivider:{ width:1, backgroundColor:'rgba(255,255,255,0.35)', borderRadius:1 },
   // Newly added decorative bubbles styles
   decorBubbleOne:{ position:'absolute', top:-70, left:-50, width:180, height:180, borderRadius:90, backgroundColor:'rgba(255,255,255,0.08)' },
   decorBubbleTwo:{ position:'absolute', top:140, right:-60, width:220, height:220, borderRadius:110, backgroundColor:'rgba(255,255,255,0.05)' },
   decorBubbleThree:{ position:'absolute', bottom:-80, left:-40, width:160, height:160, borderRadius:80, backgroundColor:'rgba(255,255,255,0.06)' },
-  fabFilter:{ position:'absolute', bottom:24, right:22, backgroundColor:'#ffffff', paddingHorizontal:18, paddingVertical:14, borderRadius:24, flexDirection:'row', alignItems:'center', gap:8, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{width:0,height:4} },
-  fabFilterPressed:{ opacity:0.9 },
-  fabFilterIcon:{ fontSize:18 },
-  fabFilterText:{ fontSize:13, fontWeight:'800', color:'#0d47a1', letterSpacing:0.5 },
   sectionHeaderOuter:{ marginHorizontal:16, marginTop:4 },
   sectionHeaderGradient:{ borderRadius:28, padding:2, position:'relative', shadowColor:'#000', shadowOpacity:0.25, shadowRadius:14, shadowOffset:{width:0,height:6} },
   sectionHeaderGlassLayer:{ ...StyleSheet.absoluteFillObject, backgroundColor:'rgba(255,255,255,0.14)', borderRadius:26 },
@@ -743,14 +706,14 @@ const styles = StyleSheet.create({
   sectionActionBtnWide:{ flexDirection:'row', alignItems:'center', gap:4, paddingHorizontal:12, height:38, borderRadius:12, backgroundColor:'rgba(255,255,255,0.22)', borderWidth:1, borderColor:'rgba(255,255,255,0.40)' },
   sectionActionBtnText:{ color:'#ffffff', fontSize:11, fontWeight:'700', letterSpacing:0.5 },
   // --- Simplified Section Header (new styles) ---
-  simpleSectionHeader:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginHorizontal:16, marginTop:30, paddingVertical:12, paddingHorizontal:16, borderRadius:20, backgroundColor:'rgba(255,255,255,0.12)', borderWidth:1, borderColor:'rgba(255,255,255,0.22)' },
+  simpleSectionHeader:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginHorizontal:16, marginTop:8, paddingVertical:12, paddingHorizontal:20, borderRadius:26, backgroundColor:'rgba(255,255,255,0.22)', borderWidth:1, borderColor:'rgba(255,255,255,0.45)', shadowColor:'#0d47a1', shadowOpacity:0.22, shadowRadius:12, shadowOffset:{width:0,height:6} },
   simpleHeaderLeft:{ flexDirection:'row', alignItems:'center', flex:1, gap:12 },
-  simpleHeaderIconCircle:{ width:42, height:42, borderRadius:14, backgroundColor:'rgba(25,118,210,0.22)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(144,202,249,0.55)' },
-  simpleHeaderIconCircleRegistered:{ backgroundColor:'rgba(30,136,229,0.30)', borderColor:'rgba(187,222,251,0.65)' },
+  simpleHeaderIconCircle:{ width:42, height:42, borderRadius:14, backgroundColor:'rgba(255,255,255,0.30)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.55)' },
+  simpleHeaderIconCircleRegistered:{ backgroundColor:'rgba(255,255,255,0.34)', borderColor:'rgba(255,255,255,0.65)' },
   simpleHeaderIconText:{ fontSize:22 },
   simpleHeaderTitleCol:{ flex:1 },
-  simpleHeaderTitle:{ fontSize:16, fontWeight:'700', color:'#ffffff', letterSpacing:0.3 },
-  simpleHeaderSubtitle:{ marginTop:2, fontSize:11, fontWeight:'500', color:'rgba(255,255,255,0.70)', letterSpacing:0.4 },
+  simpleHeaderTitle:{ fontSize:17, fontWeight:'800', color:'#ffffff', letterSpacing:0.4 },
+  simpleHeaderSubtitle:{ marginTop:2, fontSize:11, fontWeight:'600', color:'rgba(255,255,255,0.85)', letterSpacing:0.5 },
   simpleCountPill:{ backgroundColor:'rgba(255,255,255,0.20)', paddingHorizontal:10, paddingVertical:6, borderRadius:14, borderWidth:1, borderColor:'rgba(255,255,255,0.32)' },
   simpleCountPillText:{ color:'#ffffff', fontSize:12, fontWeight:'700' },
   simpleActionRow:{ flexDirection:'row', alignItems:'center', gap:8 },

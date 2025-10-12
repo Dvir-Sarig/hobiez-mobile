@@ -159,10 +159,43 @@ const ClientCalendarView: React.FC = () => {
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       fetchLessons();
+      // If returning from coach profile with a request to reopen a lesson modal
+      const openClientCalendarLessonModal = route.params?.openClientCalendarLessonModal;
+      const lessonId = route.params?.lessonId;
+      const weekAnchorDate = route.params?.weekAnchorDate;
+      const selectedDateParam = route.params?.selectedDate;
+      if (weekAnchorDate) {
+        const wa = dayjs(weekAnchorDate);
+        if (wa.isValid()) setWeekAnchor(wa);
+      }
+      if (selectedDateParam) {
+        const sd = dayjs(selectedDateParam);
+        if (sd.isValid()) setSelectedDate(sd);
+      }
+      if (openClientCalendarLessonModal && lessonId) {
+        const ev = events.find(e=> e.id === lessonId);
+        if (ev) {
+          const lesson: Lesson = {
+            id: ev.id as number,
+            title: ev.title,
+            description: ev.description || '',
+            time: ev.start.toISOString(),
+            duration: ev.duration,
+            price: ev.price,
+            location: ev.location,
+            coachId: ev.coachId,
+            capacityLimit: ev.capacityLimit,
+            registeredCount: ev.registeredCount,
+          };
+          setSelectedLesson(lesson);
+          setIsModalOpen(true);
+        }
+        (navigation as any).setParams({ openClientCalendarLessonModal: undefined, lessonId: undefined });
+      }
     });
 
     return unsubscribe;
-  }, [navigation, fetchLessons]);
+  }, [navigation, fetchLessons, events, route.params]);
 
   // Lesson type visual mapping (inferred from title if no explicit type prop)
   const lessonTypeMap: Record<string,{abbr:string; bg:string; border:string}> = {
@@ -211,12 +244,8 @@ const ClientCalendarView: React.FC = () => {
         {/* Header */}
         <View style={styles.headerPolished}> 
           <TouchableOpacity onPress={() => {
-            if (origin === 'SearchLessons') {
-              navigation.navigate('SearchLessons' as never);
-            } else {
-              navigation.goBack();
-            }
-          }} style={styles.headerIconBtn} accessibilityLabel="Back"> 
+            (navigation as any).navigate('SearchLessons', { focusRegistered: true });
+          }} style={styles.headerIconBtn} accessibilityLabel="Back to registered lessons"> 
             <Icon name="arrow-back" size={20} color="#ffffff" />
           </TouchableOpacity>
           <View style={{flex:1}}>
