@@ -65,6 +65,7 @@ export default function CoachDashboardScreen() {
   });
 
   const [returnAfter, setReturnAfter] = useState({ edit:false, clients:false, delete:false });
+  const [viewLessonLoading, setViewLessonLoading] = useState(false);
 
   const fetchLessonsData = async (force:boolean=false) => {
     if (!userId) return;
@@ -309,25 +310,35 @@ export default function CoachDashboardScreen() {
   useEffect(() => {
     if (route.params?.openCoachLessonModal && route.params.lessonId && userId) {
       (async () => {
+        setViewLessonLoading(true);
         try { await lessonCacheService.clearAllCache(userId as any); } catch {}
-        // Force fetch fresh lessons
-        await fetchLessonsData(true);
-        // Fetch the single lesson to ensure we have most up-to-date registration counts / details
+        // Fetch fresh single lesson first to avoid race with lessons state
+        let fresh: Lesson | null = null;
         try {
-          const fresh = await fetchSingleLesson(route.params.lessonId);
-          // Find existing registeredCount from list (if present) otherwise default
-          const inList = lessons.find(l=> l.id === route.params.lessonId);
-          const registeredCount = inList?.registeredCount ?? fresh.registeredCount ?? 0;
-          setLessonToView({ ...fresh, registeredCount });
-          setShowViewLessonModal(true);
+          fresh = await fetchSingleLesson(route.params.lessonId);
         } catch (e) {
-          // fallback: attempt from lessons array after refresh
-          const fallback = lessons.find(l=> l.id === route.params.lessonId);
-          if (fallback) {
-            setLessonToView(fallback);
-            setShowViewLessonModal(true);
-          }
+          fresh = null;
         }
+        // In parallel (after single fetch) refresh full list silently so page reflects updates when modal closes
+        fetchLessonsData(true);
+        if (fresh) {
+          // Merge into lessons state immediately so list shows correct counts even before bulk refresh returns
+          setLessons(prev => {
+            const exists = prev.some(l=> l.id === fresh!.id);
+            if (exists) return prev.map(l=> l.id === fresh!.id ? { ...fresh!, registeredCount: fresh!.registeredCount } : l);
+            return [...prev, fresh!];
+          });
+          setLessonToView(fresh);
+          setShowViewLessonModal(true);
+        } else {
+          // fallback to whatever we have
+            const fallback = lessons.find(l=> l.id === route.params.lessonId);
+            if (fallback) {
+              setLessonToView(fallback);
+              setShowViewLessonModal(true);
+            }
+        }
+        setViewLessonLoading(false);
         (navigation as any).setParams({ openCoachLessonModal: undefined, lessonId: undefined });
       })();
     }
@@ -489,6 +500,12 @@ export default function CoachDashboardScreen() {
           setShowDeleteConfirmationModal(true);
         }}
       />
+      {viewLessonLoading && (
+        <View style={styles.inlineLoadingOverlay}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.inlineLoadingText}>Loading latest lesson...</Text>
+        </View>
+      )}
       <RegisteredClientsModal
         isOpen={showRegisteredClientsModal}
         onClose={() => {
@@ -594,4 +611,6 @@ const styles = StyleSheet.create({
   clearButtonNew:{ marginTop:14, paddingVertical:12, borderRadius:16, backgroundColor:'#1976d2', alignItems:'center', shadowColor:'#000', shadowOpacity:0.2, shadowRadius:6, shadowOffset:{ width:0, height:3 } },
   clearButtonTextNew:{ color:'#1976d2', fontWeight:'700' },
   emptyDateItem:{ width:'13%', aspectRatio:1, marginBottom:6 },
+  inlineLoadingOverlay:{ position:'absolute', top:0, left:0, right:0, bottom:0, backgroundColor:'rgba(0,0,0,0.45)', justifyContent:'center', alignItems:'center', zIndex:50 },
+  inlineLoadingText:{ marginTop:16, color:'#ffffff', fontSize:14, fontWeight:'600', letterSpacing:0.4 },
 });
