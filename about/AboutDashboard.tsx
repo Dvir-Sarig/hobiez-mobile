@@ -7,6 +7,15 @@ export default function AboutDashboard() {
   const { width } = useWindowDimensions();
   const isMobile = width < 600;
 
+  // Safety render helper to ensure any accidental raw string content
+  // is always wrapped in a <Text> to avoid "Text strings must be rendered within a <Text> component" errors.
+  const renderSectionContent = (content: React.ReactNode) => {
+    if (typeof content === 'string') {
+      return <Text style={styles.bodyText}>{content}</Text>;
+    }
+    return content;
+  };
+
   const sections = [
     {
       title: 'What is Hobinet?',
@@ -70,7 +79,7 @@ export default function AboutDashboard() {
               <MaterialIcons name={s.icon as any} size={20} color='#ffffff' />
               <Text style={styles.sectionTitle}>{s.title}</Text>
             </View>
-            {s.content}
+            {renderSectionContent(s.content)}
           </View>
         ))}
         <Text style={styles.footerNote}>Thank you for being an early adopter.</Text>
