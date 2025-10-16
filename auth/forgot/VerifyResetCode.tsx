@@ -7,34 +7,28 @@ import AuthLayout from '../components/AuthLayout';
 import { verifyPasswordResetCode } from '../services/authService';
 import { tokens, surfaces, utils } from '../../shared/design/tokens';
 
-// Screen 2: User enters tokenId (UUID) & 6-digit code
-// On success navigate to ResetPassword
+// Screen 2: User enters 6-digit code for given email. On success navigate to ResetPassword.
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'VerifyResetCode'>;
 
 const VerifyResetCode: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const route = useRoute<any>();
-  const prefEmail = route.params?.email;
+  const { email } = route.params || {};
 
-  const [tokenId, setTokenId] = useState(route.params?.tokenId || '');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   const tryVerify = async () => {
-    if (!tokenId.trim() || !code.trim()) { setError('Enter token ID and code'); return; }
     if (code.length !== 6) { setError('Code must be 6 digits'); return; }
     setLoading(true); setError(''); setSuccessMsg('');
     try {
-      const ok = await verifyPasswordResetCode(tokenId.trim(), code.trim());
-      if (!ok) {
-        setError('Invalid or expired code');
-        return;
-      }
-      setSuccessMsg('Code valid. Continue to reset password.');
-      navigation.navigate('ResetPassword', { tokenId: tokenId.trim(), code: code.trim() });
+      const ok = await verifyPasswordResetCode(email, code);
+      if (!ok) { setError('Invalid or expired code'); return; }
+      setSuccessMsg('Code valid. Continue.');
+      navigation.navigate('ResetPassword', { email, code });
     } catch (e: any) {
       setError(e.message || 'Verification failed');
     } finally { setLoading(false); }
@@ -44,26 +38,13 @@ const VerifyResetCode: React.FC = () => {
     <AuthLayout>
       <View style={styles.card}>
         <Text style={styles.title}>Verify Code</Text>
-        <Text style={styles.subtitle}>Paste the token ID (UUID) and the 6-digit code from the email we sent{prefEmail ? ` to ${prefEmail}` : ''}.</Text>
-
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Token ID (UUID)"
-            placeholderTextColor="#94a3b8"
-            autoCapitalize="none"
-            value={tokenId}
-            onChangeText={(t) => { setTokenId(t); setError(''); }}
-            returnKeyType="next"
-          />
-        </View>
+        <Text style={styles.subtitle}>Enter the 6-digit code sent to {email || 'your email'}.</Text>
 
         <View style={styles.inputGroup}>
           <TextInput
             style={styles.input}
             placeholder="6-digit code"
             placeholderTextColor="#94a3b8"
-            autoCapitalize="none"
             keyboardType="number-pad"
             value={code}
             onChangeText={(t) => { setCode(t); setError(''); }}

@@ -3,8 +3,8 @@ export type RootStackParamList = {
     SignIn: undefined;
     SignUp: { role: 'client' | 'coach' };
   ForgotPassword: undefined; // enter email
-  VerifyResetCode: { tokenId?: string; email?: string }; // enter tokenId + code, optionally prefilled email
-  ResetPassword: { tokenId: string; code: string }; // set new password
+  VerifyResetCode: { email: string }; // enter 6-digit code for given email
+  ResetPassword: { email: string; code: string }; // set new password after code verified
   
     MainDrawer: { 
       screen?: string; 

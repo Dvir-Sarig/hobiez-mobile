@@ -16,7 +16,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'ResetPassword'>;
 const ResetPassword: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const route = useRoute<any>();
-  const { tokenId, code } = route.params || {};
+  const { email, code } = route.params || {};
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -25,9 +25,7 @@ const ResetPassword: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState('');
 
   const validate = () => {
-    if (!tokenId || !code) {
-      setError('Missing token or code'); return false;
-    }
+    if (!email || !code) { setError('Missing email or code'); return false; }
     if (newPassword.length < MIN_LENGTH) { setError(`Password must be at least ${MIN_LENGTH} characters`); return false; }
     if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) { setError('Include letters and numbers'); return false; }
     if (newPassword !== confirmPassword) { setError('Passwords do not match'); return false; }
@@ -38,7 +36,7 @@ const ResetPassword: React.FC = () => {
     if (!validate()) return;
     setLoading(true); setError(''); setSuccessMsg('');
     try {
-      const res = await resetPassword(tokenId, code, newPassword, confirmPassword);
+  const res = await resetPassword(email, code, newPassword, confirmPassword);
       setSuccessMsg(res.message || 'Password updated');
       // After brief delay navigate to SignIn
       setTimeout(() => navigation.navigate('SignIn'), 1000);
@@ -51,7 +49,7 @@ const ResetPassword: React.FC = () => {
     <AuthLayout>
       <View style={styles.card}>
         <Text style={styles.title}>Set New Password</Text>
-        <Text style={styles.subtitle}>Create a strong password using at least 8 characters including letters and numbers.</Text>
+        <Text style={styles.subtitle}>Code verified for {email || 'your email'}. Choose a strong password (min 8 chars incl. letters & numbers).</Text>
 
         <View style={styles.inputGroup}>
           <TextInput

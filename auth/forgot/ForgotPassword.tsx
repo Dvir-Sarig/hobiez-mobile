@@ -25,8 +25,8 @@ const ForgotPassword: React.FC = () => {
     try {
       const res = await requestPasswordReset(email.trim());
       setStatusMessage(res.message || 'If an account exists, a reset code was sent.');
-      // Navigate to next step letting user supply tokenId + code (since backend does not return token id yet)
-      navigation.navigate('VerifyResetCode', { email: email.trim() });
+  // Navigate to code verification step
+  navigation.navigate('VerifyResetCode', { email: email.trim() });
     } catch (e: any) {
       setError(e.message || 'Unable to request reset');
     } finally { setLoading(false); }
@@ -36,7 +36,7 @@ const ForgotPassword: React.FC = () => {
     <AuthLayout>
       <View style={styles.card}>
         <Text style={styles.title}>Forgot Password</Text>
-        <Text style={styles.subtitle}>Enter the email associated with your account. We'll send a 6-digit code and a token ID link (if available).</Text>
+  <Text style={styles.subtitle}>Enter the email associated with your account. We'll send a 6-digit code to that address.</Text>
 
         <View style={styles.inputGroup}>
           <TextInput
