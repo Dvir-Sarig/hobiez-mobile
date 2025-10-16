@@ -11,6 +11,9 @@ import { AuthContext, loadAuthState, signOut } from './auth/AuthContext';
 import SignIn from './auth/signin/SignIn';
 import SignUp from './auth/signup/SignUp';
 import LandingPage from './auth/landing/LandingPage';
+import ForgotPassword from './auth/forgot/ForgotPassword';
+import VerifyResetCode from './auth/forgot/VerifyResetCode';
+import ResetPassword from './auth/forgot/ResetPassword';
 import CoachProfilePage from './profile/pages/CoachProfilePage';
 import ClientProfilePage from './profile/pages/ClientProfilePage';
 import CreateCoachProfile from './profile/components/creation/CreateCoachProfile';
@@ -137,6 +140,9 @@ export default function App() {
                   <Stack.Screen name="LandingPage" component={LandingPage} />
                   <Stack.Screen name="SignIn" component={SignIn} />
                   <Stack.Screen name="SignUp" component={SignUp} />
+                  <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+                  <Stack.Screen name="VerifyResetCode" component={VerifyResetCode} />
+                  <Stack.Screen name="ResetPassword" component={ResetPassword} />
                 </>
               ) : (
                 // Main App Stack

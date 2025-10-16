@@ -142,6 +142,10 @@ export default function SignInScreen() {
           {isLoading ? <ActivityIndicator color={tokens.colors.primaryDark} /> : <Text style={styles.primaryButtonText}>Sign In</Text>}
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate('ForgotPassword')} accessibilityLabel="Forgot password">
+          <Text style={styles.forgotBtnText}>Forgot password?</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.secondaryGhostBtn} onPress={() => navigation.navigate('SignUp', { role: userType.toLowerCase() as 'client' | 'coach' })}>
           <Text style={styles.secondaryGhostBtnText}>Need an account? Sign Up</Text>
         </TouchableOpacity>
@@ -173,6 +177,8 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: tokens.colors.textOnDark, fontSize: 16, fontWeight: tokens.fontWeight.bold as any },
   secondaryGhostBtn: { marginTop: tokens.space.md, paddingVertical: tokens.space.sm, alignItems: 'center' },
   secondaryGhostBtnText: { color: tokens.colors.textOnDark, fontSize: 14, fontWeight: tokens.fontWeight.semibold as any, textDecorationLine: 'underline' },
+  forgotBtn: { marginTop: tokens.space.sm, alignItems: 'center' },
+  forgotBtnText: { color: tokens.colors.textOnDark, fontSize: 13, fontWeight: tokens.fontWeight.medium as any, textDecorationLine: 'underline' },
   errorContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(220,53,69,0.10)', padding: tokens.space.sm, borderRadius: tokens.radius.sm, marginBottom: tokens.space.md },
   errorText: { color: tokens.colors.error, marginLeft: 6, fontSize: 13, fontWeight: tokens.fontWeight.medium as any },
 });

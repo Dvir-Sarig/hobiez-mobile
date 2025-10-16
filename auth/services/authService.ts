@@ -183,3 +183,64 @@ export const signOut = async () => {
     }
 };
 
+// ---------------- Password Reset Flow -----------------
+// Backend endpoints:
+// POST /auth/password/forgot { email }
+//   -> Always returns 200 OK with generic message (never reveals if email exists)
+//   -> DOES NOT currently return tokenId. User receives email containing reset code and (ideally) tokenId.
+// POST /auth/password/verify { tokenId, code }
+//   -> 200 OK if valid, 400 otherwise.
+// POST /auth/password/reset { tokenId, code, newPassword, confirmPassword }
+//   -> 200 OK if success, 400 otherwise.
+// NOTE: Since /forgot does not return tokenId, the app must ask user to paste tokenId (UUID) from email.
+// If backend is later changed to return tokenId, we can store & forward automatically.
+// UX Flow (current implementation):
+// 1. ForgotPassword screen: user enters email -> requestPasswordReset() -> navigate to VerifyResetCode.
+// 2. VerifyResetCode screen: user pastes tokenId (from email link) + 6-digit code -> verifyPasswordResetCode().
+//    If valid navigate to ResetPassword.
+// 3. ResetPassword screen: user sets new password -> resetPassword(). On success returns to SignIn.
+// Security considerations: Always generic responses, rate limiting handled server-side. We do not store tokenId or code locally beyond navigation params.
+
+export interface PasswordResetGenericResponse { message: string }
+
+const parseJsonSafe = async (response: Response) => {
+    try { return await response.json(); } catch { return {}; }
+};
+
+export const requestPasswordReset = async (email: string): Promise<PasswordResetGenericResponse> => {
+    const res = await fetch(`${API_BASE_URL}/auth/password/forgot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    });
+    const data = await parseJsonSafe(res) as PasswordResetGenericResponse;
+    if (!res.ok) {
+        // Still surface generic message
+        throw new Error(data.message || 'Unable to request reset');
+    }
+    return data;
+};
+
+export const verifyPasswordResetCode = async (tokenId: string, code: string): Promise<boolean> => {
+    const res = await fetch(`${API_BASE_URL}/auth/password/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tokenId, code })
+    });
+    if (res.ok) return true;
+    return false;
+};
+
+export const resetPassword = async (tokenId: string, code: string, newPassword: string, confirmPassword: string): Promise<PasswordResetGenericResponse> => {
+    const res = await fetch(`${API_BASE_URL}/auth/password/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tokenId, code, newPassword, confirmPassword })
+    });
+    const data = await parseJsonSafe(res) as PasswordResetGenericResponse;
+    if (!res.ok) {
+        throw new Error(data.message || 'Reset failed');
+    }
+    return data;
+};
+

@@ -2,6 +2,9 @@ export type RootStackParamList = {
     LandingPage: undefined;
     SignIn: undefined;
     SignUp: { role: 'client' | 'coach' };
+  ForgotPassword: undefined; // enter email
+  VerifyResetCode: { tokenId?: string; email?: string }; // enter tokenId + code, optionally prefilled email
+  ResetPassword: { tokenId: string; code: string }; // set new password
   
     MainDrawer: { 
       screen?: string; 
