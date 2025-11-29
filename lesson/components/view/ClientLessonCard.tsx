@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Animated,
   Platform,
+  Pressable,
 } from 'react-native';
 import { Avatar } from 'react-native-paper';
 import { Lesson } from '../../types/Lesson';
@@ -18,46 +19,45 @@ interface ClientLessonCardsProps {
   coachInfoMap: { [key: string]: { name: string; email: string } };
   onOpenLessonModal: (lesson: Lesson) => void;
   isLoading?: boolean;
+  returnScrollY?: number; // added for returning to same position
 }
 
+// Glassy loading skeleton aligned with new compact layout
 const LoadingSkeleton = () => {
-  const animatedValue = new Animated.Value(0);
+  const animatedValue = useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(animatedValue, {
           toValue: 1,
-          duration: 1000,
-          useNativeDriver: Platform.OS !== 'web',
+            duration: 1100,
+            useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(animatedValue, {
           toValue: 0,
-          duration: 1000,
+          duration: 1100,
           useNativeDriver: Platform.OS !== 'web',
         }),
       ])
     ).start();
-  }, []);
+  }, [animatedValue]);
 
-  const opacity = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.3, 0.7],
-  });
+  const pulse = animatedValue.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.75] });
 
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <Animated.View style={[styles.avatar, { opacity }]} />
-        <View style={styles.headerTextContainer}>
-          <Animated.View style={[styles.skeletonTitle, { opacity }]} />
-          <Animated.View style={[styles.skeletonTime, { opacity }]} />
+    <View style={styles.card}>      
+      <View style={styles.rowTop}>        
+        <Animated.View style={[styles.skelAvatar, { opacity: pulse }]} />
+        <View style={styles.titleTimeContainer}>
+          <Animated.View style={[styles.skelTitle, { opacity: pulse }]} />
+          <Animated.View style={[styles.skelTime, { opacity: pulse }]} />
         </View>
-        <Animated.View style={[styles.skeletonButton, { opacity }]} />
+        <Animated.View style={[styles.skelPill, { opacity: pulse }]} />
       </View>
-      <View style={styles.details}>
-        <Animated.View style={[styles.skeletonDetail, { opacity }]} />
-        <Animated.View style={[styles.skeletonDetail, { opacity }]} />
+      <View style={styles.metaRow}>        
+        <Animated.View style={[styles.skelMeta, { width: '30%', opacity: pulse }]} />
+        <Animated.View style={[styles.skelMeta, { width: '55%', opacity: pulse }]} />
       </View>
     </View>
   );
@@ -68,8 +68,14 @@ const ClientLessonCards: React.FC<ClientLessonCardsProps> = ({
   coachInfoMap,
   onOpenLessonModal,
   isLoading = false,
+  returnScrollY = 0,
 }) => {
   const navigation = useNavigation<any>();
+
+  const sortedLessons = useMemo(
+    () => [...lessons].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()),
+    [lessons]
+  );
 
   if (isLoading) {
     return (
@@ -94,164 +100,196 @@ const ClientLessonCards: React.FC<ClientLessonCardsProps> = ({
 
   return (
     <View style={styles.container}>
-      {lessons
-        .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
-        .map((lesson) => {
-          const coachInfo = coachInfoMap[lesson.coachId];
-          const coachName = coachInfo?.name || 'Loading...';
-          const { IconComponent, iconName } = getLessonIcon(lesson.title);
+      {sortedLessons.map((lesson) => {
+        const coachInfo = coachInfoMap[lesson.coachId];
+        const coachName = coachInfo?.name || '...';
+        const { IconComponent, iconName } = getLessonIcon(lesson.title);
+        const registered = lesson.registeredCount ?? 0;
+        const capacity = lesson.capacityLimit ?? 0;
+        const capacityRatio = capacity > 0 ? registered / capacity : 0;
+        const capacityColor = capacityRatio >= 1
+          ? '#ff5252'
+          : capacityRatio >= 0.75
+            ? '#ffa726'
+            : '#64b5f6';
 
-          return (
-            <View key={lesson.id} style={styles.card}>
-              <View style={styles.header}>
+        // Animated press feedback
+        const scale = new Animated.Value(1);
+        const onPressIn = () => {
+          Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 40, bounciness: 6 }).start();
+        };
+        const onPressOut = () => {
+          Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }).start();
+        };
+
+        const locationText = lesson.location?.address
+          ? lesson.location.address
+          : [lesson.location?.city, lesson.location?.country].filter(Boolean).join(', ');
+
+        return (
+          <Animated.View key={lesson.id} style={[styles.card, { transform: [{ scale }] }]}>            
+            <Pressable
+              android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+              style={styles.pressable}
+              onPressIn={onPressIn}
+              onPressOut={onPressOut}
+              onPress={() => onOpenLessonModal(lesson)}
+            >
+              <View style={styles.rowTop}>
                 <Avatar.Icon
-                  size={40}
-                  icon={() => <IconComponent name={iconName} size={24} color="#fff" />}
-                  style={{ backgroundColor: '#1976d2' }}
+                  size={42}
+                  icon={() => <IconComponent name={iconName} size={22} color="#fff" />}
+                  style={styles.lessonIcon}
                 />
-                <View style={styles.headerTextContainer}>
-                  <Text style={styles.title}>{lesson.title}</Text>
-                  <Text style={styles.time}>{formatLessonTimeReadable(lesson.time)}</Text>
+                <View style={styles.titleTimeContainer}>
+                  <Text numberOfLines={1} style={styles.title}>{lesson.title}</Text>
+                  <Text style={styles.time}>🕒 {formatLessonTimeReadable(lesson.time)}</Text>
                 </View>
-                <TouchableOpacity 
-                  style={styles.viewButton}
-                  onPress={() => onOpenLessonModal(lesson)}
-                >
-                  <Text style={styles.viewButtonText}>View</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.details}>
-                <TouchableOpacity onPress={() => navigation.navigate('CoachProfilePage', { coachId: lesson.coachId })}>
-                  <Text style={styles.coach}>👤 {coachName}</Text>
-                </TouchableOpacity>
-                <Text style={styles.capacity}>👥 {lesson.registeredCount ?? 0}/{lesson.capacityLimit ?? 0}</Text>
-              </View>
-              <View style={styles.locationRow}>
-                <Text style={styles.location}>
-                  📍 {lesson.location?.address
-                     ? lesson.location.address
-                     : [lesson.location?.city, lesson.location?.country].filter(Boolean).join(', ')
-                   }
-                 </Text>
+                <View style={[styles.capacityPill, { borderColor: capacityColor }]}>                  
+                  <Text style={[styles.capacityText, { color: capacityColor }]}>👥 {registered}/{capacity}</Text>
                 </View>
-            </View>
-          );
-        })}
+              </View>
+              <View style={styles.metaRow}>                
+                <TouchableOpacity onPress={() => navigation.navigate('CoachProfilePage', { coachId: lesson.coachId, originScreen: 'SearchLessons', originTab: 'available', returnScrollY })}>
+                  <Text numberOfLines={1} style={styles.metaCoach}>👤 {coachName}</Text>
+                </TouchableOpacity>
+                {locationText ? (
+                  <Text numberOfLines={1} style={styles.metaLocation}>📍 {locationText}</Text>
+                ) : null}
+              </View>
+            </Pressable>
+          </Animated.View>
+        );
+      })}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-  },
+  container: { padding: 12 },
   card: {
-    backgroundColor: '#e3f2fd',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 3,
+    position: 'relative',
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    overflow: 'hidden',
   },
-  header: {
+  pressable: { flex: 1 },
+  rowTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: 6,
   },
-  headerTextContainer: {
-    flex: 1,
-    marginLeft: 12,
+  lessonIcon: {
+    backgroundColor: '#1976d2',
   },
+  titleTimeContainer: { flex: 1, marginLeft: 12 },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
+    letterSpacing: 0.2,
+    color: '#fff',
+    marginBottom: 2,
   },
   time: {
-    fontSize: 14,
-    color: '#546e7a',
+    fontSize: 12.5,
+    color: 'rgba(255,255,255,0.75)',
+    fontWeight: '500',
   },
-  details: {
-    marginTop: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  coach: {
-    fontSize: 14,
-    color: '#1565c0',
-  },
-  capacity: {
-    fontSize: 14,
-    color: '#546e7a',
-  },
-  viewButton: {
-    backgroundColor: '#1976d2',
-    paddingHorizontal: 12,
+  capacityPill: {
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 40,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderWidth: 1,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
   },
-  viewButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+  capacityText: {
     fontSize: 12,
+    fontWeight: '600',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  metaCoach: {
+    fontSize: 13.5,
+    color: 'rgba(255,255,255,0.95)',
+    fontWeight: '500',
+    maxWidth: 140,
+  },
+  metaLocation: {
+    flex: 1,
+    fontSize: 12.5,
+    color: 'rgba(255,255,255,0.70)',
+    textAlign: 'right',
   },
   noResultsContainer: {
-    padding: 24,
+    padding: 28,
     alignItems: 'center',
-    backgroundColor: '#e3f2fd',
-    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 18,
     margin: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   noResultsTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1976d2',
-    marginBottom: 8,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 6,
   },
   noResultsText: {
     fontSize: 14,
-    color: '#546e7a',
+    color: 'rgba(255,255,255,0.75)',
     textAlign: 'center',
     lineHeight: 20,
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#90caf9',
+  // Skeleton styles (glassy look)
+  skelAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
-  skeletonTitle: {
-    height: 16,
-    backgroundColor: '#90caf9',
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  skeletonTime: {
+  skelTitle: {
     height: 14,
-    width: '60%',
-    backgroundColor: '#90caf9',
-    borderRadius: 4,
-  },
-  skeletonButton: {
-    width: 60,
-    height: 24,
-    backgroundColor: '#90caf9',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 6,
+    marginBottom: 6,
+    width: '70%',
   },
-  skeletonDetail: {
+  skelTime: {
+    height: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 6,
+    width: '45%',
+  },
+  skelPill: {
+    height: 28,
+    width: 70,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    marginLeft: 10,
+  },
+  skelMeta: {
     height: 14,
-    width: '40%',
-    backgroundColor: '#90caf9',
-    borderRadius: 4,
-    marginTop: 8,
-  },
-  locationRow: {
-    marginTop: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  location: {
-    fontSize: 13,
-    color: '#757575',
-    flexShrink: 1,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 6,
+    marginTop: 10,
   },
 });
 

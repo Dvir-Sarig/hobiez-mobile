@@ -23,23 +23,25 @@ export default function ClientProfileView({
       <View style={styles.section}>
         <SectionHeader icon="sports" title="Hobbies" />
         <View style={styles.chipContainer}>
-          {profileData.hobbies?.map((hobby, index) => (
-            <View key={index} style={styles.primaryChip}>
-              <Text style={styles.chipText}>{hobby}</Text>
+          {profileData.hobbies?.map((hobby, i) => (
+            <View key={i} style={styles.primaryChip}>
+              <Text style={styles.primaryChipText}>{hobby}</Text>
             </View>
           ))}
+          {(!profileData.hobbies || profileData.hobbies.length===0) && <Text style={styles.emptyText}>No hobbies added yet</Text>}
         </View>
       </View>
 
       {/* Languages */}
-      <View style={[styles.section, { marginBottom: 32 }]}>
+      <View style={[styles.section,{marginBottom:42}]}>
         <SectionHeader icon="language" title="Languages" />
         <View style={styles.chipContainer}>
-          {profileData.genericProfile.languages?.map((lang, index) => (
-            <View key={index} style={styles.secondaryChip}>
+          {profileData.genericProfile.languages?.map((lang,i)=>(
+            <View key={i} style={styles.secondaryChip}>
               <Text style={styles.secondaryChipText}>{lang}</Text>
             </View>
           ))}
+          {(!profileData.genericProfile.languages || profileData.genericProfile.languages.length===0) && <Text style={styles.emptyText}>No languages listed</Text>}
         </View>
       </View>
     </BaseProfileView>
@@ -49,7 +51,9 @@ export default function ClientProfileView({
 function SectionHeader({ icon, title }: { icon: any; title: string }) {
   return (
     <View style={styles.sectionHeader}>
-      <MaterialIcons name={icon} size={20} color="#1976d2" style={styles.icon} />
+      <View style={styles.sectionIconWrapper}>
+        <MaterialIcons name={icon} size={18} color="#1976d2" />
+      </View>
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   );
@@ -57,59 +61,78 @@ function SectionHeader({ icon, title }: { icon: any; title: string }) {
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 20,
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    padding: 18,
+    borderRadius: 22,
+    marginTop: 18,
+    shadowColor: '#0d47a1',
     shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 14,
   },
-  icon: {
-    marginRight: 8,
+  sectionIconWrapper: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#e3f2fd',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1a237e',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0d47a1',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginTop: 4,
   },
   primaryChip: {
-    backgroundColor: '#bbdefb',
+    backgroundColor: '#1976d2',
     paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 18,
-    marginRight: 8,
-    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
-  chipText: {
-    fontSize: 14,
-    color: '#0d47a1',
+  primaryChipText: {
+    color: '#fff',
+    fontSize: 13,
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
   secondaryChip: {
-    backgroundColor: '#f8bbd0',
+    backgroundColor: '#1565c0',
     paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 18,
-    marginRight: 8,
-    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
   secondaryChipText: {
-    fontSize: 14,
-    color: '#880e4f',
+    color: '#fff',
+    fontSize: 13,
     fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  emptyText: {
+    color: '#607d8b',
+    fontSize: 13,
+    fontStyle: 'italic',
   },
 });

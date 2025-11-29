@@ -38,8 +38,9 @@ yarn-error.*
 
 # 🔐 Local environment variables
 .env
-.env.*.local
+.env.*
 .env.local
 
 # 🧾 TypeScript build artifacts
 *.tsbuildinfo
+.github/chatmodes/beast-mode.chatmode.md

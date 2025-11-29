@@ -43,7 +43,7 @@ export const signOut = async () => {
     if (userId) {
       await profileCacheService.clearUserProfile(userId);
     }
-    await SecureStorage.clearAll();
+    await SecureStorage.clearAuthState();
   } catch (error) {
     console.error('Error signing out:', error);
     throw error;

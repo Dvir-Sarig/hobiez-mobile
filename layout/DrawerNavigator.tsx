@@ -17,6 +17,7 @@ import CoachCalendarView from '../calendars/coach/CoachCalendarView';
 import CreateCoachProfile from '../profile/components/creation/CreateCoachProfile';
 import CreateClientProfile from '../profile/components/creation/CreateClientProfile';
 import { DrawerActions } from '@react-navigation/native';
+import SettingsScreen from '../settings/SettingsScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -91,6 +92,10 @@ const DrawerNavigator = ({ userType, initialScreen }: { userType: string | null;
       <Drawer.Screen 
         name="About" 
         component={AboutDashboard}
+      />
+      <Drawer.Screen 
+        name="Settings" 
+        component={SettingsScreen}
       />
       <Drawer.Screen 
         name="CoachProfilePage" 

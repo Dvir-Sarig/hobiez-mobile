@@ -1,5 +1,5 @@
 // components/LocationField.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  Dimensions,
+  Pressable,
+  Modal,
 } from 'react-native';
 import { Location } from '../../profile/types/profile';
 import { GOOGLE_MAPS_API_KEY } from '../../shared/config';
@@ -16,16 +19,23 @@ interface LocationFieldProps {
   location: Location;
   onLocationSelect: (location: Location) => void;
   label?: string;
+  hideLabel?: boolean;
 }
 
 const LocationField: React.FC<LocationFieldProps> = ({
   location,
   onLocationSelect,
   label = 'Location',
+  hideLabel = false,
 }) => {
   const [searchText, setSearchText] = useState('');
   const [predictions, setPredictions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPortal, setShowPortal] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ x: 0, y: 0, width: 0 });
+  const inputContainerRef = useRef<View | null>(null);
+
+  const screenHeight = Dimensions.get('window').height;
 
   useEffect(() => {
     const searchPlaces = async () => {
@@ -34,7 +44,7 @@ const LocationField: React.FC<LocationFieldProps> = ({
         return;
       }
 
-      setIsLoading(true);
+  setIsLoading(true);
       try {
         const response = await fetch(
           `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
@@ -42,10 +52,23 @@ const LocationField: React.FC<LocationFieldProps> = ({
           )}&types=(cities)&key=${GOOGLE_MAPS_API_KEY}`
         );
         const data = await response.json();
-        setPredictions(data.predictions || []);
+        const list = data.predictions || [];
+        setPredictions(list);
+        if (list.length) {
+          // ensure portal open and position measured
+          requestAnimationFrame(() => {
+            inputContainerRef.current?.measureInWindow((x, y, width) => {
+              setDropdownPos({ x, y: y + 45, width });
+              setShowPortal(true);
+            });
+          });
+        } else {
+          setShowPortal(false);
+        }
       } catch (error) {
         console.error('Error fetching predictions:', error);
         setPredictions([]);
+        setShowPortal(false);
       } finally {
         setIsLoading(false);
       }
@@ -77,6 +100,7 @@ const LocationField: React.FC<LocationFieldProps> = ({
         });
         setSearchText('');
         setPredictions([]);
+        setShowPortal(false);
       }
     } catch (error) {
       console.error('Error fetching place details:', error);
@@ -85,9 +109,34 @@ const LocationField: React.FC<LocationFieldProps> = ({
     }
   };
 
+  const renderDropdown = () => (
+    <Modal visible={showPortal && !!predictions.length} transparent animationType="fade" onRequestClose={()=>{ setShowPortal(false); setPredictions([]); }}>
+      <View style={styles.modalRoot}>
+        <Pressable style={styles.modalBackdrop} onPress={()=>{ setShowPortal(false); setPredictions([]); }} />
+        {/* Position container */}
+        <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+          {predictions.length ? (()=>{
+            const availableBelow = screenHeight - dropdownPos.y - 20;
+            const maxHeight = Math.min(availableBelow, 300);
+            return (
+              <View style={[styles.portalDropdown, { top: dropdownPos.y, left: dropdownPos.x, width: dropdownPos.width, maxHeight }]}> 
+                {predictions.map(item => (
+                  <TouchableOpacity key={item.place_id} style={styles.predictionItem} onPress={()=> handlePlaceSelect(item.place_id)}>
+                    <Text style={styles.predictionText}>{item.description}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            );
+          })(): null}
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+    <>
+  <View style={styles.container} ref={(ref)=> { inputContainerRef.current = ref; }}>
+      {!hideLabel && <Text style={styles.label}>{label}</Text>}
 
       <View style={styles.searchContainer}>
         <TextInput
@@ -99,19 +148,7 @@ const LocationField: React.FC<LocationFieldProps> = ({
         {isLoading && <ActivityIndicator style={styles.loader} />}
       </View>
 
-      {predictions.length > 0 && (
-        <View style={styles.predictionsList}>
-          {predictions.map((item) => (
-            <TouchableOpacity
-              key={item.place_id}
-              style={styles.predictionItem}
-              onPress={() => handlePlaceSelect(item.place_id)}
-            >
-              <Text style={styles.predictionText}>{item.description}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
+      {/* inline list removed in favor of portal dropdown */}
 
       {location?.city ? (
         <View style={styles.locationBadge}>
@@ -129,6 +166,8 @@ const LocationField: React.FC<LocationFieldProps> = ({
         </View>
       ) : null}
     </View>
+    {renderDropdown()}
+    </>
   );
 };
 
@@ -136,6 +175,8 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     marginTop: 10,
+    position: 'relative', // ensure absolute list anchors here
+    zIndex: 50,
   },
   label: {
     fontWeight: 'bold',
@@ -167,23 +208,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 6,
-    maxHeight: 200,
+    borderRadius: 8,
+    maxHeight: 260,
     zIndex: 9999,
-    elevation: 5,
+    elevation: 20,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.30,
+    shadowRadius: 8,
   },
   predictionItem: {
     padding: 13,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
+  portalDropdown:{
+    position:'absolute',
+    backgroundColor:'#fff',
+    borderRadius:8,
+    borderWidth:1,
+    borderColor:'#ccc',
+    shadowColor:'#000',
+    shadowOpacity:0.25,
+    shadowRadius:8,
+    shadowOffset:{ width:0, height:4 },
+    elevation:25,
+    overflow:'hidden',
+    zIndex:10000,
+  },
+  backdrop:{
+    ...StyleSheet.absoluteFillObject,
+  },
+  modalRoot:{ flex:1 },
+  modalBackdrop:{ ...StyleSheet.absoluteFillObject, backgroundColor:'transparent' },
   predictionText: {
     fontSize: 14,
   },

@@ -14,12 +14,13 @@ export const signIn = async (
     userType: UserType
 ): Promise<any> => {
     try {
+        const payload: any = { email, password, userType };
         const response = await fetch(`${API_BASE_URL}/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password, userType })
+            body: JSON.stringify(payload)
         });
 
         let data;
@@ -165,7 +166,7 @@ export const logout = async () => {
     } catch (error) {
         console.error('Logout error:', error);
     } finally {
-        await SecureStorage.clearAll();
+        await SecureStorage.clearAuthState();
     }
 };
 
@@ -175,10 +176,66 @@ export const signOut = async () => {
         if (userId) {
             await profileCacheService.clearUserProfile(userId);
         }
-        await SecureStorage.clearAll();
+        await SecureStorage.clearAuthState();
     } catch (error) {
         console.error('Error signing out:', error);
         throw error;
     }
+};
+
+// ---------------- Password Reset Flow -----------------
+// Backend endpoints (flow with separate verification):
+// POST /auth/password/forgot { email }
+//   -> Always 200 OK generic message.
+// POST /auth/password/verify { email, code }
+//   -> 200 OK if valid, 400 otherwise.
+// POST /auth/password/reset { email, code, newPassword, confirmPassword }
+//   -> 200 OK if success, 400 otherwise.
+// UX Flow:
+// 1. ForgotPassword screen: user enters email -> requestPasswordReset() -> navigate to VerifyResetCode(email).
+// 2. VerifyResetCode screen: user enters 6-digit code -> verifyPasswordResetCode(email, code). On success navigate to ResetPassword(email, code).
+// 3. ResetPassword screen: user enters new password -> resetPassword(email, code, newPassword, confirmPassword). On success navigate to SignIn.
+// Security: Server enforces attempt limits & expiry; app exposes minimal error messaging.
+
+export interface PasswordResetGenericResponse { message: string }
+
+const parseJsonSafe = async (response: Response) => {
+    try { return await response.json(); } catch { return {}; }
+};
+
+export const requestPasswordReset = async (email: string): Promise<PasswordResetGenericResponse> => {
+    const res = await fetch(`${API_BASE_URL}/auth/password/forgot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    });
+    const data = await parseJsonSafe(res) as PasswordResetGenericResponse;
+    if (!res.ok) {
+        // Still surface generic message
+        throw new Error(data.message || 'Unable to request reset');
+    }
+    return data;
+};
+
+export const resetPassword = async (email: string, code: string, newPassword: string, confirmPassword: string): Promise<PasswordResetGenericResponse> => {
+    const res = await fetch(`${API_BASE_URL}/auth/password/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code, newPassword, confirmPassword })
+    });
+    const data = await parseJsonSafe(res) as PasswordResetGenericResponse;
+    if (!res.ok) {
+        throw new Error(data.message || 'Reset failed');
+    }
+    return data;
+};
+
+export const verifyPasswordResetCode = async (email: string, code: string): Promise<boolean> => {
+    const res = await fetch(`${API_BASE_URL}/auth/password/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code })
+    });
+    return res.ok;
 };
 

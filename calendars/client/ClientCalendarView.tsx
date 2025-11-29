@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Alert, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { View, Text, Alert, StyleSheet, TouchableOpacity, ScrollView, Platform, Dimensions } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar } from 'react-native-big-calendar';
 import dayjs from 'dayjs';
@@ -17,6 +17,7 @@ import { CalendarEvent } from '../shared/types/calendar.types';
 import { formatLessonTimeReadable } from '../../shared/services/formatService';
 import { RootStackParamList } from '../../types';
 import { lessonCacheService } from '../../lesson/services/lessonCacheService';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -31,9 +32,12 @@ const ClientCalendarView: React.FC = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [selectedDateLessons, setSelectedDateLessons] = useState<Lesson[]>([]);
+  const [weekAnchor, setWeekAnchor] = useState(dayjs());
 
   const { userId } = useAuth();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<any>();
+  const origin = route.params?.origin;
 
   const handleOpenModal = (lesson: Lesson) => {
     setSelectedLesson(lesson);
@@ -98,8 +102,6 @@ const ClientCalendarView: React.FC = () => {
   const handleDateSelect = (date: Date) => {
     const selectedDay = dayjs(date);
     setSelectedDate(selectedDay);
-    
-    // Filter lessons for the selected date
     const lessonsForDate = events
       .filter(event => dayjs(event.start).isSame(selectedDay, 'day'))
       .map(event => ({
@@ -114,14 +116,12 @@ const ClientCalendarView: React.FC = () => {
         capacityLimit: event.capacityLimit,
         registeredCount: event.registeredCount,
       }));
-    
     setSelectedDateLessons(lessonsForDate);
   };
 
   const fetchLessons = useCallback(async () => {
     if (userId) {
       try {
-        // Try to get from cache first
         const cachedLessons = await lessonCacheService.getRegisteredLessons(userId);
         if (cachedLessons) {
           const formattedLessons = cachedLessons.map((lesson: Lesson) => {
@@ -129,23 +129,18 @@ const ClientCalendarView: React.FC = () => {
             return formatLessonToEvent(lesson);
           });
           setEvents(formattedLessons);
-          return;
+        } else {
+          const lessons = await fetchClientRegisteredLessons(userId);
+          const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(lessons);
+            const formattedLessons = lessonsWithCounts.map((lesson: Lesson) => {
+              fetchCoachInfoData(lesson.coachId);
+              return formatLessonToEvent(lesson);
+            });
+          await lessonCacheService.setRegisteredLessons(userId, lessonsWithCounts);
+          setEvents(formattedLessons);
         }
-
-        // If not in cache, fetch from API
-        const lessons = await fetchClientRegisteredLessons(userId);
-        const lessonsWithCounts = await fetchLessonsWithRegistrationCounts(lessons);
-        
-        // Cache the results
-        await lessonCacheService.setRegisteredLessons(userId, lessonsWithCounts);
-        
-        const formattedLessons = lessonsWithCounts.map((lesson: Lesson) => {
-          fetchCoachInfoData(lesson.coachId);
-          return formatLessonToEvent(lesson);
-        });
-        setEvents(formattedLessons);
       } catch (error) {
-        console.error('Error fetching registered lessons:', error);
+        // silently ignore or handle error UI elsewhere
       }
     }
   }, [userId]);
@@ -164,256 +159,231 @@ const ClientCalendarView: React.FC = () => {
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       fetchLessons();
+      // If returning from coach profile with a request to reopen a lesson modal
+      const openClientCalendarLessonModal = route.params?.openClientCalendarLessonModal;
+      const lessonId = route.params?.lessonId;
+      const weekAnchorDate = route.params?.weekAnchorDate;
+      const selectedDateParam = route.params?.selectedDate;
+      if (weekAnchorDate) {
+        const wa = dayjs(weekAnchorDate);
+        if (wa.isValid()) setWeekAnchor(wa);
+      }
+      if (selectedDateParam) {
+        const sd = dayjs(selectedDateParam);
+        if (sd.isValid()) setSelectedDate(sd);
+      }
+      if (openClientCalendarLessonModal && lessonId) {
+        const ev = events.find(e=> e.id === lessonId);
+        if (ev) {
+          const lesson: Lesson = {
+            id: ev.id as number,
+            title: ev.title,
+            description: ev.description || '',
+            time: ev.start.toISOString(),
+            duration: ev.duration,
+            price: ev.price,
+            location: ev.location,
+            coachId: ev.coachId,
+            capacityLimit: ev.capacityLimit,
+            registeredCount: ev.registeredCount,
+          };
+          setSelectedLesson(lesson);
+          setIsModalOpen(true);
+        }
+        (navigation as any).setParams({ openClientCalendarLessonModal: undefined, lessonId: undefined });
+      }
     });
 
     return unsubscribe;
-  }, [navigation, fetchLessons]);
+  }, [navigation, fetchLessons, events, route.params]);
 
-  const renderLessonCard = (lesson: Lesson) => (
-    <TouchableOpacity
-      key={lesson.id}
-      style={styles.lessonCard}
-      onPress={() => handleOpenModal(lesson)}
-    >
-      <View style={styles.lessonHeader}>
-        <Text style={styles.lessonTitle}>{lesson.title}</Text>
-        <Text style={styles.lessonTime}>
-          {formatLessonTimeReadable(lesson.time)}
-        </Text>
-      </View>
-      
-      <View style={styles.lessonDetails}>
-        <View style={styles.detailRow}>
-          <Icon name="person" size={16} color="#666" />
-          <Text style={styles.detailText}>
-            {coachInfoMap[lesson.coachId]?.name || 'Loading...'}
-          </Text>
+  // Lesson type visual mapping (inferred from title if no explicit type prop)
+  const lessonTypeMap: Record<string,{abbr:string; bg:string; border:string}> = {
+    Tennis:{ abbr:'TN', bg:'#fff3e0', border:'#ffb74d' },
+    Yoga:{ abbr:'YG', bg:'#e0f2f1', border:'#26a69a' },
+    Surf:{ abbr:'SF', bg:'#e0f7fa', border:'#26c6da' },
+    Football:{ abbr:'FB', bg:'#e8f5e9', border:'#66bb6a' },
+    Basketball:{ abbr:'BB', bg:'#fbe9e7', border:'#ff8a65' },
+    Paddle:{ abbr:'PD', bg:'#ede7f6', border:'#9575cd' }
+  };
+  const inferType = (title:string) => {
+    const key = Object.keys(lessonTypeMap).find(k => new RegExp(`(^|\\s)${k}(\\s|$)`,`i`).test(title));
+    return key || 'Tennis';
+  };
+
+  const goPrevWeek = () => { const d = weekAnchor.subtract(1,'week'); setWeekAnchor(d); handleDateSelect(d.toDate()); };
+  const goNextWeek = () => { const d = weekAnchor.add(1,'week'); setWeekAnchor(d); handleDateSelect(d.toDate()); };
+  const goToday = () => { const d = dayjs(); setWeekAnchor(d); handleDateSelect(d.toDate()); };
+
+  const weekRangeLabel = useMemo(()=>{ const start = weekAnchor.startOf('week').add(1,'day'); const end = start.add(6,'day'); return `${start.format('MMM D')} – ${end.format(start.month()!==end.month()? 'MMM D':'D, YYYY')}`; },[weekAnchor]);
+
+  const renderLessonCard = (lesson: Lesson) => {
+    const typeKey = inferType(lesson.title);
+    const visual = lessonTypeMap[typeKey];
+    const fillPct = Math.min(100, ((lesson.registeredCount||0)/(lesson.capacityLimit||1))*100);
+    return (
+      <TouchableOpacity key={lesson.id} style={styles.dayLessonCard} onPress={()=>handleOpenModal(lesson)} activeOpacity={0.85}> 
+        {/* debug time placement */}
+        {false && <Text style={{fontSize:9,color:'#555'}}>DBG {dayjs(lesson.time).format('HH:mm')}</Text>}
+        <View style={[styles.typeBadge,{backgroundColor:visual.bg, borderColor:visual.border}]}> 
+          <Text style={[styles.typeBadgeText,{color:'#0d47a1'}]}>{visual.abbr}</Text>
         </View>
-        
-        {lesson.location && (
-          <View style={styles.detailRow}>
-            <Icon name="location-on" size={16} color="#666" />
-            <Text style={styles.detailText}>
-              {lesson.location.address || `${lesson.location.city}, ${lesson.location.country}`}
-            </Text>
-          </View>
-        )}
-        
-        <View style={styles.detailRow}>
-          <Icon name="timer" size={16} color="#666" />
-          <Text style={styles.detailText}>{lesson.duration} minutes</Text>
+        <View style={{flex:1}}>
+          <Text style={styles.dayLessonTitle} numberOfLines={1}>{lesson.title}</Text>
+          <Text style={styles.dayLessonMeta} numberOfLines={1}>{dayjs(lesson.time).format('HH:mm')} · {lesson.duration}m · {(lesson.registeredCount||0)}/{lesson.capacityLimit}</Text>
+          {lesson.location && <Text style={styles.dayLessonLocation} numberOfLines={1}>{lesson.location.address || `${lesson.location.city}, ${lesson.location.country}`}</Text>}
+          <View style={styles.capacityBar}><View style={[styles.capacityFill,{width:`${fillPct}%`}]} /></View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('MainDrawer', { screen: 'SearchLessons' })}>
-          <Icon name="arrow-back" size={24} color="#1976d2" />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Icon name="calendar-today" size={24} color="#1976d2" style={styles.headerIcon} />
-          <Text style={styles.headerTitle}>My Schedule</Text>
+    <LinearGradient colors={['#0d47a1','#1565c0','#1e88e5']} style={styles.gradientContainer}>
+      <View style={styles.overlayLayer}> 
+        {/* Header */}
+        <View style={styles.headerPolished}> 
+          <TouchableOpacity onPress={() => {
+            (navigation as any).navigate('SearchLessons', { focusRegistered: true });
+          }} style={styles.headerIconBtn} accessibilityLabel="Back to registered lessons"> 
+            <Icon name="arrow-back" size={20} color="#ffffff" />
+          </TouchableOpacity>
+          <View style={{flex:1}}>
+            <Text style={styles.headerTitle}>My Schedule</Text>
+            <Text style={styles.headerSubtitle}>{weekRangeLabel}</Text>
+          </View>
+          <View style={styles.navControls}> 
+            <TouchableOpacity onPress={goPrevWeek} style={styles.navPill}><Icon name="chevron-left" size={20} color="#0d47a1" /></TouchableOpacity>
+            <TouchableOpacity onPress={goToday} style={[styles.navPill, styles.todayPill]}><Text style={styles.todayText}>Today</Text></TouchableOpacity>
+            <TouchableOpacity onPress={goNextWeek} style={styles.navPill}><Icon name="chevron-right" size={20} color="#0d47a1" /></TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.calendarContainer}>
-        <View style={styles.calendarHeader}>
-          <Text style={styles.calendarHeaderText}>
-            Tap any day to view lessons
-          </Text>
+        {/* Calendar Card */}
+        <View style={styles.calendarCard}> 
+          <Calendar
+            events={events}
+            date={weekAnchor.toDate()}
+            height={Dimensions.get('window').height * 0.42}
+            mode="week"
+            weekStartsOn={1}
+            hourRowHeight={44}
+            swipeEnabled
+            showTime
+            onPressCell={(d)=>{ handleDateSelect(d);} }
+            onPressEvent={(e)=>{ handleOpenModal(e);} }
+            renderEvent={(event, touchableOpacityProps)=>{ 
+              const { key: itemKey, style: evtStyle, ...restProps } = (touchableOpacityProps || {}) as any;
+              const typeKey = inferType(event.title || '');
+              const visual = lessonTypeMap[typeKey];
+              // Strip backgroundColor from incoming style to avoid overriding our custom color
+              let cleanedStyle = evtStyle;
+              if (cleanedStyle) {
+                if (Array.isArray(cleanedStyle)) {
+                  cleanedStyle = cleanedStyle.map(s => (s && typeof s === 'object' && 'backgroundColor' in s ? { ...s, backgroundColor: undefined } : s));
+                } else if (typeof cleanedStyle === 'object') {
+                  const { backgroundColor, ...rest } = cleanedStyle; // remove backgroundColor
+                  cleanedStyle = rest;
+                }
+              }
+              return (
+                <TouchableOpacity
+                  key={itemKey ?? `evt-${event.id}`}
+                  {...restProps}
+                  activeOpacity={0.85}
+                  accessibilityLabel={`${event.title} at ${dayjs(event.start).format('HH:mm')}`}
+                  style={[styles.compactEventContainer, cleanedStyle, { backgroundColor: visual.bg, borderColor: visual.border }]}
+                >
+                  <View style={[styles.compactStripe,{backgroundColor:visual.border}]} />
+                  <Text style={[styles.compactAbbr,{color:'#0d47a1'}]}>{visual.abbr}</Text>
+                </TouchableOpacity>
+              );
+            }}
+          />
         </View>
-        <Calendar
-          events={events}
-          height={300}
-          mode="week"
-          onPressEvent={(event: CalendarEvent) => {
-            handleOpenModal(event);
-          }}
-          onPressCell={(date) => handleDateSelect(date)}
-          swipeEnabled
-          scrollOffsetMinutes={480}
-          weekStartsOn={1}
-          hourRowHeight={40}
-          eventCellStyle={{ backgroundColor: '#1976d2', borderRadius: 6 }}
+
+        {/* Selected Day Lessons */}
+        <View style={styles.dayListCard}> 
+          <View style={styles.dayListHeaderRow}> 
+            <View>
+              <Text style={styles.dayHeading}>{selectedDate.format('dddd')}</Text>
+              <Text style={styles.daySubHeading}>{selectedDate.format('D MMM YYYY')}</Text>
+            </View>
+            <View style={styles.countBadge}><Text style={styles.countBadgeText}>{selectedDateLessons.length}</Text></View>
+          </View>
+          {selectedDateLessons.length>0 ? (
+            <ScrollView showsVerticalScrollIndicator={false} style={{flex:1}} contentContainerStyle={{paddingBottom:12}}>{selectedDateLessons.map(renderLessonCard)}</ScrollView>
+          ) : (
+            <View style={styles.emptyState}> 
+              <Icon name="event-busy" size={44} color="#ffffff" style={{opacity:0.55}} />
+              <Text style={styles.emptyTitle}>No lessons</Text>
+              <Text style={styles.emptySubtitle}>Select another day or check back later.</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Modals */}
+        <UnregisterLessonModal
+          lesson={selectedLesson}
+          coachInfoMap={coachInfoMap}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onUnregister={handleUnregister} 
+        />
+        <UnregisterConfirmationModal
+          lesson={lessonToDelete}
+          isOpen={isDeleteModalOpen}
+          onClose={handleCloseDeleteModal}
+          onConfirm={confirmDeleteLesson}
+        />
+        <CoachProfileModal
+          isOpen={isCoachModalOpen}
+          onClose={()=>setIsCoachModalOpen(false)}
+          coachInfo={selectedCoachInfo}
         />
       </View>
-
-      <View style={styles.lessonsContainer}>
-        <View style={styles.selectedDateContainer}>
-          <Text style={styles.selectedDateText}>
-            {selectedDate.format('dddd')}
-          </Text>
-          <Text style={styles.selectedDateNumber}>
-            {selectedDate.format('D')}
-          </Text>
-          <Text style={styles.selectedDateMonth}>
-            {selectedDate.format('MMMM YYYY')}
-          </Text>
-        </View>
-        
-        {selectedDateLessons.length > 0 ? (
-          <ScrollView style={styles.lessonsList}>
-            {selectedDateLessons.map(renderLessonCard)}
-          </ScrollView>
-        ) : (
-          <View style={styles.noLessonsContainer}>
-            <Icon name="event-busy" size={48} color="#ccc" />
-            <Text style={styles.noLessonsText}>No lessons scheduled for this day</Text>
-          </View>
-        )}
-      </View>
-
-      <UnregisterLessonModal
-        lesson={selectedLesson}
-        coachInfoMap={coachInfoMap}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onUnregister={handleUnregister} 
-      />
-
-      <UnregisterConfirmationModal
-        lesson={lessonToDelete}
-        isOpen={isDeleteModalOpen}
-        onClose={handleCloseDeleteModal}
-        onConfirm={confirmDeleteLesson}
-      />
-
-      <CoachProfileModal
-        isOpen={isCoachModalOpen}
-        onClose={() => setIsCoachModalOpen(false)}
-        coachInfo={selectedCoachInfo}
-      />
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 16,
-  },
-  headerIcon: {
-    marginRight: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1976d2',
-  },
-  calendarContainer: {
-    backgroundColor: '#fff',
-    margin: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  calendarHeader: {
-    backgroundColor: '#1976d2',
-    padding: 12,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  calendarHeaderText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  lessonsContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    margin: 16,
-    marginTop: 0,
-    borderRadius: 12,
-    padding: 16,
-  },
-  selectedDateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  selectedDateText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-  selectedDateNumber: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#1976d2',
-    marginHorizontal: 8,
-  },
-  selectedDateMonth: {
-    fontSize: 14,
-    color: '#666',
-  },
-  lessonsList: {
-    flex: 1,
-  },
-  lessonCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  lessonHeader: {
-    marginBottom: 12,
-  },
-  lessonTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1976d2',
-    marginBottom: 4,
-  },
-  lessonTime: {
-    fontSize: 14,
-    color: '#666',
-  },
-  lessonDetails: {
-    gap: 8,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  detailText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  noLessonsContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  noLessonsText: {
-    fontSize: 16,
-    color: '#999',
-    marginTop: 16,
-  },
+  gradientContainer:{ flex:1 },
+  overlayLayer:{ flex:1, paddingTop:Platform.OS==='ios'? 54:36, paddingHorizontal:18 },
+  headerPolished:{ flexDirection:'row', alignItems:'center', marginBottom:16 },
+  headerIconBtn:{ width:46, height:46, borderRadius:16, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.45)', marginRight:14 },
+  headerTitle:{ fontSize:22, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
+  headerSubtitle:{ fontSize:12, fontWeight:'600', color:'rgba(255,255,255,0.85)', marginTop:4 },
+  navControls:{ flexDirection:'row', alignItems:'center', gap:8 },
+  navPill:{ backgroundColor:'#ffffff', paddingHorizontal:8, paddingVertical:5, borderRadius:10, borderWidth:1, borderColor:'rgba(13,71,161,0.25)', shadowColor:'#000', shadowOpacity:0.10, shadowRadius:3, shadowOffset:{width:0,height:1}, minHeight:30, minWidth:34, alignItems:'center', justifyContent:'center' },
+  todayPill:{ backgroundColor:'#e3f2fd' },
+  todayText:{ fontSize:11, fontWeight:'800', color:'#0d47a1', letterSpacing:0.5 },
+  calendarCard:{ backgroundColor:'rgba(255,255,255,0.18)', borderRadius:30, borderWidth:1, borderColor:'rgba(255,255,255,0.35)', padding:10, marginBottom:18, shadowColor:'#000', shadowOpacity:0.15, shadowRadius:18, shadowOffset:{width:0,height:8} },
+  eventBox:{ flex:1, flexDirection:'row', alignItems:'center', paddingHorizontal:6, paddingVertical:4, gap:4 },
+  eventStripe:{ position:'absolute', left:0, top:0, bottom:0, width:4, borderTopLeftRadius:10, borderBottomLeftRadius:10 },
+  eventAbbr:{ fontSize:11, fontWeight:'800', color:'#0d47a1' },
+  dayListCard:{ flex:1, backgroundColor:'rgba(255,255,255,0.9)', borderRadius:30, padding:18, borderWidth:1, borderColor:'rgba(255,255,255,0.55)', shadowColor:'#000', shadowOpacity:0.15, shadowRadius:18, shadowOffset:{width:0,height:8} },
+  dayListHeaderRow:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:14 },
+  dayHeading:{ fontSize:18, fontWeight:'800', color:'#0d47a1' },
+  daySubHeading:{ fontSize:12, fontWeight:'700', color:'#1976d2', marginTop:2 },
+  countBadge:{ backgroundColor:'#0d47a1', paddingHorizontal:12, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor:'#1565c0' },
+  countBadgeText:{ fontSize:12, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
+  dayLessonCard:{ flexDirection:'row', backgroundColor:'#ffffff', borderRadius:20, padding:14, marginBottom:14, borderWidth:1, borderColor:'rgba(13,71,161,0.1)', shadowColor:'#0d47a1', shadowOpacity:0.08, shadowRadius:10, shadowOffset:{width:0,height:4} },
+  typeBadge:{ width:46, height:46, borderRadius:16, borderWidth:1.5, alignItems:'center', justifyContent:'center', marginRight:12 },
+  typeBadgeText:{ fontSize:13, fontWeight:'800', letterSpacing:0.5 },
+  dayLessonTitle:{ fontSize:14.5, fontWeight:'800', color:'#0d47a1', marginBottom:4 },
+  dayLessonMeta:{ fontSize:11.5, fontWeight:'700', color:'#1976d2' },
+  dayLessonLocation:{ fontSize:11, fontWeight:'600', color:'#374151', marginTop:4 },
+  capacityBar:{ height:5, backgroundColor:'#e0f2fe', borderRadius:4, overflow:'hidden', marginTop:8 },
+  capacityFill:{ height:5, backgroundColor:'#1976d2' },
+  emptyState:{ alignItems:'center', paddingVertical:32 },
+  emptyTitle:{ fontSize:16, fontWeight:'800', color:'#0d47a1', marginTop:12 },
+  emptySubtitle:{ fontSize:12.5, fontWeight:'600', color:'#1e3a8a', marginTop:4, textAlign:'center', paddingHorizontal:18 },
+  // Compact event styles
+  compactEventContainer:{ flexDirection:'row', alignItems:'center', paddingHorizontal:6, gap:4, borderRadius:8, borderWidth:1, minHeight:26 },
+  compactStripe:{ position:'absolute', left:0, top:0, bottom:0, width:3, borderTopLeftRadius:6, borderBottomLeftRadius:6 },
+  compactAbbr:{ fontSize:10, fontWeight:'800', letterSpacing:0.5 },
+  // Keep original style keys (unused) to avoid runtime style referencing issues
+  container:{}, header:{}, headerTitleContainer:{}, headerIcon:{}, calendarContainer:{}, calendarHeader:{}, calendarHeaderText:{}, lessonsContainer:{}, selectedDateContainer:{}, selectedDateText:{}, selectedDateNumber:{}, selectedDateMonth:{}, lessonsList:{}, lessonCard:{}, lessonHeader:{}, lessonTitle:{}, lessonTime:{}, lessonDetails:{}, detailRow:{}, detailText:{}, noLessonsContainer:{}, noLessonsText:{}
 });
 
 export default ClientCalendarView;

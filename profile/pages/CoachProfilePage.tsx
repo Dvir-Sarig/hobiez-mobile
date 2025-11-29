@@ -6,13 +6,12 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, DrawerActions } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { fetchPublicCoachProfile } from '../utils/profileService';
 import { CoachProfile } from '../types/profile';
 import ProfileView from '../components/view/CoachProfileView';
 import NoProfileModal from '../components/modals/NoProfileModal';
-import { DrawerActions } from '@react-navigation/native';
 
 export default function CoachProfilePage() {
   const route = useRoute<any>();
@@ -21,11 +20,43 @@ export default function CoachProfilePage() {
   const fromRegistrationModal = route.params?.fromRegistrationModal;
   const fromUnregisterModal = route.params?.fromUnregisterModal;
   const lessonId = route.params?.lessonId;
+  const originScreen = route.params?.originScreen; // newly added
+  const originTab = route.params?.originTab; // which tab to restore
+  const returnScrollY = route.params?.returnScrollY ?? 0; // scroll position to restore
 
   const [profileData, setProfileData] = useState<CoachProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNoProfileModal, setShowNoProfileModal] = useState(false);
+
+  const handleNoProfileClose = () => {
+    setShowNoProfileModal(false);
+    // Highest priority: explicit calendar origin to force calendar reopen
+    if (originScreen === 'ClientCalendar' && lessonId) {
+      navigation.navigate('ClientCalendar', { openClientCalendarLessonModal: true, lessonId, weekAnchorDate: route.params?.weekAnchorDate, selectedDate: route.params?.selectedDate });
+      return;
+    }
+    // Next: specific modal origins from search lessons
+    if (fromRegistrationModal && lessonId) {
+      navigation.navigate('SearchLessons', { reopenRegistrationModal: true, lessonId });
+      return;
+    }
+    if (fromUnregisterModal && lessonId) {
+      navigation.navigate('SearchLessons', { reopenUnregisterModal: true, lessonId });
+      return;
+    }
+    if (originScreen) {
+      // restore tab / scroll if provided
+      navigation.navigate(originScreen, { restoreTab: originTab, restoreScrollY: returnScrollY });
+      return;
+    }
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    // Final fallback
+    navigation.navigate('Home');
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -34,14 +65,24 @@ export default function CoachProfilePage() {
         setError(null);
         if (!coachId) throw new Error('No coach ID provided');
         const profile = await fetchPublicCoachProfile(coachId);
-        if (!profile) {
+        const invalid = !profile || (profile && Object.keys(profile).length === 0); // removed id requirement
+        if (invalid) {
+          setProfileData(null);
           setShowNoProfileModal(true);
         } else {
           setProfileData(profile as CoachProfile);
+          setShowNoProfileModal(false);
         }
       } catch (error: any) {
         console.error('Error fetching profile:', error);
-        setError(error.message || 'An error occurred while fetching profile data');
+        // Treat 404 (profile not found) as no profile modal instead of generic error screen
+        if (error?.message?.toLowerCase().includes('not found')) {
+          setProfileData(null);
+          setShowNoProfileModal(true);
+          setError(null);
+        } else {
+          setError(error.message || 'An error occurred while fetching profile data');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -49,6 +90,17 @@ export default function CoachProfilePage() {
 
     fetchProfile();
   }, [coachId]);
+
+  // Re-run validation each time screen gains focus (user may create profile meanwhile)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (!profileData && !isLoading) {
+        // Trigger refetch to re-open modal if still missing
+        setShowNoProfileModal(true);
+      }
+    });
+    return unsubscribe;
+  }, [navigation, profileData, isLoading]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -87,6 +139,22 @@ export default function CoachProfilePage() {
 
   return (
     <View style={styles.container}>
+      {originScreen && !fromRegistrationModal && !fromUnregisterModal && (
+        <TouchableOpacity
+          style={styles.returnIconButton}
+          onPress={() => {
+            if (originScreen === 'ClientCalendar' && lessonId) {
+              navigation.navigate('ClientCalendar', { openClientCalendarLessonModal: true, lessonId, weekAnchorDate: route.params?.weekAnchorDate, selectedDate: route.params?.selectedDate });
+            } else {
+              navigation.dispatch(DrawerActions.jumpTo(originScreen, { restoreTab: originTab, restoreScrollY: returnScrollY }));
+            }
+          }}
+          accessibilityLabel="Return to previous list"
+          activeOpacity={0.7}
+        >
+          <MaterialIcons name="arrow-back" size={26} color="#1976d2" />
+        </TouchableOpacity>
+      )}
       {fromRegistrationModal && lessonId && (
         <TouchableOpacity
           style={styles.returnIconButton}
@@ -116,7 +184,8 @@ export default function CoachProfilePage() {
       ) : (
         <NoProfileModal
           isOpen={showNoProfileModal}
-          onClose={() => navigation.goBack()}
+          onClose={handleNoProfileClose}
+          userType='coach'
         />
       )}
     </View>

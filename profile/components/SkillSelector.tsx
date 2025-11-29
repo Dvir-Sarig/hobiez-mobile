@@ -10,6 +10,7 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { Skill, SupportedHobby } from '../types/profile';
 import { Chip } from 'react-native-paper';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const LEVELS: Skill['level'][] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'];
 
@@ -24,9 +25,10 @@ interface Props {
   selectedSkills: Skill[];
   onAdd: (skill: Skill) => void;
   onRemove: (skill: Skill) => void;
+  hideLabel?: boolean; // new prop to optionally hide the internal header label
 }
 
-export default function SkillSelector({ selectedSkills, onAdd, onRemove }: Props) {
+export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLabel = false }: Props) {
   const [selectedSport, setSelectedSport] = useState<SupportedHobby | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<Skill['level'] | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -51,18 +53,16 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove }: Props
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Skills</Text>
-
+      {!hideLabel && <Text style={styles.label}>Skills</Text>}
       {/* Selected chips */}
       <View style={styles.chipsContainer}>
         {selectedSkills.map((skill, index) => (
-          <Chip
-            key={index}
-            style={styles.chip}
-            onClose={() => onRemove(skill)}
-          >
-            {`${skill.name} (${skill.level})`}
-          </Chip>
+          <View key={index} style={styles.skillPill}>
+            <Text style={styles.skillPillText}>{`${skill.name} · ${skill.level}`}</Text>
+            <TouchableOpacity onPress={() => onRemove(skill)} style={styles.removePillBtn}>
+              <MaterialIcons name="close" size={14} color="#fff" />
+            </TouchableOpacity>
+          </View>
         ))}
       </View>
 
@@ -71,6 +71,7 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove }: Props
         style={styles.addButton}
         onPress={() => setModalVisible(true)}
       >
+        <MaterialIcons name="add-circle-outline" size={18} color="#fff" style={{marginRight:6}} />
         <Text style={styles.addButtonText}>Add Skill</Text>
       </TouchableOpacity>
 
@@ -140,14 +141,25 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove }: Props
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 16,
+    marginTop: 8,
     marginBottom: 24,
+    padding: 14,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    shadowColor: '#0d47a1',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
   },
   label: {
-    fontWeight: '800',
-    fontSize: 20,
-    color: '#0d47a1',
-    marginBottom: 10,
+    fontWeight: '700',
+    fontSize: 13,
+    color: '#1976d2',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   chipsContainer: {
     flexDirection: 'row',
@@ -155,81 +167,136 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  chip: {
-    backgroundColor: '#e1f5fe',
+  chip: { // legacy unused kept
+    backgroundColor: '#e3f2fd',
+    borderRadius: 18,
+    marginRight: 4,
+  },
+  skillPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1976d2',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    marginRight: 4,
+    marginBottom: 6,
+  },
+  skillPillText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  removePillBtn: {
+    marginLeft: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.25)'
   },
   addButton: {
-    backgroundColor: '#0d47a1',
-    padding: 14,
-    borderRadius: 12,
+    backgroundColor: '#1976d2',
+    paddingVertical: 12,
+    borderRadius: 16,
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    flexDirection: 'row',
+    justifyContent: 'center'
   },
   addButtonText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 15,
+    letterSpacing: 0.5,
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     padding: 24,
   },
   modalContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 26,
+    padding: 22,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#0d47a1',
-    marginBottom: 12,
+    marginBottom: 14,
+    letterSpacing: 0.5,
   },
   modalLabel: {
     fontWeight: '600',
-    marginTop: 10,
-    marginBottom: 4,
+    marginTop: 12,
+    marginBottom: 6,
     color: '#1976d2',
+    fontSize: 13,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   pickerWrapper: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#bbdefb',
-    borderRadius: 12,
+    borderRadius: 16,
     backgroundColor: '#f0f8ff',
     overflow: 'hidden',
+    marginBottom: 4,
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginTop: 20,
   },
   confirmButton: {
     flex: 1,
-    backgroundColor: '#0d47a1',
-    padding: 12,
-    borderRadius: 10,
+    backgroundColor: '#1976d2',
+    paddingVertical: 14,
+    borderRadius: 16,
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
   disabledButton: {
-    backgroundColor: '#aaa',
+    backgroundColor: '#90a4ae',
   },
   confirmButtonText: {
     color: '#fff',
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 12,
-    borderRadius: 10,
+    backgroundColor: '#f8fafc',
+    paddingVertical: 14,
+    borderRadius: 16,
     alignItems: 'center',
-    marginLeft: 8,
+    marginLeft: 10,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
   },
   cancelButtonText: {
-    color: '#555',
-    fontWeight: '600',
+    color: '#475569',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });

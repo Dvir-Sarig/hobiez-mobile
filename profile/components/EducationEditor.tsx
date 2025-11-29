@@ -9,13 +9,15 @@ import {
 } from 'react-native';
 import { Education } from '../types/profile';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface Props {
   educationList: Education[];
   onChange: (updated: Education[]) => void;
+  hideTitle?: boolean;
 }
 
-export default function EducationEditor({ educationList, onChange }: Props) {
+export default function EducationEditor({ educationList, onChange, hideTitle }: Props) {
   const [showDatePicker, setShowDatePicker] = useState<{
     index: number;
     field: 'startDate' | 'endDate' | null;
@@ -58,11 +60,17 @@ export default function EducationEditor({ educationList, onChange }: Props) {
   };
 
   return (
-    <View style={{ marginTop: 20 }}>
-      <Text style={styles.title}>Education</Text>
+    <View style={{ marginTop: 12 }}>
+      {!hideTitle && <Text style={styles.title}>Education</Text>}
 
       {educationList.map((edu, index) => (
         <View key={index} style={styles.entry}>
+          <View style={styles.entryHeader}> 
+              <Text style={styles.entryBadge}>#{index + 1}</Text>
+              <TouchableOpacity onPress={() => removeItem(index)} style={styles.iconRemoveBtn}>
+                <MaterialIcons name="delete-outline" size={18} color="#d32f2f" />
+              </TouchableOpacity>
+            </View>
           <TextInput
             style={styles.input}
             placeholder="Institution"
@@ -111,9 +119,7 @@ export default function EducationEditor({ educationList, onChange }: Props) {
             onChangeText={(val) => updateItem(index, { gpa: parseFloat(val) || null })}
           />
 
-          <TouchableOpacity onPress={() => removeItem(index)} style={styles.removeButton}>
-            <Text style={styles.removeText}>Remove</Text>
-          </TouchableOpacity>
+          
         </View>
       ))}
 
@@ -129,6 +135,7 @@ export default function EducationEditor({ educationList, onChange }: Props) {
       )}
 
       <TouchableOpacity onPress={addItem} style={styles.addButton}>
+        <MaterialIcons name="add-circle-outline" size={18} color="#fff" style={{marginRight:6}} />
         <Text style={styles.addText}>Add Education</Text>
       </TouchableOpacity>
     </View>
@@ -146,51 +153,64 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#bbdefb',
-    borderRadius: 16,
-    backgroundColor: '#f5faff',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#1976d2',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    borderColor: 'rgba(255,255,255,0.35)',
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    shadowColor: '#0d47a1',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  entryHeader:{
+    flexDirection:'row',
+    justifyContent:'space-between',
+    alignItems:'center',
+    marginBottom:8,
+  },
+  entryBadge:{
+    backgroundColor:'#1976d2',
+    color:'#fff',
+    paddingHorizontal:10,
+    paddingVertical:4,
+    borderRadius:12,
+    fontSize:12,
+    fontWeight:'700',
+    letterSpacing:0.5,
+  },
+  iconRemoveBtn:{
+    width:34,
+    height:34,
+    borderRadius:17,
+    backgroundColor:'rgba(211,47,47,0.08)',
+    alignItems:'center',
+    justifyContent:'center',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    borderRadius: 14,
     padding: 12,
     marginBottom: 12,
-    backgroundColor: '#ffffff',
-    fontSize: 16,
-    color: '#212121',
+    backgroundColor: '#f8fafc',
+    fontSize: 14,
+    color: '#0f172a',
   },
   dateButton: {
     paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 14,
+    borderWidth: 1.5,
     borderColor: '#64b5f6',
     backgroundColor: '#e3f2fd',
     marginBottom: 12,
   },
   dateText: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#1565c0',
     fontWeight: '600',
   },
   removeButton: {
-    backgroundColor: '#d32f2f',
-    padding: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 6,
+    display:'none'
   },
   removeText: {
     color: '#fff',
@@ -198,16 +218,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   addButton: {
-    backgroundColor: '#0d47a1',
+    backgroundColor: '#1976d2',
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 4,
+    flexDirection:'row',
+    justifyContent:'center',
+    shadowColor:'#000',
+    shadowOpacity:0.18,
+    shadowRadius:6,
+    shadowOffset:{width:0,height:3}
   },
   addText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 15,
+    letterSpacing:0.5,
   },
 });
 

@@ -12,57 +12,40 @@ interface CoachProfileViewProps {
 export default function CoachProfileView({ profileData, onEditClick }: CoachProfileViewProps) {
   return (
     <BaseProfileView profileData={profileData} onEditClick={onEditClick}>
-      {/* Experience */}
       <View style={styles.section}>
         <SectionHeader icon="work" title="Experience" />
-        <Text style={styles.textBody}>
-          {profileData.experience || 'No experience information available'}
-        </Text>
+        <Text style={styles.longText}>{profileData.experience || 'No experience info yet'}</Text>
       </View>
 
-      {/* Education */}
       <View style={styles.section}>
         <SectionHeader icon="school" title="Education" />
-        {profileData.education?.map((edu, index) => (
-          <View key={index} style={styles.eduBlock}>
+        {profileData.education && profileData.education.length > 0 ? profileData.education.map((edu, i) => (
+          <View key={i} style={[styles.eduBlock, i === profileData.education.length - 1 && styles.eduBlockLast]}>
             <Text style={styles.eduDegree}>{edu.degree}</Text>
             <Text style={styles.eduInstitution}>{edu.institution}</Text>
-            <Text style={styles.eduDates}>
-              {edu.startDate} – {edu.endDate || 'Present'}
-            </Text>
-            {edu.fieldOfStudy && <Text style={styles.textBody}>Field: {edu.fieldOfStudy}</Text>}
-            {edu.description && <Text style={styles.textBody}>{edu.description}</Text>}
-            {edu.gpa !== null && edu.gpa !== undefined && (
-              <Text style={styles.textBody}>GPA: {edu.gpa}</Text>
-            )}
+            <Text style={styles.eduDates}>{edu.startDate} – {edu.endDate || 'Present'}</Text>
+            {!!edu.fieldOfStudy && <Text style={styles.metaText}>{edu.fieldOfStudy}</Text>}
+            {!!edu.description && <Text style={styles.metaText}>{edu.description}</Text>}
+            {edu.gpa !== null && edu.gpa !== undefined && <Text style={styles.metaBadge}>GPA {edu.gpa}</Text>}
           </View>
-        ))}
+        )) : <Text style={styles.emptyText}>No education added yet</Text>}
       </View>
 
-      {/* Skills */}
       <View style={styles.section}>
         <SectionHeader icon="star" title="Skills" />
         <View style={styles.chipContainer}>
-          {profileData.skills?.map((skill, index) => (
-            <View key={index} style={styles.primaryChip}>
-              <Text style={styles.chipText}>{skill.name} ({skill.level})</Text>
-              {skill.description && (
-                <Text style={styles.skillDescription}>{skill.description}</Text>
-              )}
-            </View>
-          ))}
+          {profileData.skills && profileData.skills.length > 0 ? profileData.skills.map((skill, i) => (
+            <View key={i} style={styles.skillChip}><Text style={styles.skillChipText}>{skill.name} · {skill.level}</Text></View>
+          )) : <Text style={styles.emptyText}>No skills listed</Text>}
         </View>
       </View>
 
-      {/* Languages */}
-      <View style={[styles.section, { marginBottom: 32 }]}>
+      <View style={[styles.section, { marginBottom: 42 }]}>
         <SectionHeader icon="language" title="Languages" />
         <View style={styles.chipContainer}>
-          {profileData.genericProfile.languages?.map((lang, index) => (
-            <View key={index} style={styles.secondaryChip}>
-              <Text style={styles.secondaryChipText}>{lang}</Text>
-            </View>
-          ))}
+          {profileData.genericProfile.languages && profileData.genericProfile.languages.length > 0 ? profileData.genericProfile.languages.map((lang, i) => (
+            <View key={i} style={styles.langChip}><Text style={styles.langChipText}>{lang}</Text></View>
+          )) : <Text style={styles.emptyText}>No languages listed</Text>}
         </View>
       </View>
     </BaseProfileView>
@@ -72,7 +55,7 @@ export default function CoachProfileView({ profileData, onEditClick }: CoachProf
 function SectionHeader({ icon, title }: { icon: any; title: string }) {
   return (
     <View style={styles.sectionHeader}>
-      <MaterialIcons name={icon} size={20} color="#1976d2" style={styles.icon} />
+      <View style={styles.sectionIconWrapper}><MaterialIcons name={icon} size={18} color="#1976d2" /></View>
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   );
@@ -80,90 +63,126 @@ function SectionHeader({ icon, title }: { icon: any; title: string }) {
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 16,
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    padding: 18,
+    borderRadius: 22,
+    marginTop: 18,
+    shadowColor: '#0d47a1',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 14,
   },
-  icon: {
-    marginRight: 8,
+  sectionIconWrapper: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#e3f2fd',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#212121',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0d47a1',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  textBody: {
+  longText: {
     fontSize: 14,
-    color: '#444',
+    color: '#37474f',
     lineHeight: 20,
-    marginBottom: 6,
   },
   eduBlock: {
-    marginBottom: 16,
+    marginBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: 'rgba(13,71,161,0.08)',
     paddingBottom: 12,
+  },
+  eduBlockLast: {
+    borderBottomWidth: 0,
+    marginBottom: 4,
   },
   eduDegree: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#263238',
+    fontWeight: '700',
+    color: '#0d47a1',
   },
   eduInstitution: {
-    fontSize: 14,
-    color: '#555',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1565c0',
+    marginTop: 2,
   },
   eduDates: {
+    fontSize: 11,
+    color: '#607d8b',
+    marginTop: 2,
+  },
+  metaText: {
     fontSize: 12,
-    color: '#888',
-    marginBottom: 4,
+    color: '#455a64',
+    marginTop: 4,
+  },
+  metaBadge: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: '#1976d2',
+    color: '#fff',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
+    gap: 10,
   },
-  primaryChip: {
-    backgroundColor: '#e3f2fd',
-    paddingHorizontal: 12,
+  skillChip: {
+    backgroundColor: '#1976d2',
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
-  chipText: {
-    fontSize: 14,
-    color: '#1976d2',
+  skillChipText: {
+    color: '#fff',
+    fontSize: 13,
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
-  skillDescription: {
-    fontSize: 12,
+  langChip: {
+    backgroundColor: '#1565c0',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  langChipText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  emptyText: {
     color: '#607d8b',
-    marginTop: 4,
-  },
-  secondaryChip: {
-    backgroundColor: '#fce4ec',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  secondaryChipText: {
-    fontSize: 14,
-    color: '#d81b60',
-    fontWeight: '500',
+    fontSize: 13,
+    fontStyle: 'italic',
   },
 });

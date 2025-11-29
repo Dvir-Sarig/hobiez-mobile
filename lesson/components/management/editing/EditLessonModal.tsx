@@ -16,6 +16,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Location } from '../../../../profile/types/profile';
 import LocationField from '../../../../integrations/google_location/LocationField';
 import dayjs from 'dayjs';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface EditLessonModalProps {
   isOpen: boolean;
@@ -24,7 +25,7 @@ interface EditLessonModalProps {
   lessonData: {
     description: string;
     time: dayjs.Dayjs;
-    capacityLimit: string;
+    capacityLimit: string; // kept as string for existing usage
     duration: number;
     location: { city: string; country: string };
   };
@@ -89,9 +90,14 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
     }
   };
 
-  const handleNumberChange = (field: string, value: string, isFloat = false) => {
-    const parsed = isFloat ? parseFloat(value) : parseInt(value);
-    setLessonData({ ...lessonData, [field]: isNaN(parsed) ? '' : parsed });
+  const handleNumberChange = (field: 'duration' | 'capacityLimit', value: string) => {
+    const cleaned = value.replace(/[^0-9]/g, '');
+    if (field === 'capacityLimit') {
+      setLessonData({ ...lessonData, capacityLimit: cleaned });
+    } else {
+      const parsed = cleaned === '' ? 0 : parseInt(cleaned, 10);
+      setLessonData({ ...lessonData, duration: isNaN(parsed) ? 0 : parsed });
+    }
   };
 
   // Clean up date pickers when modal closes
@@ -99,109 +105,62 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
     if (!isOpen) {
       setShowDatePicker(false);
       setShowTimePicker(false);
+    } else {
+      setDate(lessonData.time ? lessonData.time.toDate() : new Date());
     }
   }, [isOpen]);
 
   return (
-    <Modal visible={isOpen} animationType="slide" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Edit Lesson</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Icon name="close" size={24} color="#555" />
+    <Modal visible={isOpen} animationType="fade" transparent>
+      <View style={styles.overlayPolished}>
+        <View style={styles.glassCard}>
+          {/* Gradient Header */}
+          <LinearGradient colors={['#0d47a1','#1976d2']} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerGradient}>
+            <Text style={styles.modalTitleNew}>Edit Lesson</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeGradientBtn} accessibilityLabel="Close edit lesson modal">
+              <Icon name="close" size={22} color="#ffffff" />
             </TouchableOpacity>
-          </View>
+          </LinearGradient>
 
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
-          >
-            <ScrollView 
-              style={styles.content}
-              showsVerticalScrollIndicator={true}
-              contentContainerStyle={Platform.OS === 'android' ? styles.scrollContent : undefined}
-            >
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Description</Text>
-                <TextInput
-                  style={styles.input}
-                  multiline
-                  numberOfLines={3}
-                  value={lessonData.description}
-                  onChangeText={(text) => setLessonData({ ...lessonData, description: text })}
-                  placeholder="Describe your lesson..."
-                />
+          <KeyboardAvoidingView behavior={Platform.OS==='ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS==='ios'? 60 : 0} style={{flex:1}}>
+            <ScrollView style={{flex:1}} contentContainerStyle={styles.scrollContentNew} showsVerticalScrollIndicator={false}>
+              {/* Description Section */}
+              <View style={[styles.sectionBlock, styles.sectionCard]}> 
+                <Text style={styles.sectionLabel}>Description</Text>
+                <View style={styles.textAreaWrapper}> 
+                  <TextInput
+                    style={styles.textArea}
+                    multiline
+                    placeholder="Describe your lesson..."
+                    placeholderTextColor="#5d7489"
+                    value={lessonData.description}
+                    onChangeText={(text) => setLessonData({ ...lessonData, description: text })}
+                  />
+                </View>
               </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Date & Time</Text>
-                <TouchableOpacity
-                  style={styles.dateButton}
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <Icon name="calendar-today" size={20} color="#1976d2" style={styles.inputIcon} />
-                  <Text style={styles.dateText}>{date.toLocaleString()}</Text>
+              {/* Date & Time Section */}
+              <View style={[styles.sectionBlock, styles.sectionCard]}> 
+                <Text style={styles.sectionLabel}>Date & Time</Text>
+                <TouchableOpacity style={styles.inlinePickerBtn} onPress={()=> setShowDatePicker(true)} activeOpacity={0.85}>
+                  <Icon name="calendar-today" size={18} color="#1976d2" style={{marginRight:10}} />
+                  <Text style={styles.inlinePickerText}>{date.toLocaleString()}</Text>
                 </TouchableOpacity>
-                {showDatePicker && Platform.OS === 'ios' && (
-                  <DateTimePicker
-                    value={lessonData.time.toDate()}
-                    mode="datetime"
-                    display="spinner"
-                    onChange={onChangeDate}
-                  />
+                {showDatePicker && Platform.OS==='ios' && (
+                  <DateTimePicker value={lessonData.time.toDate()} mode="datetime" display="spinner" onChange={onChangeDate} />
                 )}
-                {showDatePicker && Platform.OS === 'android' && (
-                  <DateTimePicker
-                    value={lessonData.time.toDate()}
-                    mode="date"
-                    display="default"
-                    onChange={onChangeDate}
-                  />
+                {showDatePicker && Platform.OS==='android' && (
+                  <DateTimePicker value={lessonData.time.toDate()} mode="date" display="default" onChange={onChangeDate} />
                 )}
-                {showTimePicker && Platform.OS === 'android' && (
-                  <DateTimePicker
-                    value={lessonData.time.toDate()}
-                    mode="time"
-                    display="default"
-                    onChange={onChangeTime}
-                  />
+                {showTimePicker && Platform.OS==='android' && (
+                  <DateTimePicker value={lessonData.time.toDate()} mode="time" display="default" onChange={onChangeTime} />
                 )}
               </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Duration (minutes)</Text>
-                <View style={styles.inputWithIcon}>
-                  <Icon name="timer" size={20} color="#1976d2" style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.input, styles.inputWithIconText]}
-                    keyboardType="numeric"
-                    value={lessonData.duration?.toString() || ''}
-                    onChangeText={(value) => handleNumberChange('duration', value)}
-                    placeholder="Enter duration in minutes"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Capacity Limit</Text>
-                <View style={styles.inputWithIcon}>
-                  <Icon name="people" size={20} color="#1976d2" style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.input, styles.inputWithIconText]}
-                    keyboardType="numeric"
-                    value={lessonData.capacityLimit?.toString() || ''}
-                    onChangeText={(value) => handleNumberChange('capacityLimit', value)}
-                    placeholder="Enter maximum number of participants"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
+              {/* Location Section */}
+              <View style={[styles.sectionBlock, styles.sectionCard]}> 
                 <LocationField
                   location={lessonData.location || { city: '', country: '' }}
                   onLocationSelect={(location: Location) => {
-                    setLessonData((prev: any) => ({
+                    setLessonData(prev => ({
                       ...prev,
                       location: {
                         city: location.city,
@@ -215,23 +174,52 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
                   label="Lesson Location"
                 />
               </View>
+              {/* Compact Details Section */}
+              <View style={[styles.sectionBlock, styles.sectionCard]}> 
+                <Text style={styles.sectionLabel}>Details</Text>
+                <View style={styles.metricsRow}>
+                  {/* Duration */}
+                  <View style={styles.metricBlock}>
+                    <Text style={styles.metricLabel}>Duration</Text>
+                    <View style={styles.metricInputRow}>
+                      <Icon name="timer" size={16} color="#1976d2" style={styles.metricIcon} />
+                      <TextInput
+                        style={styles.metricNumberInput}
+                        keyboardType="numeric"
+                        value={lessonData.duration ? lessonData.duration.toString() : ''}
+                        onChangeText={(v)=> handleNumberChange('duration', v)}
+                        placeholder="min"
+                        placeholderTextColor="#7a8ea2"
+                      />
+                    </View>
+                  </View>
+                  {/* Capacity */}
+                  <View style={styles.metricBlock}>
+                    <Text style={styles.metricLabel}>Capacity</Text>
+                    <View style={styles.metricInputRow}>
+                      <Icon name="people" size={16} color="#1976d2" style={styles.metricIcon} />
+                      <TextInput
+                        style={styles.metricNumberInput}
+                        keyboardType="numeric"
+                        value={lessonData.capacityLimit || ''}
+                        onChangeText={(v)=> handleNumberChange('capacityLimit', v)}
+                        placeholder="#"
+                        placeholderTextColor="#7a8ea2"
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+              <View style={{height:120}} />
             </ScrollView>
           </KeyboardAvoidingView>
-
-          <View style={styles.footer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+          {/* Footer */}
+          <View style={styles.footerBar}> 
+            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} accessibilityLabel="Cancel edit lesson" activeOpacity={0.85}>
+              <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]} 
-              onPress={onSubmit}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.saveButtonText}>Save Changes</Text>
-              )}
+            <TouchableOpacity style={[styles.primaryBtn, isSubmitting && styles.primaryBtnDisabled]} disabled={isSubmitting} onPress={onSubmit} accessibilityLabel="Save lesson changes" activeOpacity={0.9}>
+              {isSubmitting ? <ActivityIndicator size="small" color="#ffffff" /> : <Text style={styles.primaryBtnText}>Save Changes</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -241,138 +229,34 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    maxHeight: '90%',
-    overflow: 'hidden',
-    ...(Platform.OS === 'android' && {
-      maxHeight: '95%',
-      marginVertical: 10,
-      flex: 1,
-    }),
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1976d2',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  content: {
-    padding: 16,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#424242',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#f5f5f5',
-  },
-  inputWithIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-  },
-  inputIcon: {
-    marginLeft: 12,
-  },
-  inputWithIconText: {
-    flex: 1,
-    borderWidth: 0,
-    backgroundColor: 'transparent',
-  },
-  dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: '#f5f5f5',
-  },
-  dateText: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: '#424242',
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    gap: 12,
-    ...(Platform.OS === 'android' && {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: '#fff',
-      zIndex: 10,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-    }),
-  },
-  cancelButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#757575',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  saveButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#1976d2',
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#cccccc',
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  scrollContent: {
-    paddingBottom: 200,
-    flexGrow: 1,
-  },
+  // Overlay & Card (matching create modal styling)
+  overlayPolished:{ flex:1, backgroundColor:'rgba(0,0,0,0.55)', justifyContent:'center', padding:20 },
+  glassCard:{ borderRadius:30, overflow:'hidden', backgroundColor:'rgba(255,255,255,0.95)', borderWidth:1, borderColor:'rgba(255,255,255,0.75)', maxHeight:'92%', shadowColor:'#000', shadowOpacity:0.20, shadowRadius:18, shadowOffset:{width:0,height:8}, flex:1 },
+  headerGradient:{ paddingVertical:18, paddingHorizontal:24, flexDirection:'row', alignItems:'center', justifyContent:'space-between' },
+  modalTitleNew:{ fontSize:20, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
+  closeGradientBtn:{ width:42, height:42, borderRadius:16, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.4)' },
+  scrollContentNew:{ padding:22, paddingBottom:40 },
+  sectionBlock:{ marginBottom:22 },
+  sectionCard:{ backgroundColor:'#ffffff', borderRadius:22, padding:18, shadowColor:'#0d47a1', shadowOpacity:0.06, shadowRadius:10, shadowOffset:{width:0,height:4}, borderWidth:1, borderColor:'rgba(13,71,161,0.08)' },
+  sectionLabel:{ fontSize:12.5, fontWeight:'800', letterSpacing:0.8, color:'#0d47a1', textTransform:'uppercase', marginBottom:12 },
+  textAreaWrapper:{ borderWidth:1, borderColor:'rgba(25,118,210,0.18)', borderRadius:16, backgroundColor:'#f3f7fb', padding:14 },
+  textArea:{ minHeight:90, fontSize:14, color:'#0f172a', fontWeight:'500' },
+  inlinePickerBtn:{ flexDirection:'row', alignItems:'center', paddingVertical:12, paddingHorizontal:16, backgroundColor:'#f3f7fb', borderRadius:14, borderWidth:1, borderColor:'rgba(25,118,210,0.18)' },
+  inlinePickerText:{ fontSize:14, fontWeight:'600', color:'#0d47a1', flex:1 },
+  // Metrics (compact row)
+  metricsRow:{ flexDirection:'row', alignItems:'flex-start', justifyContent:'space-between', gap:12 },
+  metricBlock:{ flex:1 },
+  metricLabel:{ fontSize:11, fontWeight:'800', letterSpacing:0.6, color:'#0d47a1', textTransform:'uppercase', marginBottom:6 },
+  metricInputRow:{ flexDirection:'row', alignItems:'center', backgroundColor:'#f3f7fb', borderRadius:14, borderWidth:1, borderColor:'rgba(25,118,210,0.18)', paddingVertical:8, paddingHorizontal:10 },
+  metricIcon:{ marginRight:6 },
+  metricNumberInput:{ flex:1, fontSize:13, fontWeight:'700', color:'#0d47a1', paddingVertical:2 },
+  // Footer action bar
+  footerBar:{ position:'absolute', left:0, right:0, bottom:0, flexDirection:'row', gap:14, padding:20, backgroundColor:'rgba(255,255,255,0.9)', borderTopWidth:1, borderTopColor:'rgba(25,118,210,0.15)', shadowColor:'#000', shadowOpacity:0.18, shadowRadius:14, shadowOffset:{width:0,height:4} },
+  cancelBtn:{ flex:1, backgroundColor:'rgba(255,255,255,0.55)', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:16, borderWidth:1.5, borderColor:'rgba(25,118,210,0.25)' },
+  cancelText:{ fontSize:15, fontWeight:'700', color:'#0d47a1' },
+  primaryBtn:{ flex:1.4, backgroundColor:'#1976d2', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:16, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{width:0,height:4} },
+  primaryBtnDisabled:{ backgroundColor:'#90a4ae' },
+  primaryBtnText:{ color:'#ffffff', fontSize:15, fontWeight:'800', letterSpacing:0.5 },
 });
 
 export default EditLessonModal;
