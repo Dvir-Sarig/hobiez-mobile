@@ -1,6 +1,5 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Animated, Pressable } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { signIn, UserType } from '../services/authService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import SecureStorage from '../services/SecureStorage';
 import { tokens, surfaces, utils } from '../../shared/design/tokens';
 import AuthLayout from '../components/AuthLayout';
-import { getOrFetchDeviceToken, onDeviceTokenReady } from '../../shared/services/deviceTokenService';
+import { askPermissionOnceAfterSignIn, getOrFetchDeviceToken, refreshAndMaybeRegister, } from '../../shared/services/deviceTokenService';
 import { registerDeviceIfNeeded } from '../services/deviceApiService';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
@@ -42,26 +41,54 @@ export default function SignInScreen() {
       shakeError();
       return;
     }
+
     setIsLoading(true);
     setError('');
+
     try {
       const platformValue = Platform.OS?.toUpperCase?.() || undefined;
-      const tokenPromise = getOrFetchDeviceToken();
+
+      // 1) התחברות
       const data = await signIn(email, password, userType);
+
+      // 2) שמירת סטייט התחברות
       await SecureStorage.storeToken(data.token);
       await SecureStorage.storeUserId(data.userId.toString());
       await SecureStorage.storeUserType(userType.toLowerCase());
-      setAuthState({ userId: data.userId.toString(), userType: userType.toLowerCase(), token: data.token });
-      tokenPromise.then(async (token) => {
-        if (!token) return;
+      setAuthState({
+        userId: data.userId.toString(),
+        userType: userType.toLowerCase(),
+        token: data.token,
+      });
+
+      // 3) פרומפט הרשאות חד-פעמי אחרי התחברות (אם כבר אושר במכשיר – לא יקפוץ)
+      await askPermissionOnceAfterSignIn();
+
+      // 4) שליפת token ורישום לשרת (אם קיים)
+      const token = await getOrFetchDeviceToken();
+      if (token) {
         await registerDeviceIfNeeded({ token, userType, platform: platformValue });
-      }).catch(()=>{});
+      }
+
+      // 5) רענון "שקט" — אם הטוקן התחלף/משתמש התחלף נרשום מחדש לשרת
+      await refreshAndMaybeRegister(
+          async (freshToken) => {
+            await registerDeviceIfNeeded({ token: freshToken, userType, platform: platformValue });
+          },
+          data.userId.toString()
+      );
+
+
+      // 6) כאן אפשר לנווט למסך הבא אם צריך
+
     } catch (error: any) {
       let errorMessage = 'Invalid email or password';
       if (error.message?.includes('Network')) errorMessage = 'Network issue. Try again';
       setError(errorMessage);
       shakeError();
-    } finally { setIsLoading(false); }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const roleButton = (type: UserType, label: string, icon: any, color: string) => {
@@ -86,7 +113,7 @@ export default function SignInScreen() {
 
   return (
     <AuthLayout>
-      <View style={styles.header}> 
+      <View style={styles.header}>
         <View style={styles.headerIconWrap}>
           <Ionicons name="log-in-outline" size={40} color={tokens.colors.textOnDark} />
         </View>
@@ -96,7 +123,7 @@ export default function SignInScreen() {
       <View style={styles.formCard}>
         <Text style={styles.sectionLabel}>ACCOUNT</Text>
 
-        <View style={[styles.inputGroup]}> 
+        <View style={[styles.inputGroup]}>
           <Ionicons name="mail-outline" size={20} color="#64748b" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
@@ -110,7 +137,7 @@ export default function SignInScreen() {
           />
         </View>
 
-        <View style={[styles.inputGroup]}> 
+        <View style={[styles.inputGroup]}>
           <Ionicons name="lock-closed-outline" size={20} color="#64748b" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
@@ -127,7 +154,7 @@ export default function SignInScreen() {
         </View>
 
         {error ? (
-          <Animated.View style={[styles.errorContainer, { transform: [{ translateX: shakeAnimation }] }]}> 
+          <Animated.View style={[styles.errorContainer, { transform: [{ translateX: shakeAnimation }] }]}>
             <Ionicons name="alert-circle-outline" size={18} color={tokens.colors.error} />
             <Text style={styles.errorText}>{error}</Text>
           </Animated.View>

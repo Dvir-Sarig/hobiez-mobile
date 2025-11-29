@@ -9,6 +9,6 @@ if (__DEV__) {
 	console.log('[config] API Base URL:', resolved);
 }
 
-export const API_BASE_URL = resolved as string;
+export const API_BASE_URL = apiBaseUrl;
 export const GOOGLE_MAPS_API_KEY = googleMapsApiKey;
 export default API_BASE_URL;

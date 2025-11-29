@@ -1,9 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { NavigationContainerRef } from '@react-navigation/native';
 import { RootStackParamList } from '../../types';
-import SecureStorage from '../../auth/services/SecureStorage';
-import { registerDeviceIfNeeded } from '../../auth/services/deviceApiService';
-import { UserType } from '../../auth/services/authService';
 
 // Types coming from backend (all string values)
 export interface NotificationData {

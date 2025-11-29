@@ -23,6 +23,7 @@ import ClientProfileManager from './profile/components/manager/ClientProfileMana
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import * as Notifications from 'expo-notifications';
 import { useNavigationContainerRef } from '@react-navigation/native';
+import './shared/services/deviceTokenService';
 import { setNavigationRef, markNavigationReady, setAuthSnapshotProvider, handleNotificationResponse, handleColdStartNotification } from './shared/services/notificationNavigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
