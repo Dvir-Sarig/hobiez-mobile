@@ -20,7 +20,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     name: 'Hobinet',
     slug: 'hobinet-mobile',
     owner: 'dvirs',
-    version: '1.0.7',
+    version: '1.0.8',
 
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -38,7 +38,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ...config.ios,
         bundleIdentifier: 'com.dvirs.hobinet',
         supportsTablet: true,
-        buildNumber: '1.0.7',
+        buildNumber: '1.0.8',
         infoPlist: {
             NSCameraUsageDescription:
                 'This app needs access to your camera to let you take profile pictures.',
