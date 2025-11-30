@@ -331,23 +331,15 @@ export default function CoachDashboardScreen() {
     </View>
   );
 
-  useEffect(()=>{
-    const unsubscribe = navigation.addListener('focus', ()=>{
-      const reopenClients = route.params?.reopenRegisteredClientsModal; // legacy param support
-      const lid = route.params?.lessonId;
-      if ((route.params?.openCoachLessonModal || reopenClients) && lid) {
-        const lesson = lessons.find(l=> l.id === lid);
-        if (lesson) {
-          dispatchModal({ type:'OPEN_VIEW', lesson });
-        }
-        (navigation as any).setParams({ openCoachLessonModal: undefined, reopenRegisteredClientsModal: undefined });
-      } else if (pendingReturn === 'view' && lessonToView) {
-        dispatchModal({ type:'OPEN_VIEW', lesson: lessonToView });
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (pendingReturn === 'view' && lessonToView) {
+        dispatchModal({ type: 'OPEN_VIEW', lesson: lessonToView });
         setPendingReturn(null);
       }
     });
     return unsubscribe;
-  },[navigation, route.params, lessons, pendingReturn, lessonToView]);
+  }, [navigation, pendingReturn, lessonToView]);
 
   useEffect(() => {
     if (route.params?.openCoachLessonModal && route.params.lessonId && userId) {
