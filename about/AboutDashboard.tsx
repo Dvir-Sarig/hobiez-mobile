@@ -56,7 +56,7 @@ export default function AboutDashboard() {
         <View> 
           <Text style={[styles.bodyText,{ marginBottom:14 }]}>Have feedback or found a bug? Reach out anytime.</Text>
           <Text style={styles.linkText} onPress={() => Linking.openURL('mailto:dvirsarig1@gmail.com')}>📧 dvirsarig1@gmail.com</Text>
-          <Text style={styles.linkText} onPress={() => Linking.openURL('tel:+972526660845')}>📞 052-6660845</Text>
+          <Text style={styles.linkText} onPress={() => Linking.openURL('tel:+972526660845')}>📞 +972526660845</Text>
         </View>
       )
     }
