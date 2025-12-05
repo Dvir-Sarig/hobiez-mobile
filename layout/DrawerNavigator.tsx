@@ -80,12 +80,12 @@ const DrawerNavigator = ({ userType, initialScreen }: { userType: string | null;
             name="CoachCalendar" 
             component={CoachCalendarView}
           />
-          <Drawer.Screen 
-            name="PublicCoachCalendar"
-            component={PublicCoachCalendarView}
-          />
         </>
       )}
+      <Drawer.Screen 
+        name="PublicCoachCalendar"
+        component={PublicCoachCalendarView}
+      />
       <Drawer.Screen
         name="Profile"
         component={userType === 'client' ? ClientProfileDashboard : CoachProfileDashboard}
