@@ -45,14 +45,24 @@ const PublicCoachCalendarView: React.FC = () => {
 
   const handleRegister = async (lessonId: number) => {
     try {
-      await registerToLesson(userId!, lessonId);
+      if (!userId) throw new Error("User not authenticated");
+      await registerToLesson(userId, lessonId);
       Alert.alert('Success', 'You have been registered for the lesson.');
       handleCloseModal();
-      // Optionally, refresh lessons to show updated registration status
       fetchLessons();
+      await lessonCacheService.clearRegisteredLessons(userId);
     } catch (error) {
-      console.error('Error registering:', error);
-      Alert.alert('Error', 'An error occurred while registering.');
+      const errorMessage = (error as Error).message;
+      if (errorMessage.includes("already registered")) {
+        Alert.alert(
+          "Time Slot Unavailable",
+          "You already have a lesson scheduled at this time. Please choose a different time slot.",
+          [{ text: "OK", style: "default" }]
+        );
+      } else {
+        console.error('Error registering:', error);
+        Alert.alert('Error', 'An error occurred while registering.');
+      }
     }
   };
 
@@ -151,7 +161,7 @@ const PublicCoachCalendarView: React.FC = () => {
     <LinearGradient colors={['#0d47a1','#1565c0','#1e88e5']} style={styles.gradientContainer}>
       <View style={styles.overlayLayer}>
         <View style={styles.headerPolished}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerIconBtn} accessibilityLabel="Back to profile">
+          <TouchableOpacity onPress={() => navigation.navigate('CoachProfilePage', { coachId })} style={styles.headerIconBtn} accessibilityLabel="Back to profile">
             <Icon name="arrow-back" size={20} color="#ffffff" />
           </TouchableOpacity>
           <View style={{flex:1}}>

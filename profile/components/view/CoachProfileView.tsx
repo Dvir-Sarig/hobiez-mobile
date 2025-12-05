@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CoachProfile } from '../../types/profile';
 import BaseProfileView from './BaseProfileView';
 
@@ -8,17 +8,26 @@ interface CoachProfileViewProps {
   profileData: CoachProfile;
   onEditClick?: () => void;
   onViewCalendarClick?: () => void;
+  onWhatsAppPress?: () => void;
 }
 
-export default function CoachProfileView({ profileData, onEditClick, onViewCalendarClick }: CoachProfileViewProps) {
+export default function CoachProfileView({ profileData, onEditClick, onViewCalendarClick, onWhatsAppPress }: CoachProfileViewProps) {
   return (
     <BaseProfileView profileData={profileData} onEditClick={onEditClick}>
-      {onViewCalendarClick && (
-        <TouchableOpacity style={styles.calendarButton} onPress={onViewCalendarClick}>
-          <MaterialIcons name="calendar-today" size={20} color="#fff" />
-          <Text style={styles.calendarButtonText}>View Calendar</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.actionButtonsContainer}>
+        {onViewCalendarClick && (
+          <TouchableOpacity style={styles.calendarButton} onPress={onViewCalendarClick}>
+            <MaterialIcons name="calendar-today" size={20} color="#fff" />
+            <Text style={styles.calendarButtonText}>View Calendar</Text>
+          </TouchableOpacity>
+        )}
+        {onWhatsAppPress && (
+          <TouchableOpacity style={styles.whatsAppButton} onPress={onWhatsAppPress}>
+            <MaterialCommunityIcons name="whatsapp" size={20} color="#fff" />
+            <Text style={styles.whatsAppButtonText}>WhatsApp</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       <View style={styles.section}>
         <SectionHeader icon="work" title="Experience" />
         <Text style={styles.longText}>{profileData.experience || 'No experience info yet'}</Text>
@@ -192,6 +201,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontStyle: 'italic',
   },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginHorizontal: 20,
+    marginTop: 15,
+    marginBottom: 5,
+  },
   calendarButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -205,11 +221,32 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
-    marginHorizontal: 20,
-    marginTop: 15,
-    marginBottom: 5,
+    flex: 1,
+    marginRight: 5,
   },
   calendarButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  whatsAppButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#25D366',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+    flex: 1,
+    marginLeft: 5,
+  },
+  whatsAppButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',

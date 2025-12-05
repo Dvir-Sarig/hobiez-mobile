@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
+  Linking,
+  Alert,
 } from 'react-native';
 import { useRoute, useNavigation, DrawerActions } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -32,6 +34,23 @@ export default function CoachProfilePage() {
   const handleViewCalendar = () => {
     if (coachId) {
       navigation.navigate('PublicCoachCalendar', { coachId });
+    }
+  };
+
+  const handleWhatsAppPress = () => {
+    if (profileData?.genericProfile.phoneNumber) {
+      const url = `whatsapp://send?phone=${profileData.genericProfile.phoneNumber}`;
+      Linking.canOpenURL(url)
+        .then((supported) => {
+          if (supported) {
+            return Linking.openURL(url);
+          } else {
+            Alert.alert('WhatsApp is not installed on your device');
+          }
+        })
+        .catch((err) => console.error('An error occurred', err));
+    } else {
+      Alert.alert('This coach has not provided a phone number.');
     }
   };
 
@@ -189,6 +208,7 @@ export default function CoachProfilePage() {
         <ProfileView 
           profileData={profileData}
           onViewCalendarClick={handleViewCalendar}
+          onWhatsAppPress={handleWhatsAppPress}
         />
       ) : (
         <NoProfileModal
