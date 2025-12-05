@@ -615,17 +615,10 @@ export default function ClientDashboardScreen() {
         {selectedLesson && (
           <RegistrationLessonModal
             lesson={selectedLesson}
-            coachInfo={coachInfoMap[selectedLesson.coachId]}
+            coachName={selectedLesson ? coachInfoMap[selectedLesson.coachId]?.name : undefined}
             isOpen={isModalOpen}
             onClose={handleCloseModal}
             onRegister={handleRegisterToLesson}
-            onOpenCoachModal={(coachId) => {
-              const info = coachInfoMap[coachId];
-              if (info) {
-                setSelectedCoachInfo(info);
-                setIsCoachModalOpen(true);
-              }
-            }}
           />
         )}
         {selectedCoachInfo && (
