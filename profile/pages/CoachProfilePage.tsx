@@ -15,6 +15,8 @@ import { CoachProfile } from '../types/profile';
 import ProfileView from '../components/view/CoachProfileView';
 import NoProfileModal from '../components/modals/NoProfileModal';
 
+import { openWhatsAppChat } from '../../shared/services/whatsAppService';
+
 export default function CoachProfilePage() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -38,15 +40,7 @@ export default function CoachProfilePage() {
   };
 
   const handleWhatsAppPress = () => {
-    if (profileData?.genericProfile.phoneNumber) {
-      const phoneNumber = profileData.genericProfile.phoneNumber.replace(/[^0-9]/g, '');
-      const url = `https://wa.me/${phoneNumber}`;
-      Linking.openURL(url).catch(() => {
-        Alert.alert('An error occurred', 'Could not open WhatsApp. Please try again later.');
-      });
-    } else {
-      Alert.alert('This coach has not provided a phone number.');
-    }
+    openWhatsAppChat(profileData?.genericProfile.phoneNumber, profileData?.genericProfile.location?.country);
   };
 
   const handleNoProfileClose = () => {

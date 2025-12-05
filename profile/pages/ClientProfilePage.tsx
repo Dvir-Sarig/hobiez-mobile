@@ -16,6 +16,8 @@ import ClientProfileView from '../components/view/ClientProfileView';
 import NoProfileModal from '../components/modals/NoProfileModal';
 import { DrawerActions } from '@react-navigation/native';
 
+import { openWhatsAppChat } from '../../shared/services/whatsAppService';
+
 export default function ClientProfilePage() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -30,15 +32,7 @@ export default function ClientProfilePage() {
   const [showNoProfileModal, setShowNoProfileModal] = useState(false);
 
   const handleWhatsAppPress = () => {
-    if (profileData?.genericProfile.phoneNumber) {
-      const phoneNumber = profileData.genericProfile.phoneNumber.replace(/[^0-9]/g, '');
-      const url = `https://wa.me/${phoneNumber}`;
-      Linking.openURL(url).catch(() => {
-        Alert.alert('An error occurred', 'Could not open WhatsApp. Please try again later.');
-      });
-    } else {
-      Alert.alert('This client has not provided a phone number.');
-    }
+    openWhatsAppChat(profileData?.genericProfile.phoneNumber, profileData?.genericProfile.location?.country);
   };
 
   const handleNoProfileClose = () => {
