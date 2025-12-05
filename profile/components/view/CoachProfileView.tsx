@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CoachProfile } from '../../types/profile';
 import BaseProfileView from './BaseProfileView';
@@ -7,11 +7,18 @@ import BaseProfileView from './BaseProfileView';
 interface CoachProfileViewProps {
   profileData: CoachProfile;
   onEditClick?: () => void;
+  onViewCalendarClick?: () => void;
 }
 
-export default function CoachProfileView({ profileData, onEditClick }: CoachProfileViewProps) {
+export default function CoachProfileView({ profileData, onEditClick, onViewCalendarClick }: CoachProfileViewProps) {
   return (
     <BaseProfileView profileData={profileData} onEditClick={onEditClick}>
+      {onViewCalendarClick && (
+        <TouchableOpacity style={styles.calendarButton} onPress={onViewCalendarClick}>
+          <MaterialIcons name="calendar-today" size={20} color="#fff" />
+          <Text style={styles.calendarButtonText}>View Calendar</Text>
+        </TouchableOpacity>
+      )}
       <View style={styles.section}>
         <SectionHeader icon="work" title="Experience" />
         <Text style={styles.longText}>{profileData.experience || 'No experience info yet'}</Text>
@@ -184,5 +191,28 @@ const styles = StyleSheet.create({
     color: '#607d8b',
     fontSize: 13,
     fontStyle: 'italic',
+  },
+  calendarButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1976d2',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+    marginHorizontal: 20,
+    marginTop: 15,
+    marginBottom: 5,
+  },
+  calendarButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });

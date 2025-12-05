@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import dotenv from 'dotenv';
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
-// בוחרים קובץ סביבת עבודה (ברירת מחדל: development)
 const APP_ENV = process.env.APP_ENV ?? 'development';
 const envFile = path.resolve(process.cwd(), `.env.${APP_ENV}`);
 
@@ -27,7 +26,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     userInterfaceStyle: 'light',
 
     splash: {
-        image: './assets/hobinet-load.png',
+        image: './assets/adaptive-icon.png',
         resizeMode: 'contain',
         backgroundColor: '#ffffff',
     },
@@ -79,7 +78,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         eas: {
             projectId: '608daaa3-e056-4641-80da-2e6b047dc45c',
         },
-        appEnv: APP_ENV, // נוח ללוגים
+        appEnv: APP_ENV, 
     },
 
     notification: {

@@ -29,6 +29,12 @@ export default function CoachProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [showNoProfileModal, setShowNoProfileModal] = useState(false);
 
+  const handleViewCalendar = () => {
+    if (coachId) {
+      navigation.navigate('PublicCoachCalendar', { coachId });
+    }
+  };
+
   const handleNoProfileClose = () => {
     setShowNoProfileModal(false);
     // Highest priority: explicit calendar origin to force calendar reopen
@@ -180,7 +186,10 @@ export default function CoachProfilePage() {
         </TouchableOpacity>
       )}
       {profileData ? (
-        <ProfileView profileData={profileData} />
+        <ProfileView 
+          profileData={profileData}
+          onViewCalendarClick={handleViewCalendar}
+        />
       ) : (
         <NoProfileModal
           isOpen={showNoProfileModal}

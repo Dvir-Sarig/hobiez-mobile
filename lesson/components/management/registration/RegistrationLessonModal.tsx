@@ -24,11 +24,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Props {
   lesson: Lesson | null;
-  coachInfo?: { name: string };
+  coachName?: string;
   isOpen: boolean;
   onClose: () => void;
   onRegister: (lessonId: number) => void;
-  onOpenCoachModal: (coachId: string) => void;
 }
 
 const getCapacityColor = (registered: number, limit: number): string => {
@@ -40,7 +39,7 @@ const getCapacityColor = (registered: number, limit: number): string => {
 
 const RegistrationLessonModal: React.FC<Props> = ({
   lesson,
-  coachInfo,
+  coachName: initialCoachName,
   isOpen,
   onClose,
   onRegister,
@@ -83,7 +82,7 @@ const RegistrationLessonModal: React.FC<Props> = ({
     }
   };
 
-  const coachName = coachGlobalInfo?.name || coachInfo?.name || 'Coach';
+  const coachName = coachGlobalInfo?.name || initialCoachName || 'Coach';
   const registered = lesson.registeredCount ?? 0;
   const capacity = lesson.capacityLimit ?? 0;
   const capacityColor = getCapacityColor(registered, capacity);
