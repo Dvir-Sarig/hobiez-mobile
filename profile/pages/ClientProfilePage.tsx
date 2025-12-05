@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
+  Linking,
+  Alert,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -26,6 +28,18 @@ export default function ClientProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNoProfileModal, setShowNoProfileModal] = useState(false);
+
+  const handleWhatsAppPress = () => {
+    if (profileData?.genericProfile.phoneNumber) {
+      const phoneNumber = profileData.genericProfile.phoneNumber.replace(/[^0-9]/g, '');
+      const url = `https://wa.me/${phoneNumber}`;
+      Linking.openURL(url).catch(() => {
+        Alert.alert('An error occurred', 'Could not open WhatsApp. Please try again later.');
+      });
+    } else {
+      Alert.alert('This client has not provided a phone number.');
+    }
+  };
 
   const handleNoProfileClose = () => {
     setShowNoProfileModal(false);
@@ -144,7 +158,10 @@ export default function ClientProfilePage() {
         </TouchableOpacity>
       )}
       {profileData ? (
-        <ClientProfileView profileData={profileData} />
+        <ClientProfileView 
+          profileData={profileData}
+          onWhatsAppPress={handleWhatsAppPress}
+        />
       ) : (
         <NoProfileModal
           isOpen={showNoProfileModal}

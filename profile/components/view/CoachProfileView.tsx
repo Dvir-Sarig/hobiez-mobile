@@ -13,21 +13,12 @@ interface CoachProfileViewProps {
 
 export default function CoachProfileView({ profileData, onEditClick, onViewCalendarClick, onWhatsAppPress }: CoachProfileViewProps) {
   return (
-    <BaseProfileView profileData={profileData} onEditClick={onEditClick}>
-      <View style={styles.actionButtonsContainer}>
-        {onViewCalendarClick && (
-          <TouchableOpacity style={styles.calendarButton} onPress={onViewCalendarClick}>
-            <MaterialIcons name="calendar-today" size={20} color="#fff" />
-            <Text style={styles.calendarButtonText}>View Calendar</Text>
-          </TouchableOpacity>
-        )}
-        {onWhatsAppPress && (
-          <TouchableOpacity style={styles.whatsAppButton} onPress={onWhatsAppPress}>
-            <MaterialCommunityIcons name="whatsapp" size={20} color="#fff" />
-            <Text style={styles.whatsAppButtonText}>WhatsApp</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+    <BaseProfileView 
+      profileData={profileData} 
+      onEditClick={onEditClick}
+      onViewCalendarClick={onViewCalendarClick}
+      onWhatsAppPress={onWhatsAppPress}
+    >
       <View style={styles.section}>
         <SectionHeader icon="work" title="Experience" />
         <Text style={styles.longText}>{profileData.experience || 'No experience info yet'}</Text>

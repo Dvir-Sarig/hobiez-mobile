@@ -39,16 +39,11 @@ export default function CoachProfilePage() {
 
   const handleWhatsAppPress = () => {
     if (profileData?.genericProfile.phoneNumber) {
-      const url = `whatsapp://send?phone=${profileData.genericProfile.phoneNumber}`;
-      Linking.canOpenURL(url)
-        .then((supported) => {
-          if (supported) {
-            return Linking.openURL(url);
-          } else {
-            Alert.alert('WhatsApp is not installed on your device');
-          }
-        })
-        .catch((err) => console.error('An error occurred', err));
+      const phoneNumber = profileData.genericProfile.phoneNumber.replace(/[^0-9]/g, '');
+      const url = `https://wa.me/${phoneNumber}`;
+      Linking.openURL(url).catch(() => {
+        Alert.alert('An error occurred', 'Could not open WhatsApp. Please try again later.');
+      });
     } else {
       Alert.alert('This coach has not provided a phone number.');
     }

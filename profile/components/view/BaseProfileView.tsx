@@ -16,19 +16,23 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from 'react-native-reanimated';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { GenericProfileInfo } from '../../types/profile';
 
 interface BaseProfileViewProps {
   profileData: { genericProfile: GenericProfileInfo };
   children?: React.ReactNode;
   onEditClick?: () => void;
+  onViewCalendarClick?: () => void;
+  onWhatsAppPress?: () => void;
 }
 
 export default function BaseProfileView({
   profileData,
   children,
   onEditClick,
+  onViewCalendarClick,
+  onWhatsAppPress,
 }: BaseProfileViewProps) {
   const {
     name,
@@ -135,6 +139,20 @@ export default function BaseProfileView({
               <InfoRow icon="email" value={email} />
               {!!phoneNumber && <InfoRow icon="phone" value={phoneNumber} />}
               <InfoRow icon="location-on" value={`${location?.city}, ${location?.country}`} />
+              <View style={styles.actionButtonsContainer}>
+                {onViewCalendarClick && (
+                  <TouchableOpacity style={styles.actionButton} onPress={onViewCalendarClick}>
+                    <MaterialIcons name="calendar-today" size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>Calendar</Text>
+                  </TouchableOpacity>
+                )}
+                {onWhatsAppPress && (
+                  <TouchableOpacity style={styles.actionButton} onPress={onWhatsAppPress}>
+                    <MaterialCommunityIcons name="whatsapp" size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>WhatsApp</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </LinearGradient>
@@ -278,5 +296,24 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     display:'none'
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });
