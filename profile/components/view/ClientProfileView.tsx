@@ -11,14 +11,20 @@ import BaseProfileView from './BaseProfileView';
 interface ClientProfileViewProps {
   profileData: ClientProfile;
   onEditClick?: () => void;
+  onWhatsAppPress?: () => void;
 }
 
 export default function ClientProfileView({
   profileData,
   onEditClick,
+  onWhatsAppPress,
 }: ClientProfileViewProps) {
   return (
-    <BaseProfileView profileData={profileData} onEditClick={onEditClick}>
+    <BaseProfileView
+      profileData={profileData}
+      onEditClick={onEditClick}
+      onWhatsAppPress={onWhatsAppPress}
+    >
       {/* Hobbies */}
       <View style={styles.section}>
         <SectionHeader icon="sports" title="Hobbies" />

@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
+  Linking,
+  Alert,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,6 +15,8 @@ import { ClientProfile } from '../types/profile';
 import ClientProfileView from '../components/view/ClientProfileView';
 import NoProfileModal from '../components/modals/NoProfileModal';
 import { DrawerActions } from '@react-navigation/native';
+
+import { openWhatsAppChat } from '../../shared/services/whatsAppService';
 
 export default function ClientProfilePage() {
   const route = useRoute<any>();
@@ -26,6 +30,10 @@ export default function ClientProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNoProfileModal, setShowNoProfileModal] = useState(false);
+
+  const handleWhatsAppPress = () => {
+    openWhatsAppChat(profileData?.genericProfile.phoneNumber, profileData?.genericProfile.location?.country);
+  };
 
   const handleNoProfileClose = () => {
     setShowNoProfileModal(false);
@@ -144,7 +152,10 @@ export default function ClientProfilePage() {
         </TouchableOpacity>
       )}
       {profileData ? (
-        <ClientProfileView profileData={profileData} />
+        <ClientProfileView 
+          profileData={profileData}
+          onWhatsAppPress={handleWhatsAppPress}
+        />
       ) : (
         <NoProfileModal
           isOpen={showNoProfileModal}

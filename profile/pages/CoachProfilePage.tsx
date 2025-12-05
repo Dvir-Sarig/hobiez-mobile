@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
+  Linking,
+  Alert,
 } from 'react-native';
 import { useRoute, useNavigation, DrawerActions } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,6 +14,8 @@ import { fetchPublicCoachProfile } from '../utils/profileService';
 import { CoachProfile } from '../types/profile';
 import ProfileView from '../components/view/CoachProfileView';
 import NoProfileModal from '../components/modals/NoProfileModal';
+
+import { openWhatsAppChat } from '../../shared/services/whatsAppService';
 
 export default function CoachProfilePage() {
   const route = useRoute<any>();
@@ -28,6 +32,16 @@ export default function CoachProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNoProfileModal, setShowNoProfileModal] = useState(false);
+
+  const handleViewCalendar = () => {
+    if (coachId) {
+      navigation.navigate('PublicCoachCalendar', { coachId });
+    }
+  };
+
+  const handleWhatsAppPress = () => {
+    openWhatsAppChat(profileData?.genericProfile.phoneNumber, profileData?.genericProfile.location?.country);
+  };
 
   const handleNoProfileClose = () => {
     setShowNoProfileModal(false);
@@ -180,7 +194,11 @@ export default function CoachProfilePage() {
         </TouchableOpacity>
       )}
       {profileData ? (
-        <ProfileView profileData={profileData} />
+        <ProfileView 
+          profileData={profileData}
+          onViewCalendarClick={handleViewCalendar}
+          onWhatsAppPress={handleWhatsAppPress}
+        />
       ) : (
         <NoProfileModal
           isOpen={showNoProfileModal}

@@ -14,6 +14,7 @@ import CoachProfilePage from '../profile/pages/CoachProfilePage';
 import ClientProfilePage from '../profile/pages/ClientProfilePage';
 import ClientCalendarView from '../calendars/client/ClientCalendarView';
 import CoachCalendarView from '../calendars/coach/CoachCalendarView';
+import PublicCoachCalendarView from '../calendars/coach/PublicCoachCalendarView';
 import CreateCoachProfile from '../profile/components/creation/CreateCoachProfile';
 import CreateClientProfile from '../profile/components/creation/CreateClientProfile';
 import { DrawerActions } from '@react-navigation/native';
@@ -81,6 +82,10 @@ const DrawerNavigator = ({ userType, initialScreen }: { userType: string | null;
           />
         </>
       )}
+      <Drawer.Screen 
+        name="PublicCoachCalendar"
+        component={PublicCoachCalendarView}
+      />
       <Drawer.Screen
         name="Profile"
         component={userType === 'client' ? ClientProfileDashboard : CoachProfileDashboard}
