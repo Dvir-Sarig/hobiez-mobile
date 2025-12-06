@@ -167,7 +167,7 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Coaching Types</Text>
+            <Text style={styles.sectionHeader}>Skills</Text>
             <SkillSelector
               selectedSkills={formData.skills || []}
               onAdd={(skill) => updateField({ skills: [...(formData.skills || []), skill] })}

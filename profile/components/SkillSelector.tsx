@@ -35,7 +35,7 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLab
 
   return (
     <View style={styles.container}>
-      {!hideLabel && <Text style={styles.label}>Coaching Types</Text>}
+      {!hideLabel && <Text style={styles.label}>Skills</Text>}
       {/* Selected chips */}
       <View style={styles.chipsContainer}>
         {selectedSkills.map((skill, index) => (
@@ -54,7 +54,7 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLab
         onPress={() => setModalVisible(true)}
       >
         <MaterialIcons name="add-circle-outline" size={18} color="#fff" style={{marginRight:6}} />
-        <Text style={styles.addButtonText}>Add Coaching Type</Text>
+        <Text style={styles.addButtonText}>Add Skill</Text>
       </TouchableOpacity>
 
       {/* Modal with pickers */}
@@ -66,7 +66,7 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLab
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Add Coaching Type</Text>
+            <Text style={styles.modalTitle}>Add Skill</Text>
 
             <Text style={styles.modalLabel}>Type</Text>
             <View style={styles.pickerWrapper}>

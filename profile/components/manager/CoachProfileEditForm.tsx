@@ -120,7 +120,7 @@ export default function CoachProfileEditForm({
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Coaching Types</Text>
+          <Text style={styles.sectionHeader}>Skills</Text>
           <SkillSelector
             selectedSkills={editData.skills || []}
             onAdd={(skill) => updateField({ skills: [...(editData.skills || []), skill] })}

@@ -48,7 +48,7 @@ export const validateCoachProfile = (data: CoachProfile): ValidationResult => {
   if (!gp.languages || gp.languages.length === 0) errors['genericProfile.languages'] = 'Select at least one language';
 
   if (minLen(data.experience) < 30) errors['experience'] = 'Experience section too short (min 30 chars)';
-  if (!data.skills || data.skills.length === 0) errors['skills'] = 'Add at least one coaching type';
+  if (!data.skills || data.skills.length === 0) errors['skills'] = 'Add at least one Skill';
 
   if (data.education) validateEducation(data.education, errors);
 
