@@ -167,19 +167,18 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Languages</Text>
-            <LanguageSelector
-              selectedLanguages={formData.genericProfile.languages as SupportedLanguage[]}
-              onAdd={(lang) => updateGeneric({ languages: [...formData.genericProfile.languages, lang] })}
-              onRemove={(lang) => updateGeneric({ languages: formData.genericProfile.languages.filter((l) => l !== lang) })}
-              editable
-              hideHeader
+            <Text style={styles.sectionHeader}>Coaching Types</Text>
+            <SkillSelector
+              selectedSkills={formData.skills || []}
+              onAdd={(skill) => updateField({ skills: [...(formData.skills || []), skill] })}
+              onRemove={(skill) => updateField({ skills: (formData.skills || []).filter((s) => s !== skill) })}
+              hideLabel
             />
-            {errors['genericProfile.languages'] && <Text style={styles.errorText}>{errors['genericProfile.languages']}</Text>}
+            {errors['skills'] && <Text style={styles.errorText}>{errors['skills']}</Text>}
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Experience & Skills</Text>
+            <Text style={styles.sectionHeader}>Experience</Text>
             <Text style={styles.label}>Experience</Text>
             <TextInput
               style={[styles.input, styles.textArea, errors['experience'] && styles.inputError]}
@@ -191,13 +190,6 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
               onChangeText={(value) => updateField({ experience: value })}
             />
             {errors['experience'] && <Text style={styles.errorText}>{errors['experience']}</Text>}
-
-            <SkillSelector
-              selectedSkills={formData.skills || []}
-              onAdd={(skill) => updateField({ skills: [...(formData.skills || []), skill] })}
-              onRemove={(skill) => updateField({ skills: formData.skills.filter((s) => s.name !== skill.name) })}
-            />
-            {errors['skills'] && <Text style={styles.errorText}>{errors['skills']}</Text>}
           </View>
 
           <View style={styles.section}>
@@ -210,6 +202,18 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
             {Object.keys(errors).some(k => k.startsWith('education.')) && (
               <Text style={styles.errorText}>Please complete required education fields</Text>
             )}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionHeader}>Languages</Text>
+            <LanguageSelector
+              selectedLanguages={formData.genericProfile.languages as SupportedLanguage[]}
+              onAdd={(lang) => updateGeneric({ languages: [...formData.genericProfile.languages, lang] })}
+              onRemove={(lang) => updateGeneric({ languages: formData.genericProfile.languages.filter((l) => l !== lang) })}
+              editable
+              hideHeader
+            />
+            {errors['genericProfile.languages'] && <Text style={styles.errorText}>{errors['genericProfile.languages']}</Text>}
           </View>
 
           <View style={{height:90}} />

@@ -120,6 +120,44 @@ export default function CoachProfileEditForm({
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionHeader}>Coaching Types</Text>
+          <SkillSelector
+            selectedSkills={editData.skills || []}
+            onAdd={(skill) => updateField({ skills: [...(editData.skills || []), skill] })}
+            onRemove={(skill) => updateField({ skills: editData.skills.filter((s) => s !== skill) })}
+            hideLabel
+          />
+          {errors['skills'] && <Text style={styles.errorText}>{errors['skills']}</Text>}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>Experience</Text>
+          <Text style={styles.label}>Experience</Text>
+          <TextInput
+            style={[styles.input, styles.textArea, errors['experience'] && styles.inputError]}
+            value={editData.experience || ''}
+            onChangeText={(val) => updateField({ experience: val })}
+            placeholder="Share your professional experience... (min 30 chars)"
+            placeholderTextColor="#90a4ae"
+            multiline
+            numberOfLines={4}
+          />
+          {errors['experience'] && <Text style={styles.errorText}>{errors['experience']}</Text>}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>Education</Text>
+          <EducationEditor
+            educationList={editData.education || []}
+            onChange={(newList) => updateField({ education: newList })}
+            hideTitle
+          />
+          {Object.keys(errors).some(k => k.startsWith('education.')) && (
+            <Text style={styles.errorText}>Please complete required education fields</Text>
+          )}
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionHeader}>Languages</Text>
           <LanguageSelector
             selectedLanguages={editData.genericProfile.languages as SupportedLanguage[]}
@@ -143,41 +181,6 @@ export default function CoachProfileEditForm({
             hideHeader
           />
           {errors['genericProfile.languages'] && <Text style={styles.errorText}>{errors['genericProfile.languages']}</Text>}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Experience & Skills</Text>
-          <Text style={styles.label}>Experience</Text>
-          <TextInput
-            style={[styles.input, styles.textArea, errors['experience'] && styles.inputError]}
-            value={editData.experience || ''}
-            onChangeText={(val) => updateField({ experience: val })}
-            placeholder="Share your professional experience... (min 30 chars)"
-            placeholderTextColor="#90a4ae"
-            multiline
-            numberOfLines={4}
-          />
-          {errors['experience'] && <Text style={styles.errorText}>{errors['experience']}</Text>}
-
-          <SkillSelector
-            selectedSkills={editData.skills || []}
-            onAdd={(skill) => updateField({ skills: [...(editData.skills || []), skill] })}
-            onRemove={(skill) => updateField({ skills: editData.skills.filter((s) => s.name !== skill.name) })}
-            hideLabel
-          />
-          {errors['skills'] && <Text style={styles.errorText}>{errors['skills']}</Text>}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Education</Text>
-          <EducationEditor
-            educationList={editData.education || []}
-            onChange={(newList) => updateField({ education: newList })}
-            hideTitle
-          />
-          {Object.keys(errors).some(k => k.startsWith('education.')) && (
-            <Text style={styles.errorText}>Please complete required education fields</Text>
-          )}
         </View>
 
         <View style={{height:100}} />

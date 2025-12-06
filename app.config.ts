@@ -20,6 +20,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     slug: 'hobinet-mobile',
     owner: 'dvirs',
     version: '1.0.8',
+    // Required for expo-dev-client to determine deep link scheme
+    scheme: 'hobinet',
 
     orientation: 'portrait',
     icon: './assets/icon.png',
