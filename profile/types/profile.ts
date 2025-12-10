@@ -1,3 +1,5 @@
+import { LessonType } from '../../lesson/types/LessonType';
+
 export interface Location {
     city: string;
     country: string;
@@ -15,14 +17,6 @@ export interface Education {
     description?: string | null;
     gpa?: number | null;
     achievements?: string[] | null;
-}
-
-export interface Skill {
-    name: SupportedHobby;
-    level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
-    category?: 'TECHNICAL' | 'TEACHING' | 'COACHING' | 'COMMUNICATION' | 'LEADERSHIP' | 'OTHER';
-    yearsOfExperience?: number | null;
-    description?: string | null;
 }
 
 export interface Certification {
@@ -48,7 +42,7 @@ export interface CoachProfile {
     genericProfile: GenericProfileInfo;
     experience: string;
     education: Education[];
-    skills: Skill[];
+    skills: LessonType[];
     certifications?: Certification[];
 }
 
@@ -71,28 +65,4 @@ export const SUPPORTED_LANGUAGES = [
     'Japanese',
     'Italian'
 ] as const;
-export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
-
-export const SUPPORTED_HOBBIES = [
-    'Tennis',
-    'Yoga',
-    'Surfing',
-    'Swimming',
-    'Running',
-    'Cycling',
-    'Basketball',
-    'Soccer',
-    'Volleyball',
-    'Dancing',
-    'Martial Arts',
-    'Golf',
-    'Skiing',
-    'Hiking',
-    'Rock Climbing',
-    'Pilates',
-    'CrossFit',
-    'Boxing',
-    'Weightlifting',
-    'Meditation'
-] as const;
-export type SupportedHobby = typeof SUPPORTED_HOBBIES[number]; 
+export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number]; 

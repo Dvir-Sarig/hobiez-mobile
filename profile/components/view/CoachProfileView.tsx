@@ -42,7 +42,7 @@ export default function CoachProfileView({ profileData, onEditClick, onViewCalen
         <SectionHeader icon="star" title="Skills" />
         <View style={styles.chipContainer}>
           {profileData.skills && profileData.skills.length > 0 ? profileData.skills.map((skill, i) => (
-            <View key={i} style={styles.skillChip}><Text style={styles.skillChipText}>{skill.name} · {skill.level}</Text></View>
+            <View key={i} style={styles.skillChip}><Text style={styles.skillChipText}>{skill}</Text></View>
           )) : <Text style={styles.emptyText}>No skills listed</Text>}
         </View>
       </View>

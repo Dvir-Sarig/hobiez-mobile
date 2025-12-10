@@ -5,48 +5,30 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
-  Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { Skill, SupportedHobby } from '../types/profile';
-import { Chip } from 'react-native-paper';
+import { lessonTypes, LessonType } from '../../lesson/types/LessonType';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const LEVELS: Skill['level'][] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'];
-
-const SUPPORTED_HOBBIES: SupportedHobby[] = [
-  'Tennis', 'Yoga', 'Surfing', 'Swimming', 'Running', 'Cycling',
-  'Basketball', 'Soccer', 'Volleyball', 'Dancing', 'Martial Arts',
-  'Golf', 'Skiing', 'Hiking', 'Rock Climbing', 'Pilates',
-  'CrossFit', 'Boxing', 'Weightlifting', 'Meditation'
-];
-
 interface Props {
-  selectedSkills: Skill[];
-  onAdd: (skill: Skill) => void;
-  onRemove: (skill: Skill) => void;
-  hideLabel?: boolean; // new prop to optionally hide the internal header label
+  selectedSkills: LessonType[];
+  onAdd: (skill: LessonType) => void;
+  onRemove: (skill: LessonType) => void;
+  hideLabel?: boolean;
 }
 
 export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLabel = false }: Props) {
-  const [selectedSport, setSelectedSport] = useState<SupportedHobby | null>(null);
-  const [selectedLevel, setSelectedLevel] = useState<Skill['level'] | null>(null);
+  const [selectedSport, setSelectedSport] = useState<LessonType | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const availableHobbies = SUPPORTED_HOBBIES.filter(
-    (hobby) => !selectedSkills.some((skill) => skill.name === hobby)
+  const availableHobbies = lessonTypes.filter(
+    (hobby) => !selectedSkills.some((skill) => skill === hobby)
   );
 
   const handleAdd = () => {
-    if (selectedSport && selectedLevel) {
-      const newSkill: Skill = {
-        name: selectedSport,
-        level: selectedLevel,
-        category: 'COACHING',
-      };
-      onAdd(newSkill);
+    if (selectedSport) {
+      onAdd(selectedSport);
       setSelectedSport(null);
-      setSelectedLevel(null);
       setModalVisible(false);
     }
   };
@@ -58,7 +40,7 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLab
       <View style={styles.chipsContainer}>
         {selectedSkills.map((skill, index) => (
           <View key={index} style={styles.skillPill}>
-            <Text style={styles.skillPillText}>{`${skill.name} · ${skill.level}`}</Text>
+            <Text style={styles.skillPillText}>{`${skill}`}</Text>
             <TouchableOpacity onPress={() => onRemove(skill)} style={styles.removePillBtn}>
               <MaterialIcons name="close" size={14} color="#fff" />
             </TouchableOpacity>
@@ -84,9 +66,9 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLab
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Add New Skill</Text>
+            <Text style={styles.modalTitle}>Add Skill</Text>
 
-            <Text style={styles.modalLabel}>Sport</Text>
+            <Text style={styles.modalLabel}>Type</Text>
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={selectedSport}
@@ -99,28 +81,17 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLab
               </Picker>
             </View>
 
-            <Text style={styles.modalLabel}>Level</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={selectedLevel}
-                onValueChange={(itemValue) => setSelectedLevel(itemValue)}
-              >
-                <Picker.Item label="Select level..." value={null} />
-                {LEVELS.map((level) => (
-                  <Picker.Item key={level} label={level} value={level} />
-                ))}
-              </Picker>
-            </View>
+            {/* Level removed for simplified UX */}
 
             {/* Modal buttons */}
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[
                   styles.confirmButton,
-                  !(selectedSport && selectedLevel) && styles.disabledButton,
+                  !selectedSport && styles.disabledButton,
                 ]}
                 onPress={handleAdd}
-                disabled={!selectedSport || !selectedLevel}
+                disabled={!selectedSport}
               >
                 <Text style={styles.confirmButtonText}>Add</Text>
               </TouchableOpacity>

@@ -1,4 +1,5 @@
-import { ClientProfile, CoachProfile, Education, Skill } from '../types/profile';
+import { ClientProfile, CoachProfile, Education } from '../types/profile';
+import { LessonType } from '../../lesson/types/LessonType';
 
 export interface ValidationResult {
   valid: boolean;
@@ -15,13 +16,6 @@ const validateEducation = (education: Education[], errors: Record<string,string>
     if (!e.degree?.trim()) errors[`education.${idx}.degree`] = 'Degree is required';
     if (!e.fieldOfStudy?.trim()) errors[`education.${idx}.fieldOfStudy`] = 'Field of study is required';
     if (!e.startDate?.trim()) errors[`education.${idx}.startDate`] = 'Start date is required';
-  });
-};
-
-const validateSkills = (skills: Skill[], errors: Record<string,string>) => {
-  skills.forEach((s, idx) => {
-    if (!s.name?.trim()) errors[`skills.${idx}.name`] = 'Skill name is required';
-    if (!s.level) errors[`skills.${idx}.level`] = 'Skill level is required';
   });
 };
 
@@ -54,10 +48,9 @@ export const validateCoachProfile = (data: CoachProfile): ValidationResult => {
   if (!gp.languages || gp.languages.length === 0) errors['genericProfile.languages'] = 'Select at least one language';
 
   if (minLen(data.experience) < 30) errors['experience'] = 'Experience section too short (min 30 chars)';
-  if (!data.skills || data.skills.length === 0) errors['skills'] = 'Add at least one skill';
+  if (!data.skills || data.skills.length === 0) errors['skills'] = 'Add at least one Skill';
 
   if (data.education) validateEducation(data.education, errors);
-  if (data.skills) validateSkills(data.skills, errors);
 
   return { valid: Object.keys(errors).length === 0, errors };
 };
