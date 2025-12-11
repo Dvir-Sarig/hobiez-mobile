@@ -566,18 +566,12 @@ export default function ClientDashboardScreen() {
           />
         </View>
 
-  <TabSwitcher />
+        <TabSwitcher />
 
         {/* Conditional Sections */}
         {activeTab === 'available' && (
           <View style={styles.sectionWrapper}> 
-            <SectionHeader 
-              title="Available Lessons" 
-              icon="event-available" 
-              onRefresh={() => refreshAllLessonData(true)}
-              subtitle="Open sessions"
-            />
-            {/* Removed visual wrapper so cards can use full width */}
+            {/* Removed section header and refresh button for available lessons */}
             <ClientLessonCards
               lessons={lessons}
               coachInfoMap={coachInfoMap}
@@ -590,14 +584,7 @@ export default function ClientDashboardScreen() {
 
         {activeTab === 'registered' && (
           <View style={styles.sectionWrapper} onLayout={event => setRegisteredSectionY(event.nativeEvent.layout.y)}> 
-            <SectionHeader 
-              title="My Registered Lessons" 
-              icon="playlist-add-check" 
-              isRegistered={true}
-              onCalendarPress={() => (navigation as any).navigate('ClientCalendar', { origin: 'SearchLessons' })}
-              subtitle="Booked spots"
-            />
-            {/* Removed visual wrapper so cards can use full width */}
+            {/* Removed section header and calendar button for registered lessons */}
             <RegisteredLessonCards
               lessons={registeredLessons}
               coachInfoMap={coachInfoMap}
@@ -639,13 +626,37 @@ export default function ClientDashboardScreen() {
         )}
       </ScrollView>
 
-      {/* Removed floating Filters shortcut for cleaner UI */}
+      {/* Floating calendar button only visible on 'registered' tab */}
+      {activeTab === 'registered' && (
+        <Pressable
+          style={styles.floatingCalendarBtn}
+          onPress={() => (navigation as any).navigate('ClientCalendar', { origin: 'SearchLessons' })}
+          android_ripple={{ color: 'rgba(255,255,255,0.18)' }}
+        >
+          <MaterialIcons name="calendar-month" size={32} color="#fff" />
+        </Pressable>
+      )}
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   // New polished layout styles
+  floatingCalendarBtn: {
+    position: 'absolute',
+    right: 22,
+    bottom: 32,
+    backgroundColor: 'rgba(25, 118, 210, 0.65)', 
+    borderRadius: 32,
+    padding: 14,
+    elevation: 6,
+    shadowColor: '#1565c0',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   gradientBg:{ flex:1 },
   scrollOverlay:{ flex:1, backgroundColor:'transparent' },
   scrollContent:{ paddingBottom:40 },

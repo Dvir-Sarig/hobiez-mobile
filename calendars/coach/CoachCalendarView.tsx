@@ -15,6 +15,7 @@ import DeleteConfirmationModal from '../../lesson/components/management/deletion
 import RegisteredClientsModal from '../../lesson/components/management/registration/RegisteredClientsModal';
 import { formatLessonTimeReadable } from '../../shared/services/formatService';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { CalendarLessonCard } from '../shared/components/CalendarLessonCard';
 import { CalendarEvent } from '../shared/types/calendar.types';
 import { RootStackParamList } from '../../types';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -293,22 +294,13 @@ const CoachCalendarView = () => {
   const renderDayLessonCard = (lesson: Lesson) => {
     const t = inferType(lesson.title);
     const v = typeColors[t];
-    const fill = Math.min(100, ((lesson.registeredCount||0)/(lesson.capacityLimit||1))*100);
     return (
-      <TouchableOpacity key={lesson.id} style={styles.dayLessonCard} activeOpacity={0.85} onPress={()=>handleOpenModal(lesson)}>
-        <View style={[styles.typeBadge,{backgroundColor:v.bg, borderColor:v.border}]}> 
-          <Text style={[styles.typeBadgeText,{color:'#0d47a1'}]}>{v.abbr}</Text>
-        </View>
-        <View style={{flex:1}}>
-          <Text style={styles.dayLessonTitle} numberOfLines={1}>{lesson.title}</Text>
-            <Text style={styles.dayLessonMeta} numberOfLines={1}>{dayjs(lesson.time).format('HH:mm')} · {lesson.duration}m · {(lesson.registeredCount||0)}/{lesson.capacityLimit}</Text>
-            {lesson.location && <Text style={styles.dayLessonLocation} numberOfLines={1}>{lesson.location.address || `${lesson.location.city}, ${lesson.location.country}`}</Text>}
-            <View style={styles.capacityBar}><View style={[styles.capacityFill,{width:`${fill}%`}]} /></View>
-        </View>
-        <TouchableOpacity onPress={()=>{ setSelectedLesson(lesson); setShowRegisteredClientsModal(true); }} style={styles.inlineAction} accessibilityLabel="View registered">
-          <Icon name="people" size={18} color="#0d47a1" />
-        </TouchableOpacity>
-      </TouchableOpacity>
+      <CalendarLessonCard
+        key={lesson.id}
+        lesson={lesson}
+        typeVisual={v}
+        onPress={() => handleOpenModal(lesson)}
+      />
     );
   };
 
@@ -497,5 +489,5 @@ const styles = StyleSheet.create({
   compactEventContainer:{ flexDirection:'row', alignItems:'center', paddingHorizontal:6, gap:4, borderRadius:8, borderWidth:1, minHeight:26 },
   compactStripe:{ position:'absolute', left:0, top:0, bottom:0, width:3, borderTopLeftRadius:6, borderBottomLeftRadius:6 },
   compactAbbr:{ fontSize:10, fontWeight:'800', letterSpacing:0.5 },
-  container:{}, header:{}, headerTitleContainer:{}, headerIcon:{}, headerTitleLegacy:{}, calendarContainer:{}, calendarHeader:{}, calendarHeaderText:{}, lessonsContainer:{}, selectedDateContainer:{}, selectedDateText:{}, selectedDateNumber:{}, selectedDateMonth:{}, lessonsList:{}, lessonCard:{}, lessonHeader:{}, lessonTitle:{}, lessonTime:{}, lessonDetails:{}, detailRow:{}, detailText:{}, noLessonsContainer:{}, noLessonsText:{},
+  container:{}, header:{}, headerTitleContainer:{}, headerIcon:{}, headerTitleLegacy:{}, calendarContainer:{}, calendarHeader:{}, calendarHeaderText:{}, lessonsContainer:{}, selectedDateContainer:{}, selectedDateText:{}, selectedDateNumber:{}, selectedDateMonth:{}, lessonsList:{}, lessonCard:{}, lessonHeader:{}, lessonTitle:{}, lessonTime:{}, lessonDetails:{}, detailRow:{}, detailText:{}, noLessonsContainer:{}, noLessonsText:{}
 });
