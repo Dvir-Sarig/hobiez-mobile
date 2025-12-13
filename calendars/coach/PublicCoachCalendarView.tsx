@@ -11,6 +11,7 @@ import { fetchPublicCoachProfile } from '../../profile/utils/profileService';
 import RegistrationLessonModal from '../../lesson/components/management/registration/RegistrationLessonModal';
 import { formatLessonToEvent } from '../shared/utils/calendar.utils';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { CalendarLessonCard } from '../shared/components/CalendarLessonCard';
 import { CalendarEvent } from '../shared/types/calendar.types';
 import { RootStackParamList } from '../../types';
 import { lessonCacheService } from '../../lesson/services/lessonCacheService';
@@ -141,19 +142,13 @@ const PublicCoachCalendarView: React.FC = () => {
   const renderLessonCard = (lesson: Lesson) => {
     const typeKey = inferType(lesson.title);
     const visual = lessonTypeMap[typeKey];
-    const fillPct = Math.min(100, ((lesson.registeredCount||0)/(lesson.capacityLimit||1))*100);
     return (
-      <TouchableOpacity key={lesson.id} style={styles.dayLessonCard} onPress={()=>handleOpenModal(lesson)} activeOpacity={0.85}>
-        <View style={[styles.typeBadge,{backgroundColor:visual.bg, borderColor:visual.border}]}>
-          <Text style={[styles.typeBadgeText,{color:'#0d47a1'}]}>{visual.abbr}</Text>
-        </View>
-        <View style={{flex:1}}>
-          <Text style={styles.dayLessonTitle} numberOfLines={1}>{lesson.title}</Text>
-          <Text style={styles.dayLessonMeta} numberOfLines={1}>{dayjs(lesson.time).format('HH:mm')} · {lesson.duration}m · {(lesson.registeredCount||0)}/{lesson.capacityLimit}</Text>
-          {lesson.location && <Text style={styles.dayLessonLocation} numberOfLines={1}>{lesson.location.address || `${lesson.location.city}, ${lesson.location.country}`}</Text>}
-          <View style={styles.capacityBar}><View style={[styles.capacityFill,{width:`${fillPct}%`}]} /></View>
-        </View>
-      </TouchableOpacity>
+      <CalendarLessonCard
+        key={lesson.id}
+        lesson={lesson}
+        typeVisual={visual}
+        onPress={() => handleOpenModal(lesson)}
+      />
     );
   };
 
@@ -165,7 +160,7 @@ const PublicCoachCalendarView: React.FC = () => {
             <Icon name="arrow-back" size={20} color="#ffffff" />
           </TouchableOpacity>
           <View style={{flex:1}}>
-            <Text style={styles.headerTitle}>{coachProfile ? `${coachProfile.genericProfile.name}'s Schedule` : 'Coach Schedule'}</Text>
+            <Text style={styles.headerTitle}>{coachProfile && coachProfile.genericProfile ? `${coachProfile.genericProfile.name}'s Schedule` : 'Coach Schedule'}</Text>
             <Text style={styles.headerSubtitle}>{weekRangeLabel}</Text>
           </View>
           <View style={styles.navControls}>
@@ -241,7 +236,7 @@ const PublicCoachCalendarView: React.FC = () => {
             isOpen={isModalOpen}
             onClose={handleCloseModal}
             onRegister={handleRegister}
-            coachName={coachProfile ? coachProfile.genericProfile.name : 'Coach'}
+            coachName={coachProfile && coachProfile.genericProfile ? coachProfile.genericProfile.name : 'Coach'}
           />
         )}
       </View>
@@ -280,7 +275,7 @@ const styles = StyleSheet.create({
   emptySubtitle:{ fontSize:12.5, fontWeight:'600', color:'#1e3a8a', marginTop:4, textAlign:'center', paddingHorizontal:18 },
   compactEventContainer:{ flexDirection:'row', alignItems:'center', paddingHorizontal:6, gap:4, borderRadius:8, borderWidth:1, minHeight:26 },
   compactStripe:{ position:'absolute', left:0, top:0, bottom:0, width:3, borderTopLeftRadius:6, borderBottomLeftRadius:6 },
-compactAbbr:{ fontSize:10, fontWeight:'800', letterSpacing:0.5 },
+compactAbbr:{ fontSize:10, fontWeight:'800', letterSpacing:0.5 }
 });
 
 export default PublicCoachCalendarView;

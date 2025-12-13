@@ -13,7 +13,7 @@ import { Avatar } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Lesson } from '../../types/Lesson';
 import { formatLessonTimeReadable, formatPrice } from '../../../shared/services/formatService';
-import { getLessonIcon } from '../../types/LessonType';
+import { getLessonIcon, getLessonBackground } from '../../types/LessonType';
 import { useNavigation } from '@react-navigation/native';
 
 interface RegisteredLessonCardsProps {
@@ -46,29 +46,26 @@ const LoadingSkeleton = () => {
   const pulse = animatedValue.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.75] });
   return (
     <View style={styles.card}>
-      <View style={styles.topRow}>
-        <Animated.View style={[styles.skelAvatar, { opacity: pulse }]} />
-        <View style={styles.titleTimeContainer}>
-          <Animated.View style={[styles.skelTitle, { opacity: pulse }]} />
-          <Animated.View style={[styles.skelTime, { opacity: pulse }]} />
+      {/* Simulate title bar */}
+      <View style={styles.titleBar}>
+        <Animated.View style={[styles.skelTitle, { opacity: pulse, flex: 1, marginLeft: 8 }]} />
+      </View>
+      {/* Simulate main content row */}
+      <View style={styles.cardContentRow}>
+        <View style={styles.infoCol}>
+          <Animated.View style={[styles.skelTime, { opacity: pulse, width: '60%', marginBottom: 8 }]} />
+          <Animated.View style={[styles.skelMeta, { opacity: pulse, width: '40%' }]} />
         </View>
-        <Animated.View style={[styles.skelPill, { opacity: pulse }]} />
-        <Animated.View style={[styles.skelUnreg, { opacity: pulse }]} />
-      </View>
-      <View style={styles.detailRowWrap}>
-        <Animated.View style={[styles.skelChip, { opacity: pulse, width: 90 }]} />
-        <Animated.View style={[styles.skelChip, { opacity: pulse, width: 70 }]} />
-        <Animated.View style={[styles.skelChip, { opacity: pulse, width: 70 }]} />
-      </View>
-      <View style={styles.metaRow}>        
-        <Animated.View style={[styles.skelMeta, { opacity: pulse, width: '40%' }]} />
-        <Animated.View style={[styles.skelMeta, { opacity: pulse, width: '50%' }]} />
+        <View style={styles.capacityCol}>
+          <Animated.View style={[styles.skelPill, { opacity: pulse }]} />
+        </View>
       </View>
     </View>
   );
 };
 
-// Single card item component (isolates hooks per item, avoiding hooks inside loops)
+// Redesigned card item with title bar and background
+import { ImageBackground } from 'react-native';
 const RegisteredLessonCardItem: React.FC<{
   lesson: Lesson;
   coachName: string;
@@ -85,13 +82,12 @@ const RegisteredLessonCardItem: React.FC<{
     ? lesson.location.address
     : [lesson.location?.city, lesson.location?.country].filter(Boolean).join(', ');
 
-  // Hook now at top level of component (valid)
   const scaleRef = useRef(new Animated.Value(1));
   const scale = scaleRef.current;
   const onPressIn = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 40, bounciness: 6 }).start();
   const onPressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }).start();
 
-  const originScreen = navigation.getState()?.routes?.[navigation.getState().routes.length - 1]?.name;
+  const lessonBg = getLessonBackground(lesson.title);
 
   return (
     <Animated.View style={[styles.card, { transform: [{ scale }] }]}>            
@@ -100,48 +96,58 @@ const RegisteredLessonCardItem: React.FC<{
         android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
-        onLongPress={() => onOpenDeleteModal(lesson)}
+        onPress={() => onOpenDeleteModal(lesson)}
       >
-        <View style={styles.topRow}>
-          <Avatar.Icon
-            size={42}
-            icon={() => <IconComponent name={iconName} size={22} color="#fff" />}
-            style={styles.lessonIcon}
-          />
-          <View style={styles.titleTimeContainer}>
-            <Text numberOfLines={1} style={styles.title}>{lesson.title}</Text>
-            <Text style={styles.time}>🕒 {formatLessonTimeReadable(lesson.time)}</Text>
-          </View>
-          <View style={[styles.capacityPill, { borderColor: capColor }]}>                  
-            <Text style={[styles.capacityText, { color: capColor }]}>👥 {registered}/{capacity}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.unregisterIconBtn}
-            onPress={() => onOpenDeleteModal(lesson)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        {/* Title bar with background image or color */}
+        {lessonBg ? (
+          <ImageBackground
+            source={lessonBg}
+            style={styles.titleBar}
+            imageStyle={{ borderTopLeftRadius: 18, borderTopRightRadius: 18 }}
+            resizeMode="cover"
           >
-            <Icon name="close" size={18} color="rgba(255,255,255,0.75)" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.detailRowWrap}>
-          <View style={styles.detailChip}>
-            <Icon name="timer" size={14} color="#64b5f6" style={styles.chipIcon} />
-            <Text style={styles.detailChipText}>{lesson.duration} min</Text>
+            <View style={styles.titleBarContent}>
+              <Text numberOfLines={1} style={styles.titleBarTextBig}>{lesson.title}</Text>
+            </View>
+          </ImageBackground>
+        ) : (
+          <View style={styles.titleBar}>
+            <View style={styles.titleBarContent}>
+              <Text numberOfLines={1} style={styles.titleBarTextBig}>{lesson.title}</Text>
+            </View>
           </View>
-          <View style={styles.detailChip}>
-            <Icon name="attach-money" size={14} color="#64b5f6" style={styles.chipIcon} />
-            <Text style={styles.detailChipText}>{formatPrice(lesson.price)}</Text>
+        )}
+        {/* Card main content */}
+        <View style={styles.cardContentRow}>
+          <View style={styles.infoCol}>
+            <View style={styles.infoRow}>
+              <Text style={styles.lessonTime}>🕒 {formatLessonTimeReadable(lesson.time)}</Text>
+              {locationText ? (
+                <Text numberOfLines={1} style={styles.lessonLocation}>📍 {locationText}</Text>
+              ) : null}
+            </View>
+            <View style={styles.infoRow}>
+              <TouchableOpacity onPress={() => navigation.navigate('CoachProfilePage', { coachId: lesson.coachId, originScreen: 'SearchLessons', originTab: 'registered', returnScrollY })}>
+                <Text numberOfLines={1} style={styles.lessonCoach}>👤 {coachName}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.detailRowWrap}>
+              <View style={styles.detailChip}>
+                <Icon name="timer" size={14} color="#64b5f6" style={styles.chipIcon} />
+                <Text style={styles.detailChipText}>{lesson.duration} min</Text>
+              </View>
+              <View style={styles.detailChip}>
+                <Icon name="attach-money" size={14} color="#64b5f6" style={styles.chipIcon} />
+                <Text style={styles.detailChipText}>{formatPrice(lesson.price)}</Text>
+              </View>
+            </View>
           </View>
-        </View>
-
-        <View style={styles.metaRow}>                
-          <TouchableOpacity onPress={() => navigation.navigate('CoachProfilePage', { coachId: lesson.coachId, originScreen: 'SearchLessons', originTab: 'registered', returnScrollY })}>
-            <Text numberOfLines={1} style={styles.metaCoach}>👤 {coachName}</Text>
-          </TouchableOpacity>
-          {locationText ? (
-            <Text numberOfLines={1} style={styles.metaLocation}>📍 {locationText}</Text>
-          ) : null}
+          <View style={styles.capacityCol}>
+            <View style={[styles.capacityPill, { borderColor: capColor, backgroundColor: capColor + '22' }]}>                  
+              <Text style={[styles.capacityText, { color: capColor }]}>👥 {registered}/{capacity}</Text>
+            </View>
+            {/* Removed the X button */}
+          </View>
         </View>
       </Pressable>
     </Animated.View>
@@ -207,38 +213,115 @@ const RegisteredLessonCards: React.FC<RegisteredLessonCardsProps> = ({
 const styles = StyleSheet.create({
   container: { padding: 12 },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    position: 'relative',
+    backgroundColor: '#fff',
     borderRadius: 18,
-    padding: 14,
-    marginBottom: 14,
+    padding: 0,
+    marginBottom: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: '#f0f4fa',
     shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowOpacity: 0.10,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    elevation: 3,
     overflow: 'hidden',
+    minHeight: 110,
   },
   pressable: { flex: 1 },
-  topRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  lessonIcon: { backgroundColor: '#1976d2' },
-  titleTimeContainer: { flex: 1, marginLeft: 12 },
-  title: { fontSize: 15, fontWeight: '600', letterSpacing: 0.2, color: '#fff', marginBottom: 2 },
-  time: { fontSize: 12.5, color: 'rgba(255,255,255,0.75)', fontWeight: '500' },
+  titleBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1976d2',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    gap: 10,
+  },
+  titleBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    zIndex: 2,
+  },
+  titleBarTextBig: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 0.5,
+    flex: 1,
+    textShadowColor: 'rgba(0,0,0,0.18)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  cardContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  infoCol: {
+    flex: 1,
+    flexDirection: 'column',
+    gap: 8,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 2,
+  },
+  lessonTime: {
+    fontSize: 16,
+    color: '#1976d2',
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  lessonLocation: {
+    fontSize: 16,
+    color: '#888',
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    maxWidth: 120,
+  },
+  lessonCoach: {
+    fontSize: 16,
+    color: '#555',
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    maxWidth: 120,
+  },
+  capacityCol: {
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    flexShrink: 0,
+    minWidth: 90,
+    position: 'relative',
+  },
   capacityPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
+    backgroundColor: '#e3f2fd',
+    borderWidth: 2,
     minWidth: 70,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 6,
+    marginLeft: 8,
+    position: 'absolute',
+    bottom: -40,
+    right: 0,
+    marginTop: 0,
   },
-  capacityText: { fontSize: 12, fontWeight: '600' },
+  capacityText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
   unregisterIconBtn: {
+    marginTop: 8,
     marginLeft: 8,
     width: 30,
     height: 30,
@@ -249,9 +332,13 @@ const styles = StyleSheet.create({
   },
   detailRowWrap: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 6,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 18,
+    marginTop: -2,
+    marginBottom: 2,
+    paddingHorizontal: 0,
+    marginLeft: -6,
   },
   detailChip: {
     flexDirection: 'row',
@@ -264,7 +351,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.22)',
   },
   chipIcon: { marginRight: 4 },
-  detailChipText: { fontSize: 12.5, fontWeight: '600', color: 'rgba(255,255,255,0.85)' },
+  detailChipText: { fontSize: 16, fontWeight: '700', color: '#1976d2', letterSpacing: 0.2 },
+  // metaRow and emptyContainer unchanged
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   metaCoach: { fontSize: 13.5, color: 'rgba(255,255,255,0.95)', fontWeight: '500', maxWidth: 150 },
   metaLocation: { flex: 1, fontSize: 12.5, color: 'rgba(255,255,255,0.70)', textAlign: 'right' },

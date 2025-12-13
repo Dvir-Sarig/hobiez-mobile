@@ -5,6 +5,30 @@ import {
 } from '@expo/vector-icons';
 import { ComponentType } from 'react';
 
+// Returns image source for lesson type title bar backgrounds
+export const getLessonBackground = (type: string): any => {
+    switch (type) {
+        case LessonType.Tennis:
+            return require('../../assets/tennis-court.jpg');
+        case LessonType.Yoga:
+            return require('../../assets/yoga-bg.jpg');
+        case LessonType.Surf:
+            return require('../../assets/surf.jpg');
+        case LessonType.Football:
+            return require('../../assets/football-court.jpg');
+        case LessonType.Basketball:
+            return require('../../assets/basketball-court.jpg');
+        case LessonType.Paddle:
+            return require('../../assets/paddel-court.jpg');
+        case LessonType.Gym:
+            return require('../../assets/gym.jpg');
+        case LessonType.Boxing:
+            return require('../../assets/boxing.jpg');
+        default:
+            return null; // fallback to solid color
+    }
+};
+
 export enum LessonType {
     Tennis = 'Tennis',
     Yoga = 'Yoga',
