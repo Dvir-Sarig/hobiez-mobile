@@ -13,6 +13,7 @@ import UnregisterConfirmationModal from '../../lesson/components/management/regi
 import CoachProfileModal from '../../profile/components/modals/CoachProfileModal';
 import { formatLessonToEvent } from '../shared/utils/calendar.utils';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { CalendarLessonCard } from '../shared/components/CalendarLessonCard';
 import { CalendarEvent } from '../shared/types/calendar.types';
 import { formatLessonTimeReadable } from '../../shared/services/formatService';
 import { RootStackParamList } from '../../types';
@@ -220,22 +221,14 @@ const ClientCalendarView: React.FC = () => {
   const renderLessonCard = (lesson: Lesson) => {
     const typeKey = inferType(lesson.title);
     const visual = lessonTypeMap[typeKey];
-    const fillPct = Math.min(100, ((lesson.registeredCount||0)/(lesson.capacityLimit||1))*100);
-    return (
-      <TouchableOpacity key={lesson.id} style={styles.dayLessonCard} onPress={()=>handleOpenModal(lesson)} activeOpacity={0.85}> 
-        {/* debug time placement */}
-        {false && <Text style={{fontSize:9,color:'#555'}}>DBG {dayjs(lesson.time).format('HH:mm')}</Text>}
-        <View style={[styles.typeBadge,{backgroundColor:visual.bg, borderColor:visual.border}]}> 
-          <Text style={[styles.typeBadgeText,{color:'#0d47a1'}]}>{visual.abbr}</Text>
-        </View>
-        <View style={{flex:1}}>
-          <Text style={styles.dayLessonTitle} numberOfLines={1}>{lesson.title}</Text>
-          <Text style={styles.dayLessonMeta} numberOfLines={1}>{dayjs(lesson.time).format('HH:mm')} · {lesson.duration}m · {(lesson.registeredCount||0)}/{lesson.capacityLimit}</Text>
-          {lesson.location && <Text style={styles.dayLessonLocation} numberOfLines={1}>{lesson.location.address || `${lesson.location.city}, ${lesson.location.country}`}</Text>}
-          <View style={styles.capacityBar}><View style={[styles.capacityFill,{width:`${fillPct}%`}]} /></View>
-        </View>
-      </TouchableOpacity>
-    );
+      return (
+        <CalendarLessonCard
+          key={lesson.id}
+          lesson={lesson}
+          typeVisual={visual}
+          onPress={() => handleOpenModal(lesson)}
+        />
+      );
   };
 
   return (

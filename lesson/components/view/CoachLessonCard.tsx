@@ -1,10 +1,9 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Avatar } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
+import { getLessonBackground } from '../../types/LessonType';
 import { Lesson } from '../../types/Lesson';
 import { formatLessonTimeReadable } from '../../../shared/services/formatService';
-import { getLessonIcon } from '../../types/LessonType';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 interface LessonCardsProps {
   lessons: Lesson[];
@@ -27,14 +26,11 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit }) => {
   return (
     <View style={styles.container}>
       {sorted.map((lesson) => {
-        const { IconComponent, iconName } = getLessonIcon(lesson.title);
         const registered = lesson.registeredCount ?? 0;
         const capacity = lesson.capacityLimit ?? 0;
         const pct = capacity > 0 ? Math.min(100, Math.round((registered / capacity)*100)) : 0;
         const capColor = getCapacityColor(registered, capacity);
-        const hasLocation = lesson.location && (lesson.location.address || lesson.location.city || lesson.location.country);
-        const locationLabel = hasLocation ? (lesson.location.address || `${lesson.location.city}${lesson.location.city && lesson.location.country ? ', ' : ''}${lesson.location.country}`) : null;
-
+        const lessonBg = getLessonBackground(lesson.title);
         return (
           <TouchableOpacity
             key={lesson.id}
@@ -43,26 +39,36 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit }) => {
             accessibilityLabel={`Open details for lesson ${lesson.title}`}
             onPress={() => onEdit(lesson)}
           >
-            <View style={styles.topRow}> 
-              <Avatar.Icon
-                size={44}
-                icon={() => <IconComponent name={iconName} size={22} color="#fff" />}
-                style={styles.avatar}
-              />
-              <View style={styles.infoBlock}> 
-                <View style={styles.titleRow}> 
-                  <Text style={styles.title} numberOfLines={1}>{lesson.title}</Text>
-                  <Text style={styles.time} numberOfLines={1}>{formatLessonTimeReadable(lesson.time)}</Text>
+            {/* Title bar with image background for lesson types */}
+            {lessonBg ? (
+              <ImageBackground
+                source={lessonBg}
+                style={styles.titleBar}
+                imageStyle={{ borderTopLeftRadius: 18, borderTopRightRadius: 18 }}
+                resizeMode="cover"
+              >
+                <View style={styles.titleBarContent}>
+                  <Text numberOfLines={1} style={styles.titleBarTextBig}>{lesson.title}</Text>
                 </View>
-                {hasLocation && (
-                  <View style={styles.locationInline}> 
-                    <Icon name="location-on" size={12} color="#bbdefb" style={{marginRight:4}} />
-                    <Text style={styles.locationText} numberOfLines={1}>{locationLabel}</Text>
-                  </View>
-                )}
-                <View style={styles.capacityRow}> 
-                  <View style={[styles.capacityPill,{borderColor:capColor}]}> 
-                    <Text style={[styles.capacityPillText,{color:capColor}]}>{registered}/{capacity||0}</Text>
+              </ImageBackground>
+            ) : (
+              <View style={styles.titleBar}>
+                <View style={styles.titleBarContent}>
+                  <Text numberOfLines={1} style={styles.titleBarTextBig}>{lesson.title}</Text>
+                </View>
+              </View>
+            )}
+            {/* Card main content: date and registration info only, styled for clarity */}
+            <View style={styles.cardContentRow}>
+              <View style={styles.infoCol}>
+                <View style={styles.dateRow}>
+                  <Icon name="schedule" size={18} color="#1976d2" style={{ marginRight: 6 }} />
+                  <Text style={styles.lessonTime}>{formatLessonTimeReadable(lesson.time)}</Text>
+                </View>
+                <View style={styles.registerRow}>
+                  <View style={[styles.capacityPill, { borderColor: capColor, backgroundColor: capColor + '22' }]}>                  
+                    <Icon name="group" size={18} color={capColor} style={{ marginRight: 4 }} />
+                    <Text style={[styles.capacityText, { color: capColor }]}>{registered}/{capacity}</Text>
                   </View>
                   <View style={styles.progressTrack}><View style={[styles.progressFill,{width:`${pct}%`, backgroundColor:capColor}]} /></View>
                   <Text style={styles.pctText}>{pct}%</Text>
@@ -80,23 +86,99 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit }) => {
 };
 
 const styles = StyleSheet.create({
-  container:{ paddingHorizontal:12, paddingTop:4 },
-  card:{ backgroundColor:'rgba(255,255,255,0.08)', borderRadius:20, padding:14, marginBottom:14, borderWidth:1, borderColor:'rgba(255,255,255,0.18)', shadowColor:'#000', shadowOpacity:0.25, shadowRadius:12, shadowOffset:{width:0,height:4} },
-  topRow:{ flexDirection:'row', alignItems:'flex-start' },
-  avatar:{ backgroundColor:'#1976d2', marginRight:12, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:6, shadowOffset:{width:0,height:3} },
-  infoBlock:{ flex:1 },
-  titleRow:{ flexDirection:'row', alignItems:'center', marginBottom:2 },
-  title:{ flex:1, fontSize:15.5, fontWeight:'800', color:'#ffffff', letterSpacing:0.3, paddingRight:6 },
-  time:{ fontSize:11.5, fontWeight:'600', color:'rgba(255,255,255,0.78)' },
-  locationInline:{ flexDirection:'row', alignItems:'center', marginTop:4 },
-  locationText:{ fontSize:11.5, fontWeight:'600', color:'rgba(255,255,255,0.70)', flex:1 },
-  capacityRow:{ flexDirection:'row', alignItems:'center', marginTop:8 },
-  capacityPill:{ paddingHorizontal:8, paddingVertical:4, borderRadius:12, borderWidth:1.5, marginRight:8, minWidth:54, alignItems:'center', backgroundColor:'rgba(0,0,0,0.25)' },
-  capacityPillText:{ fontSize:11, fontWeight:'800', letterSpacing:0.4 },
-  progressTrack:{ flex:1, height:6, backgroundColor:'rgba(255,255,255,0.22)', borderRadius:4, overflow:'hidden', marginRight:8 },
+  container:{ paddingHorizontal:4, paddingTop:2 },
+  card:{ backgroundColor:'transparent', borderRadius:20, padding:8, marginBottom:0, borderWidth:0, shadowOpacity:0 },
+  titleBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1976d2',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    gap: 10,
+  },
+  titleBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    zIndex: 2,
+  },
+  titleBarTextBig: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 0.5,
+    flex: 1,
+    textShadowColor: 'rgba(0,0,0,0.18)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  cardContentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+  },
+  infoCol: {
+    flex: 1,
+    flexDirection: 'column',
+    gap: 10,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginBottom: 6,
+  },
+  lessonTime: {
+    fontSize: 16,
+    color: '#1976d2',
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  registerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 0,
+  },
+  capacityPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 40,
+    backgroundColor: '#e3f2fd',
+    borderWidth: 2,
+    minWidth: 70,
+    marginBottom: 4,
+  },
+  capacityText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  progressTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: 'rgba(25,118,210,0.12)',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginLeft: 12,
+    marginRight: 12,
+  },
   progressFill:{ height:'100%', borderRadius:4 },
-  pctText:{ fontSize:11, fontWeight:'700', width:40, textAlign:'right', color:'#ffffff' },
-  emptyHint:{ textAlign:'center', color:'rgba(255,255,255,0.75)', fontSize:13, fontStyle:'italic', marginTop:16 }
+  pctText: {
+    fontSize: 17,
+    fontWeight: '700',
+    textAlign: 'right',
+    color: '#1976d2',
+    marginTop: 2,
+  },
+  emptyHint:{ textAlign:'center', color:'rgba(55,55,55,0.75)', fontSize:13, fontStyle:'italic', marginTop:16 }
 });
 
 export default React.memo(CoachLessonCards);
