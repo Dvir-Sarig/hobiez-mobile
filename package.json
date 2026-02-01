@@ -10,7 +10,7 @@
     "start:prod": "cross-env APP_ENV=production expo start",
     "ios": "ENV=DEV NODE_ENV=development expo start --ios",
     "web": "ENV=DEV NODE_ENV=development expo start --web",
-    "start:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --host localhost --clear",
+    "start:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --go --host localhost --clear",
     "ios:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --host localhost --clear --ios",
     "android:offline": "NODE_ENV=development EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npx expo start --host localhost --clear --android"
   },
@@ -28,6 +28,7 @@
     "dotenv": "^17.2.3",
     "eas-cli": "^16.10.1",
     "expo": "~54.0.0",
+    "expo-auth-session": "^7.0.10",
     "expo-constants": "~18.0.9",
     "expo-dev-client": "~6.0.16",
     "expo-image-picker": "~17.0.8",

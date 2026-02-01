@@ -68,6 +68,46 @@ export const signIn = async (
     }
 };
 
+export const signInWithGoogle = async (
+    idToken: string,
+    userType: UserType
+): Promise<any> => {
+    try {
+        const payload: any = { idToken, userType };
+        const response = await fetch(`${API_BASE_URL}/auth/google`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        let data;
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            if (response.status === 401) {
+                throw new Error('Google sign-in failed');
+            }
+            throw new Error('Google sign-in failed. Please try again');
+        }
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('Google sign-in failed');
+            }
+            if (response.status === 400) {
+                throw new Error(data.message || 'Please check your input');
+            }
+            throw new Error(data.message || 'Google sign-in failed. Please try again');
+        }
+
+        return data;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export const signUp = async (
     formData: { name: string; email: string; password: string },
     role: UserType

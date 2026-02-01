@@ -77,6 +77,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             'https://hobinet-backend.onrender.com',
         googleMapsApiKey:
             process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'REPLACE_ME_IN_.env',
+        googleAndroidClientId:
+            process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || 'REPLACE_ME_IN_.env',
+        googleIosClientId:
+            process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'REPLACE_ME_IN_.env',
+        googleWebClientId:
+            process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'REPLACE_ME_IN_.env',
+        googleExpoClientId:
+            process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID || 'REPLACE_ME_IN_.env',
         eas: {
             projectId: '608daaa3-e056-4641-80da-2e6b047dc45c',
         },

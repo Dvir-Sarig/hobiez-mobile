@@ -1,16 +1,22 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Animated, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { signIn, UserType } from '../services/authService';
+import { signIn, signInWithGoogle, UserType } from '../services/authService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { AuthContext } from '../AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
 import SecureStorage from '../services/SecureStorage';
 import { tokens, surfaces, utils } from '../../shared/design/tokens';
+import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID, GOOGLE_EXPO_CLIENT_ID } from '../../shared/config';
 import AuthLayout from '../components/AuthLayout';
 import { askPermissionOnceAfterSignIn, getOrFetchDeviceToken, refreshAndMaybeRegister, } from '../../shared/services/deviceTokenService';
 import { registerDeviceIfNeeded } from '../services/deviceApiService';
+
+WebBrowser.maybeCompleteAuthSession();
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
@@ -23,8 +29,19 @@ export default function SignInScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<UserType>(UserType.CLIENT);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [shakeAnimation] = useState(new Animated.Value(0));
+
+  const redirectUri = makeRedirectUri({ scheme: 'hobinet' });
+  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useIdTokenAuthRequest({
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    expoClientId: GOOGLE_EXPO_CLIENT_ID,
+    redirectUri,
+    selectAccount: true,
+  });
 
   const shakeError = () => {
     Animated.sequence([
@@ -33,6 +50,37 @@ export default function SignInScreen() {
       Animated.timing(shakeAnimation, { toValue: 6, duration: 70, useNativeDriver: true }),
       Animated.timing(shakeAnimation, { toValue: 0, duration: 70, useNativeDriver: true }),
     ]).start();
+  };
+
+  const finalizeLogin = async (data: any, selectedUserType: UserType) => {
+    const platformValue = Platform.OS?.toUpperCase?.() || undefined;
+
+    // 1) שמירת סטייט התחברות
+    await SecureStorage.storeToken(data.token);
+    await SecureStorage.storeUserId(data.userId.toString());
+    await SecureStorage.storeUserType(selectedUserType.toLowerCase());
+    setAuthState({
+      userId: data.userId.toString(),
+      userType: selectedUserType.toLowerCase(),
+      token: data.token,
+    });
+
+    // 2) פרומפט הרשאות חד-פעמי אחרי התחברות (אם כבר אושר במכשיר – לא יקפוץ)
+    await askPermissionOnceAfterSignIn();
+
+    // 3) שליפת token ורישום לשרת (אם קיים)
+    const token = await getOrFetchDeviceToken();
+    if (token) {
+      await registerDeviceIfNeeded({ token, userType: selectedUserType, platform: platformValue });
+    }
+
+    // 4) רענון "שקט" — אם הטוקן התחלף/משתמש התחלף נרשום מחדש לשרת
+    await refreshAndMaybeRegister(
+      async (freshToken) => {
+        await registerDeviceIfNeeded({ token: freshToken, userType: selectedUserType, platform: platformValue });
+      },
+      data.userId.toString()
+    );
   };
 
   const handleSubmit = async () => {
@@ -46,40 +94,11 @@ export default function SignInScreen() {
     setError('');
 
     try {
-      const platformValue = Platform.OS?.toUpperCase?.() || undefined;
-
       // 1) התחברות
       const data = await signIn(email, password, userType);
+      await finalizeLogin(data, userType);
 
-      // 2) שמירת סטייט התחברות
-      await SecureStorage.storeToken(data.token);
-      await SecureStorage.storeUserId(data.userId.toString());
-      await SecureStorage.storeUserType(userType.toLowerCase());
-      setAuthState({
-        userId: data.userId.toString(),
-        userType: userType.toLowerCase(),
-        token: data.token,
-      });
-
-      // 3) פרומפט הרשאות חד-פעמי אחרי התחברות (אם כבר אושר במכשיר – לא יקפוץ)
-      await askPermissionOnceAfterSignIn();
-
-      // 4) שליפת token ורישום לשרת (אם קיים)
-      const token = await getOrFetchDeviceToken();
-      if (token) {
-        await registerDeviceIfNeeded({ token, userType, platform: platformValue });
-      }
-
-      // 5) רענון "שקט" — אם הטוקן התחלף/משתמש התחלף נרשום מחדש לשרת
-      await refreshAndMaybeRegister(
-          async (freshToken) => {
-            await registerDeviceIfNeeded({ token: freshToken, userType, platform: platformValue });
-          },
-          data.userId.toString()
-      );
-
-
-      // 6) כאן אפשר לנווט למסך הבא אם צריך
+      // 2) כאן אפשר לנווט למסך הבא אם צריך
 
     } catch (error: any) {
       let errorMessage = 'Invalid email or password';
@@ -90,6 +109,62 @@ export default function SignInScreen() {
       setIsLoading(false);
     }
   };
+
+  const handleGoogleLogin = async (idToken: string) => {
+    setIsGoogleLoading(true);
+    setError('');
+
+    try {
+      const data = await signInWithGoogle(idToken, userType);
+      await finalizeLogin(data, userType);
+    } catch (error: any) {
+      let errorMessage = 'Google sign-in failed. Try again';
+      if (error.message?.includes('Network')) errorMessage = 'Network issue. Try again';
+      setError(errorMessage);
+      shakeError();
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGooglePress = async () => {
+    setIsGoogleLoading(true);
+    setError('');
+    try {
+      await promptGoogleSignIn();
+    } catch (error) {
+      setIsGoogleLoading(false);
+      setError('Google sign-in failed. Try again');
+      shakeError();
+    }
+  };
+
+  useEffect(() => {
+    if (!googleResponse) return;
+
+    if (googleResponse.type === 'success') {
+      const idToken = (googleResponse as any).params?.id_token;
+      if (!idToken) {
+        setIsGoogleLoading(false);
+        setError('Google sign-in failed. Missing token');
+        shakeError();
+        return;
+      }
+      handleGoogleLogin(idToken);
+      return;
+    }
+
+    if (googleResponse.type === 'error') {
+      setIsGoogleLoading(false);
+      setError('Google sign-in failed. Try again');
+      shakeError();
+      return;
+    }
+
+    if (googleResponse.type === 'dismiss') {
+      setIsGoogleLoading(false);
+    }
+  }, [googleResponse]);
 
   const roleButton = (type: UserType, label: string, icon: any, color: string) => {
     const selected = userType === type;
@@ -169,6 +244,28 @@ export default function SignInScreen() {
           {isLoading ? <ActivityIndicator color={tokens.colors.primaryDark} /> : <Text style={styles.primaryButtonText}>Sign In</Text>}
         </TouchableOpacity>
 
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.googleButton, (isGoogleLoading || !googleRequest) && styles.buttonDisabled]}
+          onPress={handleGooglePress}
+          disabled={isGoogleLoading || !googleRequest}
+          accessibilityLabel="Continue with Google"
+        >
+          {isGoogleLoading ? (
+            <ActivityIndicator color={tokens.colors.textDark} />
+          ) : (
+            <>
+              <Ionicons name="logo-google" size={18} color="#DB4437" style={styles.googleIcon} />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate('ForgotPassword')} accessibilityLabel="Forgot password">
           <Text style={styles.forgotBtnText}>Forgot password?</Text>
         </TouchableOpacity>
@@ -202,6 +299,12 @@ const styles = StyleSheet.create({
   primaryButton: { backgroundColor: tokens.colors.primary, paddingVertical: tokens.space.lg, borderRadius: tokens.radius.pill, alignItems: 'center', marginTop: tokens.space.sm },
   buttonDisabled: { opacity: 0.7 },
   primaryButtonText: { color: tokens.colors.textOnDark, fontSize: 16, fontWeight: tokens.fontWeight.bold as any },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, marginTop: tokens.space.lg, marginBottom: tokens.space.sm },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.35)' },
+  dividerText: { color: tokens.colors.textOnDark, fontSize: 12, fontWeight: tokens.fontWeight.medium as any, textTransform: 'uppercase', letterSpacing: 0.6 },
+  googleButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: tokens.space.sm, backgroundColor: tokens.colors.light, paddingVertical: tokens.space.md, borderRadius: tokens.radius.pill, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.35)' },
+  googleButtonText: { color: tokens.colors.textDark, fontSize: 15, fontWeight: tokens.fontWeight.semibold as any },
+  googleIcon: { marginRight: 2 },
   secondaryGhostBtn: { marginTop: tokens.space.md, paddingVertical: tokens.space.sm, alignItems: 'center' },
   secondaryGhostBtnText: { color: tokens.colors.textOnDark, fontSize: 14, fontWeight: tokens.fontWeight.semibold as any, textDecorationLine: 'underline' },
   forgotBtn: { marginTop: tokens.space.sm, alignItems: 'center' },
