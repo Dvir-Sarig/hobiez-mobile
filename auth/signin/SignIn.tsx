@@ -38,7 +38,7 @@ export default function SignInScreen() {
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
-    expoClientId: GOOGLE_EXPO_CLIENT_ID,
+    clientId: GOOGLE_EXPO_CLIENT_ID,
     redirectUri,
     selectAccount: true,
   });
