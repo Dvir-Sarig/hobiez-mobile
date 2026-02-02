@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Animated, Pressable } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Animated, Pressable, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { signIn, signInWithGoogle, UserType } from '../services/authService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -42,6 +42,13 @@ export default function SignInScreen() {
     redirectUri,
     selectAccount: true,
   });
+
+  // Show the full Google OAuth authorization URL for debugging
+  useEffect(() => {
+    if (googleRequest?.url) {
+      Alert.alert('Google OAuth URL', googleRequest.url, [{ text: 'OK' }]);
+    }
+  }, [googleRequest]);
 
   const shakeError = () => {
     Animated.sequence([
