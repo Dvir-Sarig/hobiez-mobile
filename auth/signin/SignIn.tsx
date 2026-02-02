@@ -8,7 +8,7 @@ import { AuthContext } from '../AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
-import { makeRedirectUri } from 'expo-auth-session';
+import * as AuthSession from 'expo-auth-session';
 import Constants from 'expo-constants';
 import SecureStorage from '../services/SecureStorage';
 import { tokens, surfaces, utils } from '../../shared/design/tokens';
@@ -35,26 +35,28 @@ export default function SignInScreen() {
   const [shakeAnimation] = useState(new Animated.Value(0));
 
   const isExpoGo = Constants?.appOwnership === 'expo';
-  const redirectUri = makeRedirectUri({ scheme: 'hobinet', useProxy: isExpoGo });
-  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useIdTokenAuthRequest({
+
+  const getGoogleRedirectUri = () => {
+    if (isExpoGo) {
+      return AuthSession.makeRedirectUri({ useProxy: true });
+    }
+    return AuthSession.makeRedirectUri({ scheme: 'hobinet' });
+  };
+
+  const redirectUri = getGoogleRedirectUri();
+
+  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useAuthRequest({
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
     clientId: GOOGLE_EXPO_CLIENT_ID,
     redirectUri,
+    responseType: AuthSession.ResponseType.Code,
+    usePKCE: true,
     selectAccount: true,
   });
 
-  // Show the full Google OAuth authorization URL and params for debugging
-  useEffect(() => {
-    if (googleRequest?.url) {
-      Alert.alert(
-        'Google OAuth URL (generated)',
-        `redirectUri:\n${redirectUri}\n\nurl:\n${googleRequest.url}\n\nparams:\n${JSON.stringify((googleRequest as any).params || {}, null, 2)}`,
-        [{ text: 'OK' }]
-      );
-    }
-  }, [googleRequest, redirectUri]);
+  // Debug helper: show redirectUri and full auth URL on demand (see handleGooglePress)
 
   const shakeError = () => {
     Animated.sequence([
@@ -149,7 +151,7 @@ export default function SignInScreen() {
         `redirectUri:\n${redirectUri}\n\nurl:\n${googleRequest?.url || 'N/A'}\n\nparams:\n${JSON.stringify((googleRequest as any)?.params || {}, null, 2)}`,
         [{ text: 'OK' }]
       );
-      await promptGoogleSignIn();
+      await promptGoogleSignIn({ useProxy: isExpoGo });
     } catch (error) {
       setIsGoogleLoading(false);
       setError('Google sign-in failed. Try again');
@@ -161,14 +163,50 @@ export default function SignInScreen() {
     if (!googleResponse) return;
 
     if (googleResponse.type === 'success') {
-      const idToken = (googleResponse as any).params?.id_token;
-      if (!idToken) {
+      const code = (googleResponse as any).params?.code;
+      if (!code) {
         setIsGoogleLoading(false);
-        setError('Google sign-in failed. Missing token');
+        setError('Google sign-in failed. Missing code');
         shakeError();
         return;
       }
-      handleGoogleLogin(idToken);
+
+      (async () => {
+        try {
+          const resolvedClientId = isExpoGo
+            ? GOOGLE_EXPO_CLIENT_ID
+            : Platform.select({
+                ios: GOOGLE_IOS_CLIENT_ID,
+                android: GOOGLE_ANDROID_CLIENT_ID,
+                default: GOOGLE_WEB_CLIENT_ID,
+              }) || GOOGLE_WEB_CLIENT_ID;
+
+          const tokenResponse = await AuthSession.exchangeCodeAsync(
+            {
+              clientId: resolvedClientId,
+              code,
+              redirectUri,
+              codeVerifier: googleRequest?.codeVerifier,
+            },
+            Google.discovery
+          );
+
+          const idToken = (tokenResponse as any)?.idToken || (tokenResponse as any)?.id_token;
+          if (!idToken) {
+            setIsGoogleLoading(false);
+            setError('Google sign-in failed. Missing id_token');
+            shakeError();
+            return;
+          }
+
+          await handleGoogleLogin(idToken as string);
+        } catch (err) {
+          setIsGoogleLoading(false);
+          setError('Google sign-in failed. Token exchange error');
+          shakeError();
+        }
+      })();
+
       return;
     }
 
