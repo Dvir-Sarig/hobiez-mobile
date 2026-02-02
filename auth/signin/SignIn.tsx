@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri } from 'expo-auth-session';
+import Constants from 'expo-constants';
 import SecureStorage from '../services/SecureStorage';
 import { tokens, surfaces, utils } from '../../shared/design/tokens';
 import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID, GOOGLE_EXPO_CLIENT_ID } from '../../shared/config';
@@ -33,7 +34,8 @@ export default function SignInScreen() {
   const [error, setError] = useState('');
   const [shakeAnimation] = useState(new Animated.Value(0));
 
-  const redirectUri = makeRedirectUri({ scheme: 'hobinet' });
+  const isExpoGo = Constants?.appOwnership === 'expo';
+  const redirectUri = makeRedirectUri({ scheme: 'hobinet', useProxy: isExpoGo });
   const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useIdTokenAuthRequest({
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
@@ -43,12 +45,16 @@ export default function SignInScreen() {
     selectAccount: true,
   });
 
-  // Show the full Google OAuth authorization URL for debugging
+  // Show the full Google OAuth authorization URL and params for debugging
   useEffect(() => {
     if (googleRequest?.url) {
-      Alert.alert('Google OAuth URL', googleRequest.url, [{ text: 'OK' }]);
+      Alert.alert(
+        'Google OAuth URL (generated)',
+        `redirectUri:\n${redirectUri}\n\nurl:\n${googleRequest.url}\n\nparams:\n${JSON.stringify((googleRequest as any).params || {}, null, 2)}`,
+        [{ text: 'OK' }]
+      );
     }
-  }, [googleRequest]);
+  }, [googleRequest, redirectUri]);
 
   const shakeError = () => {
     Animated.sequence([
@@ -138,6 +144,11 @@ export default function SignInScreen() {
     setIsGoogleLoading(true);
     setError('');
     try {
+      Alert.alert(
+        'Google OAuth URL (before prompt)',
+        `redirectUri:\n${redirectUri}\n\nurl:\n${googleRequest?.url || 'N/A'}\n\nparams:\n${JSON.stringify((googleRequest as any)?.params || {}, null, 2)}`,
+        [{ text: 'OK' }]
+      );
       await promptGoogleSignIn();
     } catch (error) {
       setIsGoogleLoading(false);
