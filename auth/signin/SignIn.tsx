@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Animated, Pressable, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Animated, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { signIn, signInWithGoogle, UserType } from '../services/authService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,8 +8,7 @@ import { AuthContext } from '../AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
-import Constants from 'expo-constants';
+import { makeRedirectUri } from 'expo-auth-session';
 import SecureStorage from '../services/SecureStorage';
 import { tokens, surfaces, utils } from '../../shared/design/tokens';
 import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID, GOOGLE_EXPO_CLIENT_ID } from '../../shared/config';
@@ -34,29 +33,15 @@ export default function SignInScreen() {
   const [error, setError] = useState('');
   const [shakeAnimation] = useState(new Animated.Value(0));
 
-  const isExpoGo = Constants?.appOwnership === 'expo';
-
-  const getGoogleRedirectUri = () => {
-    if (isExpoGo) {
-      return AuthSession.makeRedirectUri({ useProxy: true });
-    }
-    return AuthSession.makeRedirectUri({ scheme: 'hobinet' });
-  };
-
-  const redirectUri = getGoogleRedirectUri();
-
-  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useAuthRequest({
+  const redirectUri = makeRedirectUri({ scheme: 'hobinet' });
+  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useIdTokenAuthRequest({
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
     clientId: GOOGLE_EXPO_CLIENT_ID,
     redirectUri,
-    responseType: AuthSession.ResponseType.Code,
-    usePKCE: true,
     selectAccount: true,
   });
-
-  // Debug helper: show redirectUri and full auth URL on demand (see handleGooglePress)
 
   const shakeError = () => {
     Animated.sequence([
@@ -146,12 +131,7 @@ export default function SignInScreen() {
     setIsGoogleLoading(true);
     setError('');
     try {
-      Alert.alert(
-        'Google OAuth URL (before prompt)',
-        `redirectUri:\n${redirectUri}\n\nurl:\n${googleRequest?.url || 'N/A'}\n\nparams:\n${JSON.stringify((googleRequest as any)?.params || {}, null, 2)}`,
-        [{ text: 'OK' }]
-      );
-      await promptGoogleSignIn({ useProxy: isExpoGo });
+      await promptGoogleSignIn();
     } catch (error) {
       setIsGoogleLoading(false);
       setError('Google sign-in failed. Try again');
@@ -163,50 +143,14 @@ export default function SignInScreen() {
     if (!googleResponse) return;
 
     if (googleResponse.type === 'success') {
-      const code = (googleResponse as any).params?.code;
-      if (!code) {
+      const idToken = (googleResponse as any).params?.id_token;
+      if (!idToken) {
         setIsGoogleLoading(false);
-        setError('Google sign-in failed. Missing code');
+        setError('Google sign-in failed. Missing token');
         shakeError();
         return;
       }
-
-      (async () => {
-        try {
-          const resolvedClientId = isExpoGo
-            ? GOOGLE_EXPO_CLIENT_ID
-            : Platform.select({
-                ios: GOOGLE_IOS_CLIENT_ID,
-                android: GOOGLE_ANDROID_CLIENT_ID,
-                default: GOOGLE_WEB_CLIENT_ID,
-              }) || GOOGLE_WEB_CLIENT_ID;
-
-          const tokenResponse = await AuthSession.exchangeCodeAsync(
-            {
-              clientId: resolvedClientId,
-              code,
-              redirectUri,
-              codeVerifier: googleRequest?.codeVerifier,
-            },
-            Google.discovery
-          );
-
-          const idToken = (tokenResponse as any)?.idToken || (tokenResponse as any)?.id_token;
-          if (!idToken) {
-            setIsGoogleLoading(false);
-            setError('Google sign-in failed. Missing id_token');
-            shakeError();
-            return;
-          }
-
-          await handleGoogleLogin(idToken as string);
-        } catch (err) {
-          setIsGoogleLoading(false);
-          setError('Google sign-in failed. Token exchange error');
-          shakeError();
-        }
-      })();
-
+      handleGoogleLogin(idToken);
       return;
     }
 
