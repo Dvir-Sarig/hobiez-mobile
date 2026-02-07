@@ -34,27 +34,73 @@ export default function SignInScreen() {
   const [error, setError] = useState('');
   const [shakeAnimation] = useState(new Animated.Value(0));
 
-  const isExpoGo = Constants?.appOwnership === 'expo';
+  const isExpoGo = Constants.executionEnvironment === 'storeClient';
 
-  const getGoogleRedirectUri = () => {
-    if (isExpoGo) {
-      return AuthSession.makeRedirectUri({ useProxy: true });
+  const redirectUri = isExpoGo
+    ? 'https://auth.expo.io/@dvirs/hobinet-mobile'
+    : AuthSession.makeRedirectUri({ scheme: 'hobinet' });
+
+  const googleConfig = isExpoGo
+    ? {
+        expoClientId: GOOGLE_EXPO_CLIENT_ID,
+        iosClientId: GOOGLE_EXPO_CLIENT_ID,
+        androidClientId: GOOGLE_EXPO_CLIENT_ID,
+        webClientId: GOOGLE_EXPO_CLIENT_ID,
+        redirectUri,
+        responseType: AuthSession.ResponseType.Code,
+        usePKCE: true,
+        selectAccount: true,
+      }
+    : {
+        iosClientId: GOOGLE_IOS_CLIENT_ID,
+        androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+        redirectUri,
+        responseType: AuthSession.ResponseType.Code,
+        usePKCE: true,
+        selectAccount: true,
+      };
+
+  const [googleRequest, googleResponse, promptGoogleSignIn] =
+    Google.useAuthRequest(googleConfig as any);
+
+  // ---------- DEBUG LOGS (OAuth) ----------
+  const logOAuthState = (tag: string) => {
+    if (!__DEV__) return;
+
+    const url = googleRequest?.url || '';
+    const clientIdFromUrl =
+      (url.match(/client_id=([^&]+)/)?.[1] && decodeURIComponent(url.match(/client_id=([^&]+)/)![1])) || 'N/A';
+    const redirectFromUrl =
+      (url.match(/redirect_uri=([^&]+)/)?.[1] && decodeURIComponent(url.match(/redirect_uri=([^&]+)/)![1])) || 'N/A';
+
+    console.log(`\n[oauth][${tag}] ------------------------------`);
+    console.log('[oauth] executionEnvironment:', Constants.executionEnvironment);
+    console.log('[oauth] appOwnership:', Constants.appOwnership);
+    console.log('[oauth] isExpoGo:', isExpoGo);
+    console.log('[oauth] redirectUri (computed):', redirectUri);
+
+    console.log('[oauth] request exists:', !!googleRequest);
+    console.log('[oauth] request.url:', url || 'N/A');
+    console.log('[oauth] request.url client_id:', clientIdFromUrl);
+    console.log('[oauth] request.url redirect_uri:', redirectFromUrl);
+
+    // (Optional) print params if exists
+    const params = (googleRequest as any)?.params;
+    if (params) {
+      console.log('[oauth] request.params:', params);
     }
-    return AuthSession.makeRedirectUri({ scheme: 'hobinet' });
+    console.log('[oauth] --------------------------------------\n');
   };
 
-  const redirectUri = getGoogleRedirectUri();
+  // Log once when request becomes available
+  useEffect(() => {
+    if (googleRequest?.url) {
+      logOAuthState('request-ready');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googleRequest?.url]);
 
-  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useAuthRequest({
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-    iosClientId: GOOGLE_IOS_CLIENT_ID,
-    webClientId: GOOGLE_WEB_CLIENT_ID,
-    clientId: GOOGLE_EXPO_CLIENT_ID,
-    redirectUri,
-    responseType: AuthSession.ResponseType.Code,
-    usePKCE: true,
-    selectAccount: true,
-  });
 
   // Debug helper: show redirectUri and full auth URL on demand (see handleGooglePress)
 
@@ -146,6 +192,7 @@ export default function SignInScreen() {
     setIsGoogleLoading(true);
     setError('');
     try {
+      logOAuthState('before-prompt');
       Alert.alert(
         'Google OAuth URL (before prompt)',
         `redirectUri:\n${redirectUri}\n\nurl:\n${googleRequest?.url || 'N/A'}\n\nparams:\n${JSON.stringify((googleRequest as any)?.params || {}, null, 2)}`,

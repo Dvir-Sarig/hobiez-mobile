@@ -19,7 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     name: 'Hobinet',
     slug: 'hobinet-mobile',
     owner: 'dvirs',
-    version: '1.0.8',
+    version: '1.1.1',
     // Required for expo-dev-client to determine deep link scheme
     scheme: 'hobinet',
 
@@ -39,8 +39,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ...config.ios,
         bundleIdentifier: 'com.dvirs.hobinet',
         supportsTablet: true,
-        buildNumber: '1.0.8',
+        buildNumber: '1.1.1',
         infoPlist: {
+            ...config.ios?.infoPlist,
             NSCameraUsageDescription:
                 'This app needs access to your camera to let you take profile pictures.',
             NSPhotoLibraryUsageDescription:
@@ -48,6 +49,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             NSPhotoLibraryAddUsageDescription:
                 'This app saves images you take to your photo library.',
             ITSAppUsesNonExemptEncryption: false,
+            CFBundleURLTypes: [
+                {
+                CFBundleURLSchemes: [
+                    'com.googleusercontent.apps.428494796773-r03cdal0aqpun0euu8g2m1ivqd6k8gq5',
+                ],
+                },
+            ],
         },
     },
 
