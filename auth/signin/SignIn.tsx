@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Animated, Pressable, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Animated, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { signIn, signInWithGoogle, UserType } from '../services/authService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,7 +12,7 @@ import * as AuthSession from 'expo-auth-session';
 import Constants from 'expo-constants';
 import SecureStorage from '../services/SecureStorage';
 import { tokens, surfaces, utils } from '../../shared/design/tokens';
-import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID, GOOGLE_EXPO_CLIENT_ID } from '../../shared/config';
+import { GOOGLE_WEB_CLIENT_ID } from '../../shared/config';
 import AuthLayout from '../components/AuthLayout';
 import { askPermissionOnceAfterSignIn, getOrFetchDeviceToken, refreshAndMaybeRegister, } from '../../shared/services/deviceTokenService';
 import { registerDeviceIfNeeded } from '../services/deviceApiService';
@@ -36,30 +36,31 @@ export default function SignInScreen() {
 
   const isExpoGo = Constants.executionEnvironment === 'storeClient';
 
-  const redirectUri = isExpoGo
-    ? 'https://auth.expo.io/@dvirs/hobinet-mobile'
-    : AuthSession.makeRedirectUri({ scheme: 'hobinet' });
+  // Always use makeRedirectUri — the Expo auth proxy (auth.expo.io) is
+  // deprecated and no longer reliable. For Expo Go we rely on the Expo
+  // scheme-based redirect; for dev-client / standalone we use our custom scheme.
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: 'hobinet',
+    // In Expo Go the scheme-based redirect won't work, so we fall back to
+    // the Expo auth proxy path.  For dev-client / standalone builds the
+    // custom scheme is used.
+    ...(isExpoGo ? { preferLocalhost: false } : {}),
+  });
 
-  const googleConfig = isExpoGo
-    ? {
-        expoClientId: GOOGLE_EXPO_CLIENT_ID,
-        iosClientId: GOOGLE_EXPO_CLIENT_ID,
-        androidClientId: GOOGLE_EXPO_CLIENT_ID,
-        webClientId: GOOGLE_EXPO_CLIENT_ID,
-        redirectUri,
-        responseType: AuthSession.ResponseType.Code,
-        usePKCE: true,
-        selectAccount: true,
-      }
-    : {
-        iosClientId: GOOGLE_IOS_CLIENT_ID,
-        androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-        webClientId: GOOGLE_WEB_CLIENT_ID,
-        redirectUri,
-        responseType: AuthSession.ResponseType.Code,
-        usePKCE: true,
-        selectAccount: true,
-      };
+  // expo-auth-session's Google provider always uses a web-based OAuth flow,
+  // so the **Web** client ID must be used as the primary client ID in every
+  // environment.  The iOS / Android client IDs are only needed for native
+  // Google Sign-In SDKs (not used here).
+  const googleConfig = {
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    // The explicit redirectUri ensures the request matches what is
+    // registered in Google Cloud Console.
+    redirectUri,
+    responseType: AuthSession.ResponseType.Code,
+    usePKCE: true,
+    // Force the account-chooser screen
+    extraParams: { prompt: 'select_account' },
+  };
 
   const [googleRequest, googleResponse, promptGoogleSignIn] =
     Google.useAuthRequest(googleConfig as any);
@@ -193,12 +194,8 @@ export default function SignInScreen() {
     setError('');
     try {
       logOAuthState('before-prompt');
-      Alert.alert(
-        'Google OAuth URL (before prompt)',
-        `redirectUri:\n${redirectUri}\n\nurl:\n${googleRequest?.url || 'N/A'}\n\nparams:\n${JSON.stringify((googleRequest as any)?.params || {}, null, 2)}`,
-        [{ text: 'OK' }]
-      );
-      await promptGoogleSignIn({ useProxy: isExpoGo });
+      // Do NOT pass useProxy — it's deprecated in expo-auth-session v7+.
+      await promptGoogleSignIn();
     } catch (error) {
       setIsGoogleLoading(false);
       setError('Google sign-in failed. Try again');
@@ -220,20 +217,18 @@ export default function SignInScreen() {
 
       (async () => {
         try {
-          const resolvedClientId = isExpoGo
-            ? GOOGLE_EXPO_CLIENT_ID
-            : Platform.select({
-                ios: GOOGLE_IOS_CLIENT_ID,
-                android: GOOGLE_ANDROID_CLIENT_ID,
-                default: GOOGLE_WEB_CLIENT_ID,
-              }) || GOOGLE_WEB_CLIENT_ID;
+          // For the token exchange we always use the Web client ID,
+          // because expo-auth-session drives the web-based OAuth flow.
+          const resolvedClientId = GOOGLE_WEB_CLIENT_ID;
 
           const tokenResponse = await AuthSession.exchangeCodeAsync(
             {
               clientId: resolvedClientId,
               code,
               redirectUri,
-              codeVerifier: googleRequest?.codeVerifier,
+              extraParams: googleRequest?.codeVerifier
+                ? { code_verifier: googleRequest.codeVerifier }
+                : undefined,
             },
             Google.discovery
           );
