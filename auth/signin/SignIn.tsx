@@ -12,7 +12,7 @@ import * as AuthSession from 'expo-auth-session';
 import Constants from 'expo-constants';
 import SecureStorage from '../services/SecureStorage';
 import { tokens, surfaces, utils } from '../../shared/design/tokens';
-import { GOOGLE_WEB_CLIENT_ID } from '../../shared/config';
+import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from '../../shared/config';
 import AuthLayout from '../components/AuthLayout';
 import { askPermissionOnceAfterSignIn, getOrFetchDeviceToken, refreshAndMaybeRegister, } from '../../shared/services/deviceTokenService';
 import { registerDeviceIfNeeded } from '../services/deviceApiService';
@@ -34,76 +34,30 @@ export default function SignInScreen() {
   const [error, setError] = useState('');
   const [shakeAnimation] = useState(new Animated.Value(0));
 
-  const isExpoGo = Constants.executionEnvironment === 'storeClient';
-
-  // Always use makeRedirectUri — the Expo auth proxy (auth.expo.io) is
-  // deprecated and no longer reliable. For Expo Go we rely on the Expo
-  // scheme-based redirect; for dev-client / standalone we use our custom scheme.
-  const redirectUri = AuthSession.makeRedirectUri({
-    scheme: 'hobinet',
-    // In Expo Go the scheme-based redirect won't work, so we fall back to
-    // the Expo auth proxy path.  For dev-client / standalone builds the
-    // custom scheme is used.
-    ...(isExpoGo ? { preferLocalhost: false } : {}),
+  const redirectUri = AuthSession.makeRedirectUri({ 
+    scheme: Constants.appOwnership === 'expo' ? 'exp' : 'hobinet' 
   });
 
-  // expo-auth-session's Google provider always uses a web-based OAuth flow,
-  // so the **Web** client ID must be used as the primary client ID in every
-  // environment.  The iOS / Android client IDs are only needed for native
-  // Google Sign-In SDKs (not used here).
-  const googleConfig = {
-    webClientId: GOOGLE_WEB_CLIENT_ID,
-    // The explicit redirectUri ensures the request matches what is
-    // registered in Google Cloud Console.
-    redirectUri,
-    responseType: AuthSession.ResponseType.Code,
-    usePKCE: true,
-    // Force the account-chooser screen
-    extraParams: { prompt: 'select_account' },
-  };
-
   const [googleRequest, googleResponse, promptGoogleSignIn] =
-    Google.useAuthRequest(googleConfig as any);
+    Google.useAuthRequest({
+      iosClientId: GOOGLE_IOS_CLIENT_ID,
+      androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+      webClientId: GOOGLE_WEB_CLIENT_ID,
+      redirectUri,
+      scopes: ['openid', 'profile', 'email'],
+      responseType: AuthSession.ResponseType.Code,
+      usePKCE: true,
+      selectAccount: true,
+    });
 
-  // ---------- DEBUG LOGS (OAuth) ----------
-  const logOAuthState = (tag: string) => {
-    if (!__DEV__) return;
-
-    const url = googleRequest?.url || '';
-    const clientIdFromUrl =
-      (url.match(/client_id=([^&]+)/)?.[1] && decodeURIComponent(url.match(/client_id=([^&]+)/)![1])) || 'N/A';
-    const redirectFromUrl =
-      (url.match(/redirect_uri=([^&]+)/)?.[1] && decodeURIComponent(url.match(/redirect_uri=([^&]+)/)![1])) || 'N/A';
-
-    console.log(`\n[oauth][${tag}] ------------------------------`);
-    console.log('[oauth] executionEnvironment:', Constants.executionEnvironment);
-    console.log('[oauth] appOwnership:', Constants.appOwnership);
-    console.log('[oauth] isExpoGo:', isExpoGo);
-    console.log('[oauth] redirectUri (computed):', redirectUri);
-
-    console.log('[oauth] request exists:', !!googleRequest);
-    console.log('[oauth] request.url:', url || 'N/A');
-    console.log('[oauth] request.url client_id:', clientIdFromUrl);
-    console.log('[oauth] request.url redirect_uri:', redirectFromUrl);
-
-    // (Optional) print params if exists
-    const params = (googleRequest as any)?.params;
-    if (params) {
-      console.log('[oauth] request.params:', params);
-    }
-    console.log('[oauth] --------------------------------------\n');
-  };
-
-  // Log once when request becomes available
+  // Log OAuth config once when request becomes available
   useEffect(() => {
-    if (googleRequest?.url) {
-      logOAuthState('request-ready');
+    if (__DEV__ && googleRequest?.url) {
+      console.log('[oauth] redirectUri:', redirectUri);
+      console.log('[oauth] request.url:', googleRequest.url);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [googleRequest?.url]);
-
-
-  // Debug helper: show redirectUri and full auth URL on demand (see handleGooglePress)
 
   const shakeError = () => {
     Animated.sequence([
@@ -193,10 +147,9 @@ export default function SignInScreen() {
     setIsGoogleLoading(true);
     setError('');
     try {
-      logOAuthState('before-prompt');
-      // Do NOT pass useProxy — it's deprecated in expo-auth-session v7+.
       await promptGoogleSignIn();
     } catch (error) {
+      if (__DEV__) console.warn('[oauth] promptGoogleSignIn error:', error);
       setIsGoogleLoading(false);
       setError('Google sign-in failed. Try again');
       shakeError();
@@ -217,19 +170,22 @@ export default function SignInScreen() {
 
       (async () => {
         try {
-          // For the token exchange we always use the Web client ID,
-          // because expo-auth-session drives the web-based OAuth flow.
-          const resolvedClientId = GOOGLE_WEB_CLIENT_ID;
+          // Use the SAME client ID and redirect URI that the request was built with
+          const resolvedClientId = Platform.select({
+            ios: GOOGLE_IOS_CLIENT_ID,
+            android: GOOGLE_ANDROID_CLIENT_ID,
+            default: GOOGLE_WEB_CLIENT_ID,
+          }) || GOOGLE_WEB_CLIENT_ID;
 
           const tokenResponse = await AuthSession.exchangeCodeAsync(
             {
               clientId: resolvedClientId,
               code,
-              redirectUri,
+              redirectUri: googleRequest?.redirectUri || redirectUri,
               extraParams: googleRequest?.codeVerifier
                 ? { code_verifier: googleRequest.codeVerifier }
                 : undefined,
-            },
+            } as any,
             Google.discovery
           );
 
