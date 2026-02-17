@@ -122,16 +122,16 @@ export default function SignInScreen() {
    */
   const redirectUri = useMemo(() => {
     if (useProxy) {
-      return AuthSession.makeRedirectUri({ useProxy: true });
+      return AuthSession.makeRedirectUri();
     }
 
     if (Platform.OS === 'ios') {
       const googleScheme = googleIosUrlSchemeFromClientId(IOS_CLIENT_ID);
-      return AuthSession.makeRedirectUri({ scheme: googleScheme, useProxy: false });
+      return AuthSession.makeRedirectUri({ scheme: googleScheme });
     }
 
     // Android standalone
-    return AuthSession.makeRedirectUri({ scheme: 'hobinet', useProxy: false });
+    return AuthSession.makeRedirectUri({ scheme: 'hobinet' });
   }, [useProxy]);
 
   /**
@@ -154,8 +154,7 @@ export default function SignInScreen() {
   }, [redirectUri, useProxy]);
 
   const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useAuthRequest(
-    googleConfig,
-    { useProxy }
+    googleConfig
   );
 
   useEffect(() => {
@@ -272,7 +271,7 @@ export default function SignInScreen() {
 
     try {
       // ✅ forcing account chooser (עדיין iOS יכול לזכור session, אבל זה עוזר)
-      await promptGoogleSignIn({ prompt: 'select_account' });
+      await promptGoogleSignIn();
     } catch (e: any) {
       setIsGoogleLoading(false);
       setError('Google sign-in failed. Prompt error');
@@ -333,27 +332,59 @@ export default function SignInScreen() {
 
         const effectiveRedirectUri = googleRequest?.redirectUri || redirectUri;
 
+        const bodyParams: Record<string, string> = {
+          grant_type: 'authorization_code',
+          code,
+          client_id: resolvedClientId,
+          redirect_uri: effectiveRedirectUri,
+        };
+
+        if (googleRequest?.codeVerifier) {
+          bodyParams.code_verifier = googleRequest.codeVerifier;
+        }
+
         if (OAUTH_DEBUG_ALERTS) {
           showDebug('OAuth debug (exchange params)', {
             clientId: resolvedClientId,
             redirectUri: effectiveRedirectUri,
             hasCodeVerifier: !!googleRequest?.codeVerifier,
+            bodyParams,
           });
         }
 
-        const tokenResponse = await AuthSession.exchangeCodeAsync(
-          {
-            clientId: resolvedClientId,
-            code,
-            redirectUri: effectiveRedirectUri,
-            extraParams: googleRequest?.codeVerifier
-              ? { code_verifier: googleRequest.codeVerifier }
-              : undefined,
-          } as any,
-          Google.discovery
-        );
+        // Manual fetch instead of AuthSession.exchangeCodeAsync
+        // to avoid redirect_uri normalization / encoding mismatch in the library
+        const tokenEndpoint = 'https://oauth2.googleapis.com/token';
+        const formBody = Object.entries(bodyParams)
+          .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+          .join('&');
 
-        const idToken = (tokenResponse as any)?.idToken || (tokenResponse as any)?.id_token;
+        const tokenRes = await fetch(tokenEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formBody,
+        });
+
+        const tokenData = await tokenRes.json();
+
+        if (!tokenRes.ok) {
+          throw {
+            message: tokenData.error_description || tokenData.error || 'Token exchange failed',
+            code: tokenData.error,
+            description: tokenData.error_description,
+            params: tokenData,
+          };
+        }
+
+        if (OAUTH_DEBUG_ALERTS) {
+          showDebug('Token exchange success', {
+            hasIdToken: !!tokenData.id_token,
+            hasAccessToken: !!tokenData.access_token,
+            tokenType: tokenData.token_type,
+          });
+        }
+
+        const idToken = tokenData.id_token;
 
         if (!idToken) {
           setIsGoogleLoading(false);
@@ -367,7 +398,7 @@ export default function SignInScreen() {
         setIsGoogleLoading(false);
         setError('Google sign-in failed. Token exchange error');
         shakeError();
-        showDebug('❌ exchangeCodeAsync error', {
+        showDebug('Token exchange error', {
           message: err?.message,
           code: err?.code,
           description: err?.description,
@@ -378,9 +409,6 @@ export default function SignInScreen() {
             requestUrl: googleRequest?.url,
           },
         });
-
-        // ✅ אם נכשל — תן אפשרות לנסות שוב (ה-code כבר “burned”, אבל בפעם הבאה יהיה code חדש)
-        // לכן אנחנו משאירים handledCodesRef כמו שהוא.
       } finally {
         exchangeInFlightRef.current = false;
       }
