@@ -19,7 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     name: 'Hobinet',
     slug: 'hobinet-mobile',
     owner: 'dvirs',
-    version: '1.1.1',
+    version: '1.1.7',
     // Required for expo-dev-client to determine deep link scheme
     scheme: 'hobinet',
 
@@ -39,7 +39,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ...config.ios,
         bundleIdentifier: 'com.dvirs.hobinet',
         supportsTablet: true,
-        buildNumber: '1.1.1',
+        buildNumber: '1.1.7',
         infoPlist: {
             ...config.ios?.infoPlist,
             NSCameraUsageDescription:
@@ -50,11 +50,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 'This app saves images you take to your photo library.',
             ITSAppUsesNonExemptEncryption: false,
             CFBundleURLTypes: [
-                {
-                CFBundleURLSchemes: [
-                    'com.googleusercontent.apps.428494796773-r03cdal0aqpun0euu8g2m1ivqd6k8gq5',
-                ],
-                },
+                { CFBundleURLSchemes: ['hobinet'] },
+                { CFBundleURLSchemes: ['com.googleusercontent.apps.428494796773-r03cdal0aqpun0euu8g2m1ivqd6k8gq5'] },
             ],
         },
     },
@@ -86,17 +83,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         googleMapsApiKey:
             process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'REPLACE_ME_IN_.env',
         googleAndroidClientId:
-            process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || 'REPLACE_ME_IN_.env',
+            "428494796773-d8kk8lkb7485mq91evpf0atir73jet0b.apps.googleusercontent.com",
         googleIosClientId:
-            process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'REPLACE_ME_IN_.env',
+            "428494796773-r03cdal0aqpun0euu8g2m1ivqd6k8gq5.apps.googleusercontent.com",
         googleWebClientId:
-            process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'REPLACE_ME_IN_.env',
+            "428494796773-ped969msbm5oon25a5t119p6pb6mii30.apps.googleusercontent.com",
         googleExpoClientId:
-            process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID || 'REPLACE_ME_IN_.env',
+            "428494796773-9u6opvespvpb403punmct8acugtij4l5.apps.googleusercontent.com",
         eas: {
             projectId: '608daaa3-e056-4641-80da-2e6b047dc45c',
         },
-        appEnv: APP_ENV, 
+        appEnv: APP_ENV,
     },
 
     notification: {

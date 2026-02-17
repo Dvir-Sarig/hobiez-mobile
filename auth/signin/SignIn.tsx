@@ -1,25 +1,70 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Animated, Pressable } from 'react-native';
+import React, { useState, useContext, useEffect, useMemo, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  Alert,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { signIn, signInWithGoogle, UserType } from '../services/authService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
-import { AuthContext } from '../AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AuthSession from 'expo-auth-session';
 import Constants from 'expo-constants';
+
+import { signIn, signInWithGoogle, UserType } from '../services/authService';
+import { RootStackParamList } from '../../types';
+import { AuthContext } from '../AuthContext';
 import SecureStorage from '../services/SecureStorage';
 import { tokens, surfaces, utils } from '../../shared/design/tokens';
-import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from '../../shared/config';
 import AuthLayout from '../components/AuthLayout';
-import { askPermissionOnceAfterSignIn, getOrFetchDeviceToken, refreshAndMaybeRegister, } from '../../shared/services/deviceTokenService';
+import {
+  askPermissionOnceAfterSignIn,
+  getOrFetchDeviceToken,
+  refreshAndMaybeRegister,
+} from '../../shared/services/deviceTokenService';
 import { registerDeviceIfNeeded } from '../services/deviceApiService';
+
+// ===== Client IDs =====
+const IOS_CLIENT_ID =
+  '428494796773-r03cdal0aqpun0euu8g2m1ivqd6k8gq5.apps.googleusercontent.com';
+const ANDROID_CLIENT_ID =
+  '428494796773-d8kk8lkb7485mq91evpf0atir73jet0b.apps.googleusercontent.com';
+const WEB_CLIENT_ID =
+  '428494796773-ped969msbm5oon25a5t119p6pb6mii30.apps.googleusercontent.com';
+const EXPO_CLIENT_ID =
+  '428494796773-9u6opvespvpb403punmct8acugtij4l5.apps.googleusercontent.com';
 
 WebBrowser.maybeCompleteAuthSession();
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
+
+// ✅ Debug switch
+const OAUTH_DEBUG_ALERTS = true;
+
+function safeJson(obj: any) {
+  try {
+    return JSON.stringify(obj, null, 2);
+  } catch {
+    return String(obj);
+  }
+}
+
+function clientIdPrefix(clientId: string) {
+  return clientId.replace('.apps.googleusercontent.com', '').trim();
+}
+
+function googleIosUrlSchemeFromClientId(clientId: string) {
+  // com.googleusercontent.apps.<prefix>
+  return `com.googleusercontent.apps.${clientIdPrefix(clientId)}`;
+}
 
 export default function SignInScreen() {
   const navigation = useNavigation<SignInScreenNavigationProp>();
@@ -34,29 +79,107 @@ export default function SignInScreen() {
   const [error, setError] = useState('');
   const [shakeAnimation] = useState(new Animated.Value(0));
 
-  const redirectUri = AuthSession.makeRedirectUri({ 
-    scheme: Constants.appOwnership === 'expo' ? 'exp' : 'hobinet' 
-  });
+  // ✅ Guards נגד exchange כפול
+  const exchangeInFlightRef = useRef(false);
+  const handledCodesRef = useRef<Set<string>>(new Set());
 
-  const [googleRequest, googleResponse, promptGoogleSignIn] =
-    Google.useAuthRequest({
-      iosClientId: GOOGLE_IOS_CLIENT_ID,
-      androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-      webClientId: GOOGLE_WEB_CLIENT_ID,
+  const isExpoGo = Constants.appOwnership === 'expo';
+  const useProxy = isExpoGo;
+
+  const showDebug = (title: string, payload: any) => {
+    if (!OAUTH_DEBUG_ALERTS) return;
+    Alert.alert(title, safeJson(payload).slice(0, 3500));
+  };
+
+  const validateClientIdsOrAlert = () => {
+    const ids = {
+      iosClientId: IOS_CLIENT_ID,
+      androidClientId: ANDROID_CLIENT_ID,
+      webClientId: WEB_CLIENT_ID,
+      expoClientId: EXPO_CLIENT_ID,
+    };
+    const bad = Object.entries(ids).filter(([_, v]) => !v || v.includes('REPLACE_ME'));
+    if (bad.length > 0) {
+      showDebug('❌ OAuth config invalid', {
+        reason: 'One or more client IDs are missing / REPLACE_ME',
+        bad,
+        ids,
+      });
+      return false;
+    }
+    return true;
+  };
+
+  /**
+   * ✅ redirectUri:
+   * - Expo Go => proxy redirect
+   * - iOS TestFlight/Standalone => com.googleusercontent.apps.<prefix>:/  (ללא path)
+   * - Android standalone => hobinet:/  (ללא path)
+   *
+   * למה בלי path?
+   * כי אצלך ראינו שכשמוסיפים path זה עלול להכניס התנהגות שונה.
+   * העיקר: שיהיה זהה ב-request וב-exchange.
+   */
+  const redirectUri = useMemo(() => {
+    if (useProxy) {
+      return AuthSession.makeRedirectUri({ useProxy: true });
+    }
+
+    if (Platform.OS === 'ios') {
+      const googleScheme = googleIosUrlSchemeFromClientId(IOS_CLIENT_ID);
+      return AuthSession.makeRedirectUri({ scheme: googleScheme, useProxy: false });
+    }
+
+    // Android standalone
+    return AuthSession.makeRedirectUri({ scheme: 'hobinet', useProxy: false });
+  }, [useProxy]);
+
+  /**
+   * ✅ ב-Standalone/TestFlight לא מעבירים expoClientId בכלל
+   */
+  const googleConfig = useMemo(() => {
+    const base: any = {
+      iosClientId: IOS_CLIENT_ID,
+      androidClientId: ANDROID_CLIENT_ID,
+      webClientId: WEB_CLIENT_ID,
       redirectUri,
       scopes: ['openid', 'profile', 'email'],
       responseType: AuthSession.ResponseType.Code,
       usePKCE: true,
-      selectAccount: true,
-    });
+    };
 
-  // Log OAuth config once when request becomes available
+    if (useProxy) base.expoClientId = EXPO_CLIENT_ID;
+
+    return base;
+  }, [redirectUri, useProxy]);
+
+  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useAuthRequest(
+    googleConfig,
+    { useProxy }
+  );
+
   useEffect(() => {
-    if (__DEV__ && googleRequest?.url) {
-      console.log('[oauth] redirectUri:', redirectUri);
-      console.log('[oauth] request.url:', googleRequest.url);
-    }
+    if (!OAUTH_DEBUG_ALERTS) return;
+    showDebug('OAuth debug (init)', {
+      isExpoGo,
+      useProxy,
+      platform: Platform.OS,
+      redirectUri,
+      iosUrlSchemeExpected:
+        Platform.OS === 'ios' ? googleIosUrlSchemeFromClientId(IOS_CLIENT_ID) : undefined,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (googleRequest?.url && OAUTH_DEBUG_ALERTS) {
+      showDebug('OAuth debug (request built)', {
+        requestRedirectUri: googleRequest.redirectUri,
+        redirectUri,
+        requestUrl: googleRequest.url,
+        hasCodeVerifier: !!googleRequest.codeVerifier,
+      });
+    }
   }, [googleRequest?.url]);
 
   const shakeError = () => {
@@ -71,7 +194,6 @@ export default function SignInScreen() {
   const finalizeLogin = async (data: any, selectedUserType: UserType) => {
     const platformValue = Platform.OS?.toUpperCase?.() || undefined;
 
-    // 1) שמירת סטייט התחברות
     await SecureStorage.storeToken(data.token);
     await SecureStorage.storeUserId(data.userId.toString());
     await SecureStorage.storeUserType(selectedUserType.toLowerCase());
@@ -81,19 +203,20 @@ export default function SignInScreen() {
       token: data.token,
     });
 
-    // 2) פרומפט הרשאות חד-פעמי אחרי התחברות (אם כבר אושר במכשיר – לא יקפוץ)
     await askPermissionOnceAfterSignIn();
 
-    // 3) שליפת token ורישום לשרת (אם קיים)
     const token = await getOrFetchDeviceToken();
     if (token) {
       await registerDeviceIfNeeded({ token, userType: selectedUserType, platform: platformValue });
     }
 
-    // 4) רענון "שקט" — אם הטוקן התחלף/משתמש התחלף נרשום מחדש לשרת
     await refreshAndMaybeRegister(
       async (freshToken) => {
-        await registerDeviceIfNeeded({ token: freshToken, userType: selectedUserType, platform: platformValue });
+        await registerDeviceIfNeeded({
+          token: freshToken,
+          userType: selectedUserType,
+          platform: platformValue,
+        });
       },
       data.userId.toString()
     );
@@ -110,12 +233,8 @@ export default function SignInScreen() {
     setError('');
 
     try {
-      // 1) התחברות
       const data = await signIn(email, password, userType);
       await finalizeLogin(data, userType);
-
-      // 2) כאן אפשר לנווט למסך הבא אם צריך
-
     } catch (error: any) {
       let errorMessage = 'Invalid email or password';
       if (error.message?.includes('Network')) errorMessage = 'Network issue. Try again';
@@ -134,9 +253,7 @@ export default function SignInScreen() {
       const data = await signInWithGoogle(idToken, userType);
       await finalizeLogin(data, userType);
     } catch (error: any) {
-      let errorMessage = 'Google sign-in failed. Try again';
-      if (error.message?.includes('Network')) errorMessage = 'Network issue. Try again';
-      setError(errorMessage);
+      setError('Google sign-in failed. Try again');
       shakeError();
     } finally {
       setIsGoogleLoading(false);
@@ -144,80 +261,130 @@ export default function SignInScreen() {
   };
 
   const handleGooglePress = async () => {
+    if (isGoogleLoading) return; // ✅ מניעת לחיצה כפולה
     setIsGoogleLoading(true);
     setError('');
-    try {
-      await promptGoogleSignIn();
-    } catch (error) {
-      if (__DEV__) console.warn('[oauth] promptGoogleSignIn error:', error);
+
+    if (!validateClientIdsOrAlert()) {
       setIsGoogleLoading(false);
-      setError('Google sign-in failed. Try again');
+      return;
+    }
+
+    try {
+      // ✅ forcing account chooser (עדיין iOS יכול לזכור session, אבל זה עוזר)
+      await promptGoogleSignIn({ prompt: 'select_account' });
+    } catch (e: any) {
+      setIsGoogleLoading(false);
+      setError('Google sign-in failed. Prompt error');
       shakeError();
+      showDebug('❌ promptGoogleSignIn error', { message: e?.message, e });
     }
   };
 
   useEffect(() => {
     if (!googleResponse) return;
 
-    if (googleResponse.type === 'success') {
-      const code = (googleResponse as any).params?.code;
-      if (!code) {
-        setIsGoogleLoading(false);
-        setError('Google sign-in failed. Missing code');
-        shakeError();
-        return;
-      }
+    if (OAUTH_DEBUG_ALERTS) {
+      showDebug('OAuth debug (response)', googleResponse);
+    }
 
-      (async () => {
-        try {
-          // Use the SAME client ID and redirect URI that the request was built with
-          const resolvedClientId = Platform.select({
-            ios: GOOGLE_IOS_CLIENT_ID,
-            android: GOOGLE_ANDROID_CLIENT_ID,
-            default: GOOGLE_WEB_CLIENT_ID,
-          }) || GOOGLE_WEB_CLIENT_ID;
-
-          const tokenResponse = await AuthSession.exchangeCodeAsync(
-            {
-              clientId: resolvedClientId,
-              code,
-              redirectUri: googleRequest?.redirectUri || redirectUri,
-              extraParams: googleRequest?.codeVerifier
-                ? { code_verifier: googleRequest.codeVerifier }
-                : undefined,
-            } as any,
-            Google.discovery
-          );
-
-          const idToken = (tokenResponse as any)?.idToken || (tokenResponse as any)?.id_token;
-          if (!idToken) {
-            setIsGoogleLoading(false);
-            setError('Google sign-in failed. Missing id_token');
-            shakeError();
-            return;
-          }
-
-          await handleGoogleLogin(idToken as string);
-        } catch (err) {
-          setIsGoogleLoading(false);
-          setError('Google sign-in failed. Token exchange error');
-          shakeError();
-        }
-      })();
-
+    if (googleResponse.type !== 'success') {
+      setIsGoogleLoading(false);
       return;
     }
 
-    if (googleResponse.type === 'error') {
+    const code = (googleResponse as any).params?.code;
+    if (!code) {
       setIsGoogleLoading(false);
-      setError('Google sign-in failed. Try again');
+      setError('Google sign-in failed. Missing code');
       shakeError();
       return;
     }
 
-    if (googleResponse.type === 'dismiss') {
+    // ✅ Guard: אל תטפל באותו code פעמיים
+    if (handledCodesRef.current.has(code)) {
       setIsGoogleLoading(false);
+      if (OAUTH_DEBUG_ALERTS) showDebug('ℹ️ code already handled (skip)', { code });
+      return;
     }
+
+    // ✅ Guard: אל תעשה exchange במקביל
+    if (exchangeInFlightRef.current) {
+      setIsGoogleLoading(false);
+      if (OAUTH_DEBUG_ALERTS) showDebug('ℹ️ exchange already in flight (skip)', { code });
+      return;
+    }
+
+    exchangeInFlightRef.current = true;
+    handledCodesRef.current.add(code);
+
+    (async () => {
+      try {
+        const resolvedClientId =
+          Platform.OS === 'ios'
+            ? useProxy
+              ? EXPO_CLIENT_ID
+              : IOS_CLIENT_ID
+            : Platform.OS === 'android'
+              ? useProxy
+                ? EXPO_CLIENT_ID
+                : ANDROID_CLIENT_ID
+              : WEB_CLIENT_ID;
+
+        const effectiveRedirectUri = googleRequest?.redirectUri || redirectUri;
+
+        if (OAUTH_DEBUG_ALERTS) {
+          showDebug('OAuth debug (exchange params)', {
+            clientId: resolvedClientId,
+            redirectUri: effectiveRedirectUri,
+            hasCodeVerifier: !!googleRequest?.codeVerifier,
+          });
+        }
+
+        const tokenResponse = await AuthSession.exchangeCodeAsync(
+          {
+            clientId: resolvedClientId,
+            code,
+            redirectUri: effectiveRedirectUri,
+            extraParams: googleRequest?.codeVerifier
+              ? { code_verifier: googleRequest.codeVerifier }
+              : undefined,
+          } as any,
+          Google.discovery
+        );
+
+        const idToken = (tokenResponse as any)?.idToken || (tokenResponse as any)?.id_token;
+
+        if (!idToken) {
+          setIsGoogleLoading(false);
+          setError('Google sign-in failed. Missing id_token');
+          shakeError();
+          return;
+        }
+
+        await handleGoogleLogin(idToken as string);
+      } catch (err: any) {
+        setIsGoogleLoading(false);
+        setError('Google sign-in failed. Token exchange error');
+        shakeError();
+        showDebug('❌ exchangeCodeAsync error', {
+          message: err?.message,
+          code: err?.code,
+          description: err?.description,
+          params: err?.params,
+          snapshot: {
+            computedRedirectUri: redirectUri,
+            requestRedirectUri: googleRequest?.redirectUri,
+            requestUrl: googleRequest?.url,
+          },
+        });
+
+        // ✅ אם נכשל — תן אפשרות לנסות שוב (ה-code כבר “burned”, אבל בפעם הבאה יהיה code חדש)
+        // לכן אנחנו משאירים handledCodesRef כמו שהוא.
+      } finally {
+        exchangeInFlightRef.current = false;
+      }
+    })();
   }, [googleResponse]);
 
   const roleButton = (type: UserType, label: string, icon: any, color: string) => {
@@ -228,14 +395,26 @@ export default function SignInScreen() {
         style={({ pressed }) => [
           styles.roleBtn,
           selected && { backgroundColor: color, borderColor: color, ...styles.roleBtnSelected },
-          pressed && { opacity: 0.85 }
+          pressed && { opacity: 0.85 },
         ]}
-        accessibilityRole="button"
-        accessibilityLabel={`Select ${label} role`}
       >
-        <Ionicons name={icon} size={20} color={selected ? tokens.colors.textOnDark : color} style={styles.roleIcon} />
-        <Text style={[styles.roleText, selected && styles.roleTextSelected, { color: selected ? tokens.colors.textOnDark : color }]}>{label}</Text>
-        {selected && <Ionicons name="checkmark-circle" size={20} color={tokens.colors.textOnDark} style={styles.checkIcon} />}
+        <Ionicons
+          name={icon}
+          size={20}
+          color={selected ? tokens.colors.textOnDark : color}
+          style={styles.roleIcon}
+        />
+        <Text style={[styles.roleText, { color: selected ? tokens.colors.textOnDark : color }]}>
+          {label}
+        </Text>
+        {selected && (
+          <Ionicons
+            name="checkmark-circle"
+            size={20}
+            color={tokens.colors.textOnDark}
+            style={styles.checkIcon}
+          />
+        )}
       </Pressable>
     );
   };
@@ -249,24 +428,28 @@ export default function SignInScreen() {
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Sign in to continue your journey</Text>
       </View>
+
       <View style={styles.formCard}>
         <Text style={styles.sectionLabel}>ACCOUNT</Text>
 
-        <View style={[styles.inputGroup]}>
+        <View style={styles.inputGroup}>
           <Ionicons name="mail-outline" size={20} color="#64748b" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Email"
             placeholderTextColor="#94a3b8"
             value={email}
-            onChangeText={(text) => { setEmail(text); setError(''); }}
+            onChangeText={(text) => {
+              setEmail(text);
+              setError('');
+            }}
             keyboardType="email-address"
             autoCapitalize="none"
             returnKeyType="next"
           />
         </View>
 
-        <View style={[styles.inputGroup]}>
+        <View style={styles.inputGroup}>
           <Ionicons name="lock-closed-outline" size={20} color="#64748b" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
@@ -274,10 +457,13 @@ export default function SignInScreen() {
             placeholderTextColor="#94a3b8"
             secureTextEntry={!showPassword}
             value={password}
-            onChangeText={(text) => { setPassword(text); setError(''); }}
+            onChangeText={(text) => {
+              setPassword(text);
+              setError('');
+            }}
             returnKeyType="done"
           />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.toggleSecure} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.toggleSecure}>
             <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#64748b" />
           </TouchableOpacity>
         </View>
@@ -294,8 +480,16 @@ export default function SignInScreen() {
           {roleButton(UserType.COACH, 'Coach', 'school-outline', '#42A5F5')}
         </View>
 
-        <TouchableOpacity style={[styles.primaryButton, isLoading && styles.buttonDisabled]} onPress={handleSubmit} disabled={isLoading} accessibilityLabel="Sign in">
-          {isLoading ? <ActivityIndicator color={tokens.colors.primaryDark} /> : <Text style={styles.primaryButtonText}>Sign In</Text>}
+        <TouchableOpacity
+          style={[styles.primaryButton, isLoading && styles.buttonDisabled]}
+          onPress={handleSubmit}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color={tokens.colors.primaryDark} />
+          ) : (
+            <Text style={styles.primaryButtonText}>Sign In</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.dividerRow}>
@@ -308,7 +502,6 @@ export default function SignInScreen() {
           style={[styles.googleButton, (isGoogleLoading || !googleRequest) && styles.buttonDisabled]}
           onPress={handleGooglePress}
           disabled={isGoogleLoading || !googleRequest}
-          accessibilityLabel="Continue with Google"
         >
           {isGoogleLoading ? (
             <ActivityIndicator color={tokens.colors.textDark} />
@@ -320,11 +513,16 @@ export default function SignInScreen() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate('ForgotPassword')} accessibilityLabel="Forgot password">
+        <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate('ForgotPassword')}>
           <Text style={styles.forgotBtnText}>Forgot password?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.secondaryGhostBtn} onPress={() => navigation.navigate('SignUp', { role: userType.toLowerCase() as 'client' | 'coach' })}>
+        <TouchableOpacity
+          style={styles.secondaryGhostBtn}
+          onPress={() =>
+            navigation.navigate('SignUp', { role: userType.toLowerCase() as 'client' | 'coach' })
+          }
+        >
           <Text style={styles.secondaryGhostBtnText}>Need an account? Sign Up</Text>
         </TouchableOpacity>
       </View>
@@ -334,35 +532,134 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   header: { alignItems: 'center', marginBottom: tokens.space.xl },
-  headerIconWrap: { width: 70, height: 70, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: tokens.colors.borderGlass, alignItems: 'center', justifyContent: 'center', marginBottom: tokens.space.md },
-  title: { fontSize: 30, color: tokens.colors.textOnDark, fontWeight: tokens.fontWeight.heavy as any, textAlign: 'center', letterSpacing: 0.6, marginBottom: tokens.space.sm },
+  headerIconWrap: {
+    width: 70,
+    height: 70,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: tokens.colors.borderGlass,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: tokens.space.md,
+  },
+  title: {
+    fontSize: 30,
+    color: tokens.colors.textOnDark,
+    fontWeight: tokens.fontWeight.heavy as any,
+    textAlign: 'center',
+    letterSpacing: 0.6,
+    marginBottom: tokens.space.sm,
+  },
   subtitle: { fontSize: 15, lineHeight: 22, color: tokens.colors.textSubtle, textAlign: 'center' },
-  formCard: { ...surfaces.glassCard, borderRadius: tokens.radius.xl, padding: tokens.space.xl, ...utils.shadowSoft },
-  sectionLabel: { fontSize: 12, fontWeight: tokens.fontWeight.bold as any, letterSpacing: 0.8, color: tokens.colors.textOnDark, marginBottom: tokens.space.md },
-  inputGroup: { flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.input, borderRadius: tokens.radius.md, paddingHorizontal: tokens.space.md, marginBottom: tokens.space.sm, borderWidth: 1.5, borderColor: tokens.colors.inputBorder },
+
+  formCard: {
+    ...surfaces.glassCard,
+    borderRadius: tokens.radius.xl,
+    padding: tokens.space.xl,
+    ...utils.shadowSoft,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: tokens.fontWeight.bold as any,
+    letterSpacing: 0.8,
+    color: tokens.colors.textOnDark,
+    marginBottom: tokens.space.md,
+  },
+  inputGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: tokens.colors.input,
+    borderRadius: tokens.radius.md,
+    paddingHorizontal: tokens.space.md,
+    marginBottom: tokens.space.sm,
+    borderWidth: 1.5,
+    borderColor: tokens.colors.inputBorder,
+  },
   inputIcon: { marginRight: tokens.space.sm },
-  input: { flex: 1, paddingVertical: 12, fontSize: 15, fontWeight: tokens.fontWeight.medium as any, color: tokens.colors.textDark },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 15,
+    fontWeight: tokens.fontWeight.medium as any,
+    color: tokens.colors.textDark,
+  },
   toggleSecure: { padding: 4, marginLeft: 4 },
+
   roleRow: { flexDirection: 'row', gap: tokens.space.md, marginTop: tokens.space.md, marginBottom: tokens.space.md },
-  roleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: tokens.radius.md, borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', backgroundColor: tokens.colors.light, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 2 }, android: { elevation: 2 } }) },
-  roleBtnSelected: { transform: [{ scale: 1.02 }], ...Platform.select({ ios: { shadowOpacity: 0.35, shadowRadius: 5, shadowOffset: { width: 0, height: 3 } }, android: { elevation: 4 } }) },
+  roleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: tokens.radius.md,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: tokens.colors.light,
+  },
+  roleBtnSelected: { transform: [{ scale: 1.02 }] },
   roleIcon: { marginRight: 8 },
   roleText: { fontSize: 15, fontWeight: tokens.fontWeight.semibold as any },
-  roleTextSelected: { color: tokens.colors.textOnDark },
   checkIcon: { marginLeft: 6 },
-  primaryButton: { backgroundColor: tokens.colors.primary, paddingVertical: tokens.space.lg, borderRadius: tokens.radius.pill, alignItems: 'center', marginTop: tokens.space.sm },
+
+  primaryButton: {
+    backgroundColor: tokens.colors.primary,
+    paddingVertical: tokens.space.lg,
+    borderRadius: tokens.radius.pill,
+    alignItems: 'center',
+    marginTop: tokens.space.sm,
+  },
   buttonDisabled: { opacity: 0.7 },
   primaryButtonText: { color: tokens.colors.textOnDark, fontSize: 16, fontWeight: tokens.fontWeight.bold as any },
+
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, marginTop: tokens.space.lg, marginBottom: tokens.space.sm },
   dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.35)' },
-  dividerText: { color: tokens.colors.textOnDark, fontSize: 12, fontWeight: tokens.fontWeight.medium as any, textTransform: 'uppercase', letterSpacing: 0.6 },
-  googleButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: tokens.space.sm, backgroundColor: tokens.colors.light, paddingVertical: tokens.space.md, borderRadius: tokens.radius.pill, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.35)' },
+  dividerText: {
+    color: tokens.colors.textOnDark,
+    fontSize: 12,
+    fontWeight: tokens.fontWeight.medium as any,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.space.sm,
+    backgroundColor: tokens.colors.light,
+    paddingVertical: tokens.space.md,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
   googleButtonText: { color: tokens.colors.textDark, fontSize: 15, fontWeight: tokens.fontWeight.semibold as any },
   googleIcon: { marginRight: 2 },
+
   secondaryGhostBtn: { marginTop: tokens.space.md, paddingVertical: tokens.space.sm, alignItems: 'center' },
-  secondaryGhostBtnText: { color: tokens.colors.textOnDark, fontSize: 14, fontWeight: tokens.fontWeight.semibold as any, textDecorationLine: 'underline' },
+  secondaryGhostBtnText: {
+    color: tokens.colors.textOnDark,
+    fontSize: 14,
+    fontWeight: tokens.fontWeight.semibold as any,
+    textDecorationLine: 'underline',
+  },
+
   forgotBtn: { marginTop: tokens.space.sm, alignItems: 'center' },
-  forgotBtnText: { color: tokens.colors.textOnDark, fontSize: 13, fontWeight: tokens.fontWeight.medium as any, textDecorationLine: 'underline' },
-  errorContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(220,53,69,0.10)', padding: tokens.space.sm, borderRadius: tokens.radius.sm, marginBottom: tokens.space.md },
+  forgotBtnText: {
+    color: tokens.colors.textOnDark,
+    fontSize: 13,
+    fontWeight: tokens.fontWeight.medium as any,
+    textDecorationLine: 'underline',
+  },
+
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(220,53,69,0.10)',
+    padding: tokens.space.sm,
+    borderRadius: tokens.radius.sm,
+    marginBottom: tokens.space.md,
+  },
   errorText: { color: tokens.colors.error, marginLeft: 6, fontSize: 13, fontWeight: tokens.fontWeight.medium as any },
 });
