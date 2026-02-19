@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -46,7 +46,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
-// ✅ Debug switch
+// ✅ Keep alerts only for useful debug points
 const OAUTH_DEBUG_ALERTS = true;
 
 function safeJson(obj: any) {
@@ -62,7 +62,6 @@ function clientIdPrefix(clientId: string) {
 }
 
 function googleIosUrlSchemeFromClientId(clientId: string) {
-  // com.googleusercontent.apps.<prefix>
   return `com.googleusercontent.apps.${clientIdPrefix(clientId)}`;
 }
 
@@ -78,10 +77,6 @@ export default function SignInScreen() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [shakeAnimation] = useState(new Animated.Value(0));
-
-  // ✅ Guards נגד exchange כפול
-  const exchangeInFlightRef = useRef(false);
-  const handledCodesRef = useRef<Set<string>>(new Set());
 
   const isExpoGo = Constants.appOwnership === 'expo';
   const useProxy = isExpoGo;
@@ -103,23 +98,12 @@ export default function SignInScreen() {
       showDebug('❌ OAuth config invalid', {
         reason: 'One or more client IDs are missing / REPLACE_ME',
         bad,
-        ids,
       });
       return false;
     }
     return true;
   };
 
-  /**
-   * ✅ redirectUri:
-   * - Expo Go => proxy redirect
-   * - iOS TestFlight/Standalone => com.googleusercontent.apps.<prefix>:/  (ללא path)
-   * - Android standalone => hobinet:/  (ללא path)
-   *
-   * למה בלי path?
-   * כי אצלך ראינו שכשמוסיפים path זה עלול להכניס התנהגות שונה.
-   * העיקר: שיהיה זהה ב-request וב-exchange.
-   */
   const redirectUri = useMemo(() => {
     if (useProxy) {
       return AuthSession.makeRedirectUri();
@@ -130,13 +114,9 @@ export default function SignInScreen() {
       return AuthSession.makeRedirectUri({ scheme: googleScheme });
     }
 
-    // Android standalone
     return AuthSession.makeRedirectUri({ scheme: 'hobinet' });
   }, [useProxy]);
 
-  /**
-   * ✅ ב-Standalone/TestFlight לא מעבירים expoClientId בכלל
-   */
   const googleConfig = useMemo(() => {
     const base: any = {
       iosClientId: IOS_CLIENT_ID,
@@ -153,13 +133,11 @@ export default function SignInScreen() {
     return base;
   }, [redirectUri, useProxy]);
 
-  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useAuthRequest(
-    googleConfig
-  );
+  const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useAuthRequest(googleConfig);
 
   useEffect(() => {
-    if (!OAUTH_DEBUG_ALERTS) return;
-    showDebug('OAuth debug (init)', {
+    // ✅ minimal init debug
+    showDebug('OAuth init', {
       isExpoGo,
       useProxy,
       platform: Platform.OS,
@@ -171,11 +149,11 @@ export default function SignInScreen() {
   }, []);
 
   useEffect(() => {
+    // ✅ only show key request fields, never tokens
     if (googleRequest?.url && OAUTH_DEBUG_ALERTS) {
-      showDebug('OAuth debug (request built)', {
+      showDebug('OAuth request built', {
         requestRedirectUri: googleRequest.redirectUri,
         redirectUri,
-        requestUrl: googleRequest.url,
         hasCodeVerifier: !!googleRequest.codeVerifier,
       });
     }
@@ -244,23 +222,15 @@ export default function SignInScreen() {
     }
   };
 
+  // ✅ no loading here (controlled by the flow)
   const handleGoogleLogin = async (idToken: string) => {
-    setIsGoogleLoading(true);
     setError('');
-
-    try {
-      const data = await signInWithGoogle(idToken, userType);
-      await finalizeLogin(data, userType);
-    } catch (error: any) {
-      setError('Google sign-in failed. Try again');
-      shakeError();
-    } finally {
-      setIsGoogleLoading(false);
-    }
+    const data = await signInWithGoogle(idToken, userType);
+    await finalizeLogin(data, userType);
   };
 
   const handleGooglePress = async () => {
-    if (isGoogleLoading) return; // ✅ מניעת לחיצה כפולה
+    if (isGoogleLoading) return;
     setIsGoogleLoading(true);
     setError('');
 
@@ -270,21 +240,28 @@ export default function SignInScreen() {
     }
 
     try {
-      // ✅ forcing account chooser (עדיין iOS יכול לזכור session, אבל זה עוזר)
       await promptGoogleSignIn();
+      // loading stays true until we finish processing googleResponse
     } catch (e: any) {
       setIsGoogleLoading(false);
       setError('Google sign-in failed. Prompt error');
       shakeError();
-      showDebug('❌ promptGoogleSignIn error', { message: e?.message, e });
+      showDebug('❌ prompt error', { message: e?.message || String(e) });
     }
   };
 
   useEffect(() => {
     if (!googleResponse) return;
 
+    // ✅ minimal response debug (no tokens)
     if (OAUTH_DEBUG_ALERTS) {
-      showDebug('OAuth debug (response)', googleResponse);
+      showDebug('OAuth response', {
+        type: googleResponse.type,
+        hasAuthentication: !!(googleResponse as any).authentication,
+        hasIdToken:
+          !!(googleResponse as any).authentication?.idToken ||
+          !!(googleResponse as any).authentication?.id_token,
+      });
     }
 
     if (googleResponse.type !== 'success') {
@@ -292,125 +269,26 @@ export default function SignInScreen() {
       return;
     }
 
-    const code = (googleResponse as any).params?.code;
-    if (!code) {
+    const idToken =
+      (googleResponse as any).authentication?.idToken ||
+      (googleResponse as any).authentication?.id_token;
+
+    if (!idToken) {
       setIsGoogleLoading(false);
-      setError('Google sign-in failed. Missing code');
+      setError('Google sign-in failed. Missing id_token');
       shakeError();
       return;
     }
 
-    // ✅ Guard: אל תטפל באותו code פעמיים
-    if (handledCodesRef.current.has(code)) {
-      setIsGoogleLoading(false);
-      if (OAUTH_DEBUG_ALERTS) showDebug('ℹ️ code already handled (skip)', { code });
-      return;
-    }
-
-    // ✅ Guard: אל תעשה exchange במקביל
-    if (exchangeInFlightRef.current) {
-      setIsGoogleLoading(false);
-      if (OAUTH_DEBUG_ALERTS) showDebug('ℹ️ exchange already in flight (skip)', { code });
-      return;
-    }
-
-    exchangeInFlightRef.current = true;
-    handledCodesRef.current.add(code);
-
     (async () => {
       try {
-        const resolvedClientId =
-          Platform.OS === 'ios'
-            ? useProxy
-              ? EXPO_CLIENT_ID
-              : IOS_CLIENT_ID
-            : Platform.OS === 'android'
-              ? useProxy
-                ? EXPO_CLIENT_ID
-                : ANDROID_CLIENT_ID
-              : WEB_CLIENT_ID;
-
-        const effectiveRedirectUri = googleRequest?.redirectUri || redirectUri;
-
-        const bodyParams: Record<string, string> = {
-          grant_type: 'authorization_code',
-          code,
-          client_id: resolvedClientId,
-          redirect_uri: effectiveRedirectUri,
-        };
-
-        if (googleRequest?.codeVerifier) {
-          bodyParams.code_verifier = googleRequest.codeVerifier;
-        }
-
-        if (OAUTH_DEBUG_ALERTS) {
-          showDebug('OAuth debug (exchange params)', {
-            clientId: resolvedClientId,
-            redirectUri: effectiveRedirectUri,
-            hasCodeVerifier: !!googleRequest?.codeVerifier,
-            bodyParams,
-          });
-        }
-
-        // Manual fetch instead of AuthSession.exchangeCodeAsync
-        // to avoid redirect_uri normalization / encoding mismatch in the library
-        const tokenEndpoint = 'https://oauth2.googleapis.com/token';
-        const formBody = Object.entries(bodyParams)
-          .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-          .join('&');
-
-        const tokenRes = await fetch(tokenEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formBody,
-        });
-
-        const tokenData = await tokenRes.json();
-
-        if (!tokenRes.ok) {
-          throw {
-            message: tokenData.error_description || tokenData.error || 'Token exchange failed',
-            code: tokenData.error,
-            description: tokenData.error_description,
-            params: tokenData,
-          };
-        }
-
-        if (OAUTH_DEBUG_ALERTS) {
-          showDebug('Token exchange success', {
-            hasIdToken: !!tokenData.id_token,
-            hasAccessToken: !!tokenData.access_token,
-            tokenType: tokenData.token_type,
-          });
-        }
-
-        const idToken = tokenData.id_token;
-
-        if (!idToken) {
-          setIsGoogleLoading(false);
-          setError('Google sign-in failed. Missing id_token');
-          shakeError();
-          return;
-        }
-
         await handleGoogleLogin(idToken as string);
-      } catch (err: any) {
-        setIsGoogleLoading(false);
-        setError('Google sign-in failed. Token exchange error');
+      } catch (e: any) {
+        setError('Google sign-in failed. Try again');
         shakeError();
-        showDebug('Token exchange error', {
-          message: err?.message,
-          code: err?.code,
-          description: err?.description,
-          params: err?.params,
-          snapshot: {
-            computedRedirectUri: redirectUri,
-            requestRedirectUri: googleRequest?.redirectUri,
-            requestUrl: googleRequest?.url,
-          },
-        });
+        showDebug('❌ backend login error', { message: e?.message || String(e) });
       } finally {
-        exchangeInFlightRef.current = false;
+        setIsGoogleLoading(false);
       }
     })();
   }, [googleResponse]);
@@ -492,7 +370,11 @@ export default function SignInScreen() {
             returnKeyType="done"
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.toggleSecure}>
-            <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#64748b" />
+            <Ionicons
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color="#64748b"
+            />
           </TouchableOpacity>
         </View>
 
@@ -547,9 +429,7 @@ export default function SignInScreen() {
 
         <TouchableOpacity
           style={styles.secondaryGhostBtn}
-          onPress={() =>
-            navigation.navigate('SignUp', { role: userType.toLowerCase() as 'client' | 'coach' })
-          }
+          onPress={() => navigation.navigate('SignUp', { role: userType.toLowerCase() as 'client' | 'coach' })}
         >
           <Text style={styles.secondaryGhostBtnText}>Need an account? Sign Up</Text>
         </TouchableOpacity>
@@ -614,7 +494,12 @@ const styles = StyleSheet.create({
   },
   toggleSecure: { padding: 4, marginLeft: 4 },
 
-  roleRow: { flexDirection: 'row', gap: tokens.space.md, marginTop: tokens.space.md, marginBottom: tokens.space.md },
+  roleRow: {
+    flexDirection: 'row',
+    gap: tokens.space.md,
+    marginTop: tokens.space.md,
+    marginBottom: tokens.space.md,
+  },
   roleBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -639,9 +524,19 @@ const styles = StyleSheet.create({
     marginTop: tokens.space.sm,
   },
   buttonDisabled: { opacity: 0.7 },
-  primaryButtonText: { color: tokens.colors.textOnDark, fontSize: 16, fontWeight: tokens.fontWeight.bold as any },
+  primaryButtonText: {
+    color: tokens.colors.textOnDark,
+    fontSize: 16,
+    fontWeight: tokens.fontWeight.bold as any,
+  },
 
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.space.sm, marginTop: tokens.space.lg, marginBottom: tokens.space.sm },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    marginTop: tokens.space.lg,
+    marginBottom: tokens.space.sm,
+  },
   dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.35)' },
   dividerText: {
     color: tokens.colors.textOnDark,
@@ -662,7 +557,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.35)',
   },
-  googleButtonText: { color: tokens.colors.textDark, fontSize: 15, fontWeight: tokens.fontWeight.semibold as any },
+  googleButtonText: {
+    color: tokens.colors.textDark,
+    fontSize: 15,
+    fontWeight: tokens.fontWeight.semibold as any,
+  },
   googleIcon: { marginRight: 2 },
 
   secondaryGhostBtn: { marginTop: tokens.space.md, paddingVertical: tokens.space.sm, alignItems: 'center' },
