@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Animated,
   Pressable,
-  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -46,17 +45,6 @@ WebBrowser.maybeCompleteAuthSession();
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
-// ✅ Keep alerts only for useful debug points
-const OAUTH_DEBUG_ALERTS = true;
-
-function safeJson(obj: any) {
-  try {
-    return JSON.stringify(obj, null, 2);
-  } catch {
-    return String(obj);
-  }
-}
-
 function clientIdPrefix(clientId: string) {
   return clientId.replace('.apps.googleusercontent.com', '').trim();
 }
@@ -81,27 +69,14 @@ export default function SignInScreen() {
   const isExpoGo = Constants.appOwnership === 'expo';
   const useProxy = isExpoGo;
 
-  const showDebug = (title: string, payload: any) => {
-    if (!OAUTH_DEBUG_ALERTS) return;
-    Alert.alert(title, safeJson(payload).slice(0, 3500));
-  };
-
-  const validateClientIdsOrAlert = () => {
+  const validateClientIds = () => {
     const ids = {
       iosClientId: IOS_CLIENT_ID,
       androidClientId: ANDROID_CLIENT_ID,
       webClientId: WEB_CLIENT_ID,
       expoClientId: EXPO_CLIENT_ID,
     };
-    const bad = Object.entries(ids).filter(([_, v]) => !v || v.includes('REPLACE_ME'));
-    if (bad.length > 0) {
-      showDebug('❌ OAuth config invalid', {
-        reason: 'One or more client IDs are missing / REPLACE_ME',
-        bad,
-      });
-      return false;
-    }
-    return true;
+    return Object.values(ids).every((value) => !!value && !value.includes('REPLACE_ME'));
   };
 
   const redirectUri = useMemo(() => {
@@ -134,30 +109,6 @@ export default function SignInScreen() {
   }, [redirectUri, useProxy]);
 
   const [googleRequest, googleResponse, promptGoogleSignIn] = Google.useAuthRequest(googleConfig);
-
-  useEffect(() => {
-    // ✅ minimal init debug
-    showDebug('OAuth init', {
-      isExpoGo,
-      useProxy,
-      platform: Platform.OS,
-      redirectUri,
-      iosUrlSchemeExpected:
-        Platform.OS === 'ios' ? googleIosUrlSchemeFromClientId(IOS_CLIENT_ID) : undefined,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    // ✅ only show key request fields, never tokens
-    if (googleRequest?.url && OAUTH_DEBUG_ALERTS) {
-      showDebug('OAuth request built', {
-        requestRedirectUri: googleRequest.redirectUri,
-        redirectUri,
-        hasCodeVerifier: !!googleRequest.codeVerifier,
-      });
-    }
-  }, [googleRequest?.url]);
 
   const shakeError = () => {
     Animated.sequence([
@@ -234,7 +185,7 @@ export default function SignInScreen() {
     setIsGoogleLoading(true);
     setError('');
 
-    if (!validateClientIdsOrAlert()) {
+    if (!validateClientIds()) {
       setIsGoogleLoading(false);
       return;
     }
@@ -246,23 +197,11 @@ export default function SignInScreen() {
       setIsGoogleLoading(false);
       setError('Google sign-in failed. Prompt error');
       shakeError();
-      showDebug('❌ prompt error', { message: e?.message || String(e) });
     }
   };
 
   useEffect(() => {
     if (!googleResponse) return;
-
-    // ✅ minimal response debug (no tokens)
-    if (OAUTH_DEBUG_ALERTS) {
-      showDebug('OAuth response', {
-        type: googleResponse.type,
-        hasAuthentication: !!(googleResponse as any).authentication,
-        hasIdToken:
-          !!(googleResponse as any).authentication?.idToken ||
-          !!(googleResponse as any).authentication?.id_token,
-      });
-    }
 
     if (googleResponse.type !== 'success') {
       setIsGoogleLoading(false);
@@ -286,7 +225,6 @@ export default function SignInScreen() {
       } catch (e: any) {
         setError('Google sign-in failed. Try again');
         shakeError();
-        showDebug('❌ backend login error', { message: e?.message || String(e) });
       } finally {
         setIsGoogleLoading(false);
       }

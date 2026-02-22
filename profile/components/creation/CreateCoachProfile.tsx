@@ -179,7 +179,6 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
 
           <View style={styles.section}>
             <Text style={styles.sectionHeader}>Experience</Text>
-            <Text style={styles.label}>Experience</Text>
             <TextInput
               style={[styles.input, styles.textArea, errors['experience'] && styles.inputError]}
               multiline

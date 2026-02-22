@@ -65,4 +65,16 @@ export const SUPPORTED_LANGUAGES = [
     'Japanese',
     'Italian'
 ] as const;
-export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number]; 
+export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+
+export const SUPPORTED_HOBBIES: LessonType[] = [
+    LessonType.Tennis,
+    LessonType.Yoga,
+    LessonType.Surf,
+    LessonType.Football,
+    LessonType.Basketball,
+    LessonType.Paddle,
+    LessonType.Gym,
+    LessonType.Boxing,
+];
+export type SupportedHobby = LessonType; 
