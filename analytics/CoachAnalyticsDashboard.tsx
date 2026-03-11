@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   ScrollView,
   View,
@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   FlatList,
+  Image,
+  Modal,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -14,12 +17,17 @@ import dayjs from 'dayjs';
 import { useAuth } from '../auth/AuthContext';
 import { Lesson } from '../lesson/types/Lesson';
 import { fetchCoachLessons } from '../lesson/services/lessonService';
+import { fetchLessonRegistrations } from '../lesson/services/registrationService';
+import { fetchClientGlobalInfo } from '../profile/services/clientService';
 import {
   calculateCoachAnalytics,
   getTopHours,
   formatHour,
   CoachAnalyticsData,
   HourlyRegistration,
+  PaymentAnalytics,
+  PaymentMethodBreakdown,
+  PaymentEntry,
 } from './services/coachAnalyticsService';
 
 // Mock data for testing (remove after confirming backend works)
@@ -101,10 +109,21 @@ export default function CoachAnalyticsDashboard() {
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [analyticsData, setAnalyticsData] = useState<CoachAnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodBreakdown | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const isRefreshRef = useRef(false);
+
+  const onRefresh = useCallback(() => {
+    isRefreshRef.current = true;
+    setRefreshing(true);
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
-      setLoading(true);
+      if (!isRefreshRef.current) setLoading(true);
+      isRefreshRef.current = false;
       try {
         if (!userId) {
           console.error('No user ID available');
@@ -114,20 +133,56 @@ export default function CoachAnalyticsDashboard() {
         
         // Fetch real coach lessons data
         const lessons = await fetchCoachLessons(userId);
-        
+
+        // Fetch registrations for each lesson in the selected month (payment analytics)
+        const monthLessons = lessons.filter(l => {
+          const d = dayjs(l.time);
+          return d.month() === currentMonth.month() && d.year() === currentMonth.year();
+        });
+        const registrationsMap: Record<number, Awaited<ReturnType<typeof fetchLessonRegistrations>>> = {};
+        await Promise.all(
+          monthLessons.map(async l => {
+            try {
+              registrationsMap[l.id] = await fetchLessonRegistrations(l.id);
+            } catch {
+              registrationsMap[l.id] = [];
+            }
+          })
+        );
+
         // Calculate analytics for the selected month
-        const data = calculateCoachAnalytics(lessons, currentMonth.month(), currentMonth.year());
+        const data = calculateCoachAnalytics(lessons, currentMonth.month(), currentMonth.year(), registrationsMap);
+
+        // Fetch client names for payment entries
+        const allEntries = data.paymentAnalytics?.revenueByMethod.flatMap(m => m.entries) ?? [];
+        const uniqueClientIds = Array.from(new Set(allEntries.map(e => e.clientId)));
+        const clientNameMap: Record<string, string> = {};
+        await Promise.all(
+          uniqueClientIds.map(async (clientId) => {
+            try {
+              const info = await fetchClientGlobalInfo(clientId);
+              clientNameMap[clientId] = info.name;
+            } catch {
+              clientNameMap[clientId] = `Client ${clientId}`;
+            }
+          })
+        );
+        data.paymentAnalytics?.revenueByMethod.forEach(m =>
+          m.entries.forEach(e => { e.clientName = clientNameMap[e.clientId] ?? `Client ${e.clientId}`; })
+        );
+
         setAnalyticsData(data);
       } catch (error) {
         console.error('Error fetching analytics:', error);
         setAnalyticsData(null);
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
 
     fetchAnalytics();
-  }, [currentMonth, userId]);
+  }, [currentMonth, userId, refreshTrigger]);
 
   const handlePrevMonth = () => setCurrentMonth(currentMonth.subtract(1, 'month'));
   const handleNextMonth = () => setCurrentMonth(currentMonth.add(1, 'month'));
@@ -170,7 +225,18 @@ export default function CoachAnalyticsDashboard() {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#fff"
+            colors={['#fff']}
+          />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
@@ -224,9 +290,13 @@ export default function CoachAnalyticsDashboard() {
               />
               <MetricCard
                 icon="attach-money"
-                label="Revenue"
+                label="Confirmed Revenue"
                 value={formatShekel(analyticsData.totalRevenue)}
-                subtext={`${analyticsData.registeredCount} registrations`}
+                subtext={
+                  analyticsData.paymentAnalytics
+                    ? `${analyticsData.paymentAnalytics.paymentConfirmedCount} confirmed payment${analyticsData.paymentAnalytics.paymentConfirmedCount !== 1 ? 's' : ''}`
+                    : `${analyticsData.registeredCount} registrations (estimate)`
+                }
                 bgGradient={['#1565c0', '#42a5f5']}
                 iconColor="#4fc3f7"
               />
@@ -240,55 +310,115 @@ export default function CoachAnalyticsDashboard() {
               />
             </View>
 
-            {/* Hot Hours Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons name="fire" size={20} color="#ff6b6b" />
-                <Text style={styles.sectionTitle}>Hot Hours</Text>
-              </View>
-              <Text style={styles.sectionSubtitle}>Your most popular lesson times</Text>
+            {/* Payment Insights */}
+            {analyticsData.paymentAnalytics && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <MaterialIcons name="account-balance-wallet" size={20} color="#1e88e5" />
+                  <Text style={styles.sectionTitle}>Payment Insights</Text>
+                </View>
+                <Text style={styles.sectionSubtitle}>Revenue from confirmed payments &amp; method breakdown</Text>
 
-              {topHours.length > 0 ? (
-                <View style={styles.hoursContainer}>
-                  {topHours.map((hour: HourlyRegistration, index: number) => (
-                    <View key={hour.hour} style={styles.hourCard}>
-                      <View style={styles.hourHeader}>
-                        <Text style={styles.hourLabel}>{formatHour(hour.hour)}</Text>
-                        <View style={[styles.rankBadge, { backgroundColor: getRankColor(index) }]}>
-                          <Text style={styles.rankText}>#{index + 1}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.hourStats}>
-                        <View style={styles.hourStat}>
-                          <MaterialCommunityIcons name="account-multiple" size={16} color="#64b5f6" />
-                          <Text style={styles.hourStatText}>{hour.registrations} registrations</Text>
-                        </View>
-                        <View style={styles.hourStat}>
-                          <MaterialCommunityIcons name="calendar-month" size={16} color="#81d4fa" />
-                          <Text style={styles.hourStatText}>{hour.lessonCount} lesson{hour.lessonCount !== 1 ? 's' : ''}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.progressBar}>
-                        <View
-                          style={[
-                            styles.progressFill,
-                            {
-                              width: `${Math.min((hour.registrations / (topHours[0]?.registrations || 1)) * 100, 100)}%`,
-                              backgroundColor: getRankColor(index),
-                            },
-                          ]}
-                        />
-                      </View>
+                {/* Confirmed Revenue + Collection Rate */}
+                <View style={styles.metricsRow}>
+                  <View style={[styles.metricBox, styles.confirmedBox]}>
+                    <Text style={styles.metricBoxLabel}>Confirmed Revenue</Text>
+                    <Text style={[styles.metricBoxValue, { color: '#15803d' }]}>
+                      {formatShekel(analyticsData.paymentAnalytics.confirmedRevenue)}
+                    </Text>
+                    <Text style={styles.metricBoxSubtext}>
+                      {analyticsData.paymentAnalytics.paymentConfirmedCount} payment{analyticsData.paymentAnalytics.paymentConfirmedCount !== 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                  <View style={styles.metricBox}>
+                    <Text style={styles.metricBoxLabel}>Collection Rate</Text>
+                    <Text style={[styles.metricBoxValue, {
+                      color: analyticsData.paymentAnalytics.collectionRate >= 80 ? '#15803d'
+                        : analyticsData.paymentAnalytics.collectionRate >= 50 ? '#b45309' : '#dc2626',
+                    }]}>
+                      {analyticsData.paymentAnalytics.collectionRate}%
+                    </Text>
+                    <View style={styles.occupancyBar}>
+                      <View style={[styles.occupancyFill, {
+                        width: `${analyticsData.paymentAnalytics.collectionRate}%`,
+                        backgroundColor: analyticsData.paymentAnalytics.collectionRate >= 80 ? '#16a34a' : '#ffa726',
+                      }]} />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Pending Revenue Banner */}
+                {analyticsData.paymentAnalytics.pendingRevenue > 0 && (
+                  <View style={styles.pendingBanner}>
+                    <MaterialIcons name="hourglass-top" size={16} color="#b45309" />
+                    <View style={styles.pendingBannerBody}>
+                      <Text style={styles.pendingBannerTitle}>
+                        {formatShekel(analyticsData.paymentAnalytics.pendingRevenue)} Pending
+                      </Text>
+                      <Text style={styles.pendingBannerSub}>
+                        {analyticsData.paymentAnalytics.paymentPendingCount} payment{analyticsData.paymentAnalytics.paymentPendingCount !== 1 ? 's' : ''} awaiting your approval
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Payment Status Chips */}
+                <View style={styles.statusDistribution}>
+                  {([
+                    { label: 'Confirmed', count: analyticsData.paymentAnalytics.paymentConfirmedCount, color: '#16a34a' },
+                    { label: 'Pending', count: analyticsData.paymentAnalytics.paymentPendingCount, color: '#d97706' },
+                    { label: 'Not Set', count: analyticsData.paymentAnalytics.paymentNotSetCount, color: '#94a3b8' },
+                    { label: 'Rejected', count: analyticsData.paymentAnalytics.paymentRejectedCount, color: '#dc2626' },
+                  ] as const).filter(s => s.count > 0).map(status => (
+                    <View key={status.label} style={styles.statusItem}>
+                      <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+                      <Text style={styles.statusCount}>{status.count}</Text>
+                      <Text style={styles.statusLabel}>{status.label}</Text>
                     </View>
                   ))}
                 </View>
-              ) : (
-                <View style={styles.emptyHoursPlaceholder}>
-                  <MaterialCommunityIcons name="clock-outline" size={40} color="#cbd5e1" />
-                  <Text style={styles.emptyHoursText}>No lessons scheduled yet</Text>
-                </View>
-              )}
-            </View>
+
+                {/* Revenue by Method — tappable rows */}
+                {analyticsData.paymentAnalytics.revenueByMethod.length > 0 && (
+                  <>
+                    <Text style={styles.methodsTitle}>Revenue by Method</Text>
+                    <View style={styles.methodList}>
+                      {analyticsData.paymentAnalytics.revenueByMethod.map(item => (
+                        <TouchableOpacity
+                          key={item.method}
+                          style={styles.methodRow}
+                          onPress={() => setSelectedMethod(item)}
+                          activeOpacity={0.75}
+                        >
+                          <View style={[styles.methodIconBubble, { backgroundColor: getMethodColor(item.method) + '22' }]}>
+                            {item.method === 'BIT' ? (
+                              <Image source={require('../assets/bit-logo.png')} style={styles.methodLogoImg} />
+                            ) : item.method === 'PAYBOX' ? (
+                              <Image source={require('../assets/paybox-logo.png')} style={styles.methodLogoImg} />
+                            ) : (
+                              <MaterialIcons
+                                name={item.method === 'CASH' ? 'account-balance-wallet' : 'swap-horiz'}
+                                size={18}
+                                color={getMethodColor(item.method)}
+                              />
+                            )}
+                          </View>
+                          <View style={styles.methodInfo}>
+                            <Text style={styles.methodName}>{METHOD_LABELS[item.method] ?? item.method}</Text>
+                            <Text style={styles.methodCount}>{item.count} payment{item.count !== 1 ? 's' : ''}</Text>
+                          </View>
+                          <View style={styles.methodAmounts}>
+                            <Text style={styles.methodRevenue}>{formatShekel(item.revenue)}</Text>
+                            <Text style={styles.methodPct}>{item.percentage}%</Text>
+                          </View>
+                          <MaterialIcons name="chevron-right" size={18} color="#94a3b8" style={{ marginLeft: 4 }} />
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </>
+                )}
+              </View>
+            )}
 
             {/* Revenue Breakdown */}
             <View style={styles.section}>
@@ -305,28 +435,86 @@ export default function CoachAnalyticsDashboard() {
                   <Text style={styles.breakdownValue}>{analyticsData.registeredCount}</Text>
                 </View>
                 <View style={styles.breakdownDivider} />
-                <View style={styles.breakdownRow}>
-                  <View style={styles.breakdownLabel}>
-                    <View style={[styles.breakdownDot, { backgroundColor: '#42a5f5' }]} />
-                    <Text style={styles.breakdownText}>Total Revenue</Text>
-                  </View>
-                  <Text style={[styles.breakdownValue, styles.revenueHighlight]}>
-                    {formatShekel(analyticsData.totalRevenue)}
-                  </Text>
-                </View>
-                <View style={styles.breakdownDivider} />
-                <View style={styles.breakdownRow}>
-                  <View style={styles.breakdownLabel}>
-                    <View style={[styles.breakdownDot, { backgroundColor: '#81d4fa' }]} />
-                    <Text style={styles.breakdownText}>Avg. per Registration</Text>
-                  </View>
-                  <Text style={styles.breakdownValue}>
-                    {formatShekel(
-                      analyticsData.registeredCount > 0 ? analyticsData.totalRevenue / analyticsData.registeredCount : 0,
-                      2,
-                    )}
-                  </Text>
-                </View>
+                {/* When payment data is available show potential vs confirmed; otherwise show estimate */}
+                {analyticsData.paymentAnalytics ? (
+                  <>
+                    <View style={styles.breakdownRow}>
+                      <View style={styles.breakdownLabel}>
+                        <View style={[styles.breakdownDot, { backgroundColor: '#94a3b8' }]} />
+                        <View>
+                          <Text style={styles.breakdownText}>Total Money from Registrations</Text>
+                          <Text style={styles.breakdownNote}>potential if all pay</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.breakdownValue}>
+                        {formatShekel(analyticsData.registeredCount * (
+                          analyticsData.registeredCount > 0
+                            ? (analyticsData.paymentAnalytics.confirmedRevenue + analyticsData.paymentAnalytics.pendingRevenue) /
+                              Math.max(analyticsData.paymentAnalytics.paymentConfirmedCount + analyticsData.paymentAnalytics.paymentPendingCount, 1)
+                            : 0
+                        ))}
+                      </Text>
+                    </View>
+                    <View style={styles.breakdownDivider} />
+                    <View style={styles.breakdownRow}>
+                      <View style={styles.breakdownLabel}>
+                        <View style={[styles.breakdownDot, { backgroundColor: '#42a5f5' }]} />
+                        <View>
+                          <Text style={styles.breakdownText}>Confirmed Revenue</Text>
+                          <Text style={styles.breakdownNote}>approved payments only</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.breakdownValue, styles.revenueHighlight]}>
+                        {formatShekel(analyticsData.paymentAnalytics.confirmedRevenue)}
+                      </Text>
+                    </View>
+                    <View style={styles.breakdownDivider} />
+                    <View style={styles.breakdownRow}>
+                      <View style={styles.breakdownLabel}>
+                        <View style={[styles.breakdownDot, { backgroundColor: '#81d4fa' }]} />
+                        <View>
+                          <Text style={styles.breakdownText}>Avg. per Confirmed Payment</Text>
+                          <Text style={styles.breakdownNote}>
+                            {analyticsData.paymentAnalytics.paymentConfirmedCount} confirmed payment{analyticsData.paymentAnalytics.paymentConfirmedCount !== 1 ? 's' : ''}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={styles.breakdownValue}>
+                        {formatShekel(
+                          analyticsData.paymentAnalytics.paymentConfirmedCount > 0
+                            ? analyticsData.paymentAnalytics.confirmedRevenue / analyticsData.paymentAnalytics.paymentConfirmedCount
+                            : 0,
+                          2,
+                        )}
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <View style={styles.breakdownRow}>
+                      <View style={styles.breakdownLabel}>
+                        <View style={[styles.breakdownDot, { backgroundColor: '#42a5f5' }]} />
+                        <Text style={styles.breakdownText}>Total Revenue (estimate)</Text>
+                      </View>
+                      <Text style={[styles.breakdownValue, styles.revenueHighlight]}>
+                        {formatShekel(analyticsData.totalRevenue)}
+                      </Text>
+                    </View>
+                    <View style={styles.breakdownDivider} />
+                    <View style={styles.breakdownRow}>
+                      <View style={styles.breakdownLabel}>
+                        <View style={[styles.breakdownDot, { backgroundColor: '#81d4fa' }]} />
+                        <Text style={styles.breakdownText}>Avg. per Registration</Text>
+                      </View>
+                      <Text style={styles.breakdownValue}>
+                        {formatShekel(
+                          analyticsData.registeredCount > 0 ? analyticsData.totalRevenue / analyticsData.registeredCount : 0,
+                          2,
+                        )}
+                      </Text>
+                    </View>
+                  </>
+                )}
               </View>
             </View>
 
@@ -494,6 +682,56 @@ export default function CoachAnalyticsDashboard() {
                 </View>
               </View>
             )}
+
+            {/* Hot Hours — moved to bottom */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons name="fire" size={20} color="#ff6b6b" />
+                <Text style={styles.sectionTitle}>Hot Hours</Text>
+              </View>
+              <Text style={styles.sectionSubtitle}>Your most popular lesson times</Text>
+
+              {topHours.length > 0 ? (
+                <View style={styles.hoursContainer}>
+                  {topHours.map((hour: HourlyRegistration, index: number) => (
+                    <View key={hour.hour} style={styles.hourCard}>
+                      <View style={styles.hourHeader}>
+                        <Text style={styles.hourLabel}>{formatHour(hour.hour)}</Text>
+                        <View style={[styles.rankBadge, { backgroundColor: getRankColor(index) }]}>
+                          <Text style={styles.rankText}>#{index + 1}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.hourStats}>
+                        <View style={styles.hourStat}>
+                          <MaterialCommunityIcons name="account-multiple" size={16} color="#64b5f6" />
+                          <Text style={styles.hourStatText}>{hour.registrations} registrations</Text>
+                        </View>
+                        <View style={styles.hourStat}>
+                          <MaterialCommunityIcons name="calendar-month" size={16} color="#81d4fa" />
+                          <Text style={styles.hourStatText}>{hour.lessonCount} lesson{hour.lessonCount !== 1 ? 's' : ''}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.progressBar}>
+                        <View
+                          style={[
+                            styles.progressFill,
+                            {
+                              width: `${Math.min((hour.registrations / (topHours[0]?.registrations || 1)) * 100, 100)}%`,
+                              backgroundColor: getRankColor(index),
+                            },
+                          ]}
+                        />
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyHoursPlaceholder}>
+                  <MaterialCommunityIcons name="clock-outline" size={40} color="#cbd5e1" />
+                  <Text style={styles.emptyHoursText}>No lessons scheduled yet</Text>
+                </View>
+              )}
+            </View>
           </>
         ) : (
           <View style={styles.emptyState}>
@@ -504,6 +742,75 @@ export default function CoachAnalyticsDashboard() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Payment Method Client List Modal */}
+      <Modal
+        visible={!!selectedMethod}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedMethod(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderLeft}>
+                <View style={[styles.modalMethodBubble, { backgroundColor: getMethodColor(selectedMethod?.method ?? '') + '22' }]}>
+                  {selectedMethod?.method === 'BIT' ? (
+                    <Image source={require('../assets/bit-logo.png')} style={styles.methodLogoImg} />
+                  ) : selectedMethod?.method === 'PAYBOX' ? (
+                    <Image source={require('../assets/paybox-logo.png')} style={styles.methodLogoImg} />
+                  ) : (
+                    <MaterialIcons
+                      name={selectedMethod?.method === 'CASH' ? 'account-balance-wallet' : 'swap-horiz'}
+                      size={20}
+                      color={getMethodColor(selectedMethod?.method ?? '')}
+                    />
+                  )}
+                </View>
+                <View>
+                  <Text style={styles.modalTitle}>
+                    {METHOD_LABELS[selectedMethod?.method ?? ''] ?? selectedMethod?.method}
+                  </Text>
+                  <Text style={styles.modalSubtitle}>
+                    {selectedMethod?.count} payment{selectedMethod?.count !== 1 ? 's' : ''} · {formatShekel(selectedMethod?.revenue ?? 0)}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setSelectedMethod(null)} style={styles.modalCloseBtn}>
+                <MaterialIcons name="close" size={20} color="#475569" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalDivider} />
+
+            <FlatList
+              data={selectedMethod?.entries ?? []}
+              keyExtractor={(_, i) => String(i)}
+              contentContainerStyle={styles.modalList}
+              renderItem={({ item, index }) => (
+                <View style={styles.modalEntry}>
+                  <View style={styles.modalEntryLeft}>
+                    <View style={styles.modalEntryAvatar}>
+                      <Text style={styles.modalEntryAvatarText}>{index + 1}</Text>
+                    </View>
+                    <View style={styles.modalEntryBody}>
+                      <Text style={styles.modalEntryClientName} numberOfLines={1}>{item.clientName}</Text>
+                      <View style={styles.modalEntryRow}>
+                        <Text style={styles.modalEntryLesson} numberOfLines={1}>{item.lessonTitle}</Text>
+                        <Text style={styles.modalEntryDate}>
+                          {item.lessonTime ? dayjs(item.lessonTime).format('ddd, MMM D · HH:mm') : '—'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  <Text style={styles.modalEntryAmount}>{formatShekel(item.amount)}</Text>
+                </View>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.modalEntrySep} />}
+            />
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -516,6 +823,23 @@ const getRankColor = (index: number): string => {
 const getTypeColor = (index: number): string => {
   const colors = ['#42a5f5', '#66bb6a', '#ffa726', '#ec407a', '#ab47bc', '#78909c'];
   return colors[index % colors.length];
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  BIT: 'Bit',
+  PAYBOX: 'PayBox',
+  CASH: 'Cash',
+  OTHER: 'Other',
+};
+
+const getMethodColor = (method: string): string => {
+  const colors: Record<string, string> = {
+    BIT: '#0b2f35',
+    PAYBOX: '#0891b2',
+    CASH: '#16a34a',
+    OTHER: '#64748b',
+  };
+  return colors[method] ?? '#64748b';
 };
 
 const styles = StyleSheet.create({
@@ -744,6 +1068,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#475569',
     fontWeight: '500',
+  },
+  breakdownNote: {
+    fontSize: 10,
+    color: '#94a3b8',
+    marginTop: 1,
   },
   breakdownValue: {
     fontSize: 14,
@@ -986,5 +1315,241 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#ec407a',
     borderRadius: 3,
+  },
+  confirmedBox: {
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fffbeb',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(180,83,9,0.25)',
+    gap: 10,
+  },
+  pendingBannerBody: {
+    flex: 1,
+  },
+  pendingBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#b45309',
+  },
+  pendingBannerSub: {
+    fontSize: 12,
+    color: '#92400e',
+    marginTop: 2,
+  },
+  statusDistribution: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  statusItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  statusCount: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  statusLabel: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  methodsTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 10,
+  },
+  methodList: {
+    gap: 8,
+  },
+  methodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  methodIconBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  methodLogoImg: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+  },
+  methodInfo: {
+    flex: 1,
+  },
+  methodName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  methodCount: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 1,
+  },
+  methodAmounts: {
+    alignItems: 'flex-end',
+  },
+  methodRevenue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0d47a1',
+  },
+  methodPct: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '75%',
+    paddingBottom: 32,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  modalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  modalMethodBubble: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0d47a1',
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: '#e2e8f0',
+  },
+  modalList: {
+    padding: 16,
+  },
+  modalEntry: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalEntryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  modalEntryAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalEntryAvatarText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1d4ed8',
+  },
+  modalEntryBody: {
+    flex: 1,
+  },
+  modalEntryClientName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1d4ed8',
+    marginBottom: 1,
+  },
+  modalEntryLesson: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#475569',
+    flexShrink: 1,
+    marginRight: 6,
+  },
+  modalEntryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'nowrap',
+    marginTop: 1,
+  },
+  modalEntryDate: {
+    fontSize: 11,
+    color: '#94a3b8',
+    flexShrink: 0,
+  },
+  modalEntryAmount: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#15803d',
+    marginLeft: 8,
+  },
+  modalEntrySep: {
+    height: 1,
+    backgroundColor: '#f1f5f9',
+    marginVertical: 8,
   },
 });

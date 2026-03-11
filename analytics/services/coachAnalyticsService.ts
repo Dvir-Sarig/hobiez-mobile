@@ -1,4 +1,5 @@
 import { Lesson } from '../../lesson/types/Lesson';
+import { RegistrationWithPayment, PaymentMethod } from '../../lesson/types/Registration';
 import dayjs from 'dayjs';
 
 export interface HourlyRegistration {
@@ -37,6 +38,33 @@ export interface OccupancyData {
   comparedHoursCount: number;
 }
 
+export interface PaymentEntry {
+  clientId: string;
+  clientName: string;
+  lessonTitle: string;
+  lessonTime: string;
+  amount: number;
+}
+
+export interface PaymentMethodBreakdown {
+  method: PaymentMethod;
+  count: number;
+  revenue: number;
+  percentage: number;
+  entries: PaymentEntry[];
+}
+
+export interface PaymentAnalytics {
+  confirmedRevenue: number;
+  pendingRevenue: number;
+  paymentConfirmedCount: number;
+  paymentPendingCount: number;
+  paymentRejectedCount: number;
+  paymentNotSetCount: number;
+  collectionRate: number;
+  revenueByMethod: PaymentMethodBreakdown[];
+}
+
 export interface CoachAnalyticsData {
   totalLessons: number;
   registrationRate: number; // percentage (0-100)
@@ -46,9 +74,15 @@ export interface CoachAnalyticsData {
   lessonTypeMetrics: LessonTypeMetric[];
   weeklyPerformance: WeeklyPerformance[];
   occupancyMetrics: OccupancyData;
+  paymentAnalytics: PaymentAnalytics | null;
 }
 
-export const calculateCoachAnalytics = (lessons: Lesson[], month: number, year: number): CoachAnalyticsData => {
+export const calculateCoachAnalytics = (
+  lessons: Lesson[],
+  month: number,
+  year: number,
+  registrationsMap?: Record<number, RegistrationWithPayment[]>
+): CoachAnalyticsData => {
   // Filter lessons by month
   const monthLessons = lessons.filter((lesson) => {
     const lessonDate = dayjs(lesson.time);
@@ -63,8 +97,8 @@ export const calculateCoachAnalytics = (lessons: Lesson[], month: number, year: 
   const registeredCount = monthLessons.reduce((sum, lesson) => sum + (lesson.registeredCount || 0), 0);
   const registrationRate = totalCapacity > 0 ? (registeredCount / totalCapacity) * 100 : 0;
 
-  // Calculate revenue
-  const totalRevenue = monthLessons.reduce((sum, lesson) => {
+  // Calculate estimated revenue (overridden by confirmed payments when registration data is available)
+  let totalRevenue = monthLessons.reduce((sum, lesson) => {
     const registrations = lesson.registeredCount || 0;
     return sum + registrations * lesson.price;
   }, 0);
@@ -160,6 +194,69 @@ export const calculateCoachAnalytics = (lessons: Lesson[], month: number, year: 
     ...getHourOccupancyInsights(hoursData),
   };
 
+  // Calculate payment analytics when registration data is available
+  let paymentAnalytics: PaymentAnalytics | null = null;
+  if (registrationsMap) {
+    const allRegs = monthLessons.flatMap(
+      l => (registrationsMap[l.id] ?? []).filter(r => r.registrationStatus === 'ACTIVE')
+    );
+    const lessonById: Record<number, Lesson> = Object.fromEntries(monthLessons.map(l => [l.id, l]));
+    const lessonPriceById: Record<number, number> = Object.fromEntries(
+      monthLessons.map(l => [l.id, l.price])
+    );
+    const confirmed = allRegs.filter(r => r.paymentStatus === 'CONFIRMED');
+    const pending = allRegs.filter(r => r.paymentStatus === 'PENDING');
+    const rejected = allRegs.filter(r => r.paymentStatus === 'REJECTED');
+    const notSet = allRegs.filter(r => r.paymentStatus === 'NOT_SET');
+
+    const confirmedRevenue = confirmed.reduce((sum, r) => sum + (lessonPriceById[r.lessonId] ?? 0), 0);
+    const pendingRevenue = pending.reduce((sum, r) => sum + (lessonPriceById[r.lessonId] ?? 0), 0);
+    const collectionRate = allRegs.length > 0
+      ? Math.round((confirmed.length / allRegs.length) * 100) : 0;
+
+    const methodAccum = new Map<PaymentMethod, { count: number; revenue: number; entries: PaymentEntry[] }>();
+    confirmed.forEach(r => {
+      if (r.paymentMethod) {
+        const cur = methodAccum.get(r.paymentMethod) ?? { count: 0, revenue: 0, entries: [] };
+        const lesson = lessonById[r.lessonId];
+        methodAccum.set(r.paymentMethod, {
+          count: cur.count + 1,
+          revenue: cur.revenue + (lessonPriceById[r.lessonId] ?? 0),
+          entries: [...cur.entries, {
+            clientId: r.clientId,
+            clientName: '',
+            lessonTitle: lesson?.title ?? `Lesson #${r.lessonId}`,
+            lessonTime: lesson?.time ?? '',
+            amount: lessonPriceById[r.lessonId] ?? 0,
+          }],
+        });
+      }
+    });
+
+    const revenueByMethod: PaymentMethodBreakdown[] = Array.from(methodAccum.entries())
+      .map(([method, data]) => ({
+        method,
+        count: data.count,
+        revenue: data.revenue,
+        percentage: confirmedRevenue > 0 ? Math.round((data.revenue / confirmedRevenue) * 100) : 0,
+        entries: data.entries,
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    paymentAnalytics = {
+      confirmedRevenue,
+      pendingRevenue,
+      paymentConfirmedCount: confirmed.length,
+      paymentPendingCount: pending.length,
+      paymentRejectedCount: rejected.length,
+      paymentNotSetCount: notSet.length,
+      collectionRate,
+      revenueByMethod,
+    };
+    // Use actual confirmed payments as the authoritative revenue figure
+    totalRevenue = confirmedRevenue;
+  }
+
   return {
     totalLessons,
     registrationRate: Math.round(registrationRate),
@@ -169,6 +266,7 @@ export const calculateCoachAnalytics = (lessons: Lesson[], month: number, year: 
     lessonTypeMetrics,
     weeklyPerformance,
     occupancyMetrics,
+    paymentAnalytics,
   };
 };
 

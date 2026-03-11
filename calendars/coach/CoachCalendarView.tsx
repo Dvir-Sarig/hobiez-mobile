@@ -5,7 +5,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar } from 'react-native-big-calendar';
 import dayjs from 'dayjs';
 import { useAuth } from '../../auth/AuthContext';
-import { fetchCoachLessons, deleteLesson, editLesson, fetchSingleLesson, fetchRegisteredClients } from '../../lesson/services/lessonService';
+import { fetchCoachLessons, deleteLesson, editLesson, fetchSingleLesson, fetchRegisteredClients, deleteClientFromLesson } from '../../lesson/services/lessonService';
+import { fetchLessonRegistrations, confirmPayment, rejectPayment } from '../../lesson/services/registrationService';
+import { RegistrationWithPayment } from '../../lesson/types/Registration';
 import { fetchClientGlobalInfo } from '../../profile/services/clientService';
 import { Lesson } from '../../lesson/types/Lesson';
 import { formatLessonToEvent } from '../shared/utils/calendar.utils';
@@ -42,6 +44,7 @@ const CoachCalendarView = () => {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [selectedDateLessons, setSelectedDateLessons] = useState<Lesson[]>([]);
   const [registeredClients, setRegisteredClients] = useState<{ id: string; name: string }[]>([]);
+  const [lessonRegistrations, setLessonRegistrations] = useState<RegistrationWithPayment[]>([]);
   const [weekAnchor, setWeekAnchor] = useState(dayjs());
 
   const { userId: coachId } = useAuth();
@@ -62,6 +65,10 @@ const CoachCalendarView = () => {
   const handleOpenModal = (lesson: Lesson) => {
     setSelectedLesson(lesson);
     setIsModalOpen(true);
+    // Fetch registrations immediately so the pending-payment count shows on first open
+    fetchLessonRegistrations(lesson.id)
+      .then(regs => setLessonRegistrations(regs))
+      .catch(() => {});
   };
 
   const handleCloseModal = () => {
@@ -174,7 +181,11 @@ const CoachCalendarView = () => {
   const loadRegisteredClients = async (lessonId: number) => {
     try {
       setIsLoadingClients(true);
-      const clientIds = await fetchRegisteredClients(lessonId);
+      const [clientIds, regs] = await Promise.all([
+        fetchRegisteredClients(lessonId),
+        fetchLessonRegistrations(lessonId).catch(() => [] as RegistrationWithPayment[]),
+      ]);
+      setLessonRegistrations(regs);
       const clientsWithInfo = await Promise.all(
         clientIds.map(async (id) => {
           try {
@@ -188,6 +199,7 @@ const CoachCalendarView = () => {
       setRegisteredClients(clientsWithInfo);
     } catch {
       setRegisteredClients([]);
+      setLessonRegistrations([]);
     } finally {
       setIsLoadingClients(false);
     }
@@ -389,6 +401,7 @@ const CoachCalendarView = () => {
         lesson={selectedLesson}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+        pendingPaymentsCount={lessonRegistrations.filter(r => r.paymentStatus === 'PENDING').length}
         onEditClick={(lesson) => {
           setSelectedLesson(lesson);
           setEditLessonData({
@@ -446,6 +459,28 @@ const CoachCalendarView = () => {
             setShowRegisteredClientsModal(false);
         }}
         originScreen="CoachCalendar"
+        registrations={lessonRegistrations}
+        onConfirmPayment={async (registrationId) => {
+          await confirmPayment(registrationId);
+          setLessonRegistrations(prev => prev.map(r => r.id === registrationId ? { ...r, paymentStatus: 'CONFIRMED' } : r));
+        }}
+        onRejectPayment={async (registrationId) => {
+          await rejectPayment(registrationId);
+          setLessonRegistrations(prev => prev.map(r => r.id === registrationId ? { ...r, paymentStatus: 'REJECTED' } : r));
+        }}
+        onUnregisterClient={async (clientId, clientName) => {
+          const lessonId = selectedLesson?.id;
+          if (!lessonId) return;
+          await deleteClientFromLesson(clientId, lessonId);
+          setRegisteredClients(prev => prev.filter(c => c.id !== clientId));
+          setLessonRegistrations(prev => prev.filter(r => r.clientId !== clientId));
+          // Refresh the selected lesson to update registeredCount
+          if (selectedLesson) {
+            const updated = await fetchSingleLesson(lessonId);
+            setSelectedLesson(updated);
+          }
+          Alert.alert('Client Removed', `${clientName} has been unregistered from the lesson.`);
+        }}
       />
     </LinearGradient>
   );

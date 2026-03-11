@@ -12,9 +12,11 @@ import {
 import { Avatar } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Lesson } from '../../types/Lesson';
+import { RegistrationWithPayment } from '../../types/Registration';
 import { formatLessonTimeReadable, formatPrice } from '../../../shared/services/formatService';
 import { getLessonIcon, getLessonBackground } from '../../types/LessonType';
 import { useNavigation } from '@react-navigation/native';
+import PaymentStatusBadge from '../payment/PaymentStatusBadge';
 
 interface RegisteredLessonCardsProps {
   lessons: Lesson[];
@@ -22,6 +24,8 @@ interface RegisteredLessonCardsProps {
   onOpenDeleteModal: (lesson: Lesson) => void; // unregister action
   isLoading?: boolean;
   returnScrollY?: number; // added for restoring scroll position
+  registrationMap?: Record<number, RegistrationWithPayment>;
+  onDeclarePayment?: (lesson: Lesson) => void;
 }
 
 const computeCapacityColor = (registered: number, capacity: number) => {
@@ -73,7 +77,9 @@ const RegisteredLessonCardItem: React.FC<{
   onOpenDeleteModal: (lesson: Lesson) => void;
   navigation: any;
   returnScrollY?: number;
-}> = ({ lesson, coachName, icon, onOpenDeleteModal, navigation, returnScrollY = 0 }) => {
+  registration?: RegistrationWithPayment;
+  onDeclarePayment?: (lesson: Lesson) => void;
+}> = ({ lesson, coachName, icon, onOpenDeleteModal, navigation, returnScrollY = 0, registration, onDeclarePayment }) => {
   const { IconComponent, iconName } = icon;
   const registered = lesson.registeredCount ?? 0;
   const capacity = lesson.capacityLimit ?? 0;
@@ -145,9 +151,26 @@ const RegisteredLessonCardItem: React.FC<{
             <View style={[styles.capacityPill, { borderColor: capColor, backgroundColor: capColor + '22' }]}>                  
               <Text style={[styles.capacityText, { color: capColor }]}>👥 {registered}/{capacity}</Text>
             </View>
-            {/* Removed the X button */}
           </View>
         </View>
+        {/* Payment status row */}
+        {registration && (
+          <View style={styles.paymentRow}>
+            <PaymentStatusBadge status={registration.paymentStatus} compact method={registration.paymentMethod} />
+            {(registration.paymentStatus === 'NOT_SET' || registration.paymentStatus === 'REJECTED') && onDeclarePayment && (
+              <TouchableOpacity
+                style={styles.markPaidBtn}
+                onPress={(e) => { e.stopPropagation?.(); onDeclarePayment(lesson); }}
+                activeOpacity={0.7}
+              >
+                <Icon name="payment" size={14} color="#ffffff" />
+                <Text style={styles.markPaidBtnText}>
+                  {registration.paymentStatus === 'REJECTED' ? 'Retry Payment' : 'Mark as Paid'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -159,6 +182,8 @@ const RegisteredLessonCards: React.FC<RegisteredLessonCardsProps> = ({
   onOpenDeleteModal,
   isLoading = false,
   returnScrollY = 0,
+  registrationMap,
+  onDeclarePayment,
 }) => {
   const navigation = useNavigation<any>();
 
@@ -202,6 +227,8 @@ const RegisteredLessonCards: React.FC<RegisteredLessonCardsProps> = ({
             onOpenDeleteModal={onOpenDeleteModal}
             navigation={navigation}
             returnScrollY={returnScrollY}
+            registration={registrationMap?.[lesson.id]}
+            onDeclarePayment={onDeclarePayment}
           />
         );
       })}
@@ -374,6 +401,36 @@ const styles = StyleSheet.create({
   skelUnreg: { height: 30, width: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.15)', marginLeft: 8 },
   skelChip: { height: 26, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.15)' },
   skelMeta: { height: 14, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 6, marginTop: 10 },
+  paymentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: 'rgba(245,248,255,0.6)',
+  },
+  markPaidBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#1976d2',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+    shadowColor: '#1976d2',
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  markPaidBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
 });
 
 export default RegisteredLessonCards;

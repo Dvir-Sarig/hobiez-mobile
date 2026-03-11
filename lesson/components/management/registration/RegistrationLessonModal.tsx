@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  ImageBackground,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,8 +18,7 @@ import { formatPrice } from '../../../../shared/services/formatService';
 import { MaterialIcons, FontAwesome5, Ionicons, Entypo } from '@expo/vector-icons';
 import { RootStackParamList } from '../../../../types';
 import { fetchCoachGlobalInfo, CoachGlobalInfo } from '../../../../profile/services/coachService';
-import { LinearGradient } from 'expo-linear-gradient';
-import { getLessonIcon } from '../../../types/LessonType';
+import { getLessonBackground, getLessonIcon } from '../../../types/LessonType';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -90,6 +90,7 @@ const RegistrationLessonModal: React.FC<Props> = ({
   const dateStr = timeDate.toLocaleDateString();
   const timeStr = timeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const { IconComponent, iconName } = getLessonIcon(lesson.title);
+  const lessonBg = getLessonBackground(lesson.title);
   const locationText = lesson.location?.address || [lesson.location?.city, lesson.location?.country].filter(Boolean).join(', ');
 
   const renderCoachAvatar = () => {
@@ -105,25 +106,54 @@ const RegistrationLessonModal: React.FC<Props> = ({
       <View style={styles.overlay}> 
         <View style={styles.shell}> 
           {/* Header */}
-          <LinearGradient colors={['#0d47a1','#1976d2']} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerBar}> 
-            <View style={styles.headerLeft}> 
-              <View style={styles.lessonIconWrap}> 
-                <Avatar.Icon size={42} style={styles.lessonIconAvatar} icon={() => <IconComponent name={iconName} size={22} color="#ffffff" />} />
+          {lessonBg ? (
+            <ImageBackground
+              source={lessonBg}
+              style={styles.headerBar}
+              imageStyle={styles.headerImage}
+              resizeMode="cover"
+            >
+              <View style={styles.headerOverlay}>
+                <View style={styles.headerLeft}> 
+                  <View style={styles.lessonIconWrap}> 
+                    <Avatar.Icon size={42} style={styles.lessonIconAvatar} icon={() => <IconComponent name={iconName} size={22} color="#ffffff" />} />
+                  </View>
+                  <View style={styles.headerTextCol}> 
+                    <Text style={styles.headerTitle} numberOfLines={1}>{lesson.title}</Text>
+                    <View style={styles.headerMetaRow}> 
+                      <MaterialIcons name="event" size={14} color="#bbdefb" />
+                      <Text style={styles.headerMetaText}>{dateStr}</Text>
+                      <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginLeft:10 }} />
+                      <Text style={styles.headerMetaText}>{timeStr}</Text>
+                    </View>
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close registration modal">
+                  <MaterialIcons name="close" size={22} color="#ffffff" />
+                </TouchableOpacity>
               </View>
-              <View style={styles.headerTextCol}> 
-                <Text style={styles.headerTitle} numberOfLines={1}>{lesson.title}</Text>
-                <View style={styles.headerMetaRow}> 
-                  <MaterialIcons name="event" size={14} color="#bbdefb" />
-                  <Text style={styles.headerMetaText}>{dateStr}</Text>
-                  <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginLeft:10 }} />
-                  <Text style={styles.headerMetaText}>{timeStr}</Text>
+            </ImageBackground>
+          ) : (
+            <View style={styles.headerBar}> 
+              <View style={styles.headerLeft}> 
+                <View style={styles.lessonIconWrap}> 
+                  <Avatar.Icon size={42} style={styles.lessonIconAvatar} icon={() => <IconComponent name={iconName} size={22} color="#ffffff" />} />
+                </View>
+                <View style={styles.headerTextCol}> 
+                  <Text style={styles.headerTitle} numberOfLines={1}>{lesson.title}</Text>
+                  <View style={styles.headerMetaRow}> 
+                    <MaterialIcons name="event" size={14} color="#bbdefb" />
+                    <Text style={styles.headerMetaText}>{dateStr}</Text>
+                    <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginLeft:10 }} />
+                    <Text style={styles.headerMetaText}>{timeStr}</Text>
+                  </View>
                 </View>
               </View>
+              <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close registration modal">
+                <MaterialIcons name="close" size={22} color="#ffffff" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close registration modal">
-              <MaterialIcons name="close" size={22} color="#ffffff" />
-            </TouchableOpacity>
-          </LinearGradient>
+          )}
 
           {/* Content Scroll */}
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -207,11 +237,13 @@ const RegistrationLessonModal: React.FC<Props> = ({
 const styles = StyleSheet.create({
   overlay:{ flex:1, backgroundColor:'rgba(0,0,0,0.55)', justifyContent:'center', padding:20 },
   shell:{ backgroundColor:'rgba(255,255,255,0.96)', borderRadius:30, overflow:'hidden', maxHeight:'92%', ...Platform.select({ ios:{ shadowColor:'#000', shadowOpacity:0.25, shadowRadius:18, shadowOffset:{width:0,height:8}}, android:{ elevation:10 } }) },
-  headerBar:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', paddingHorizontal:18, paddingVertical:16 },
+  headerBar:{ backgroundColor:'#1976d2', flexDirection:'row', alignItems:'center', justifyContent:'space-between', paddingHorizontal:18, paddingVertical:16 },
+  headerImage:{},
+  headerOverlay:{ backgroundColor:'rgba(0,0,0,0.28)', marginHorizontal:-18, marginVertical:-16, paddingHorizontal:18, paddingVertical:16, flexDirection:'row', alignItems:'center', justifyContent:'space-between' },
   headerLeft:{ flexDirection:'row', alignItems:'center', flex:1, gap:12 },
   headerTextCol:{ flex:1 },
   lessonIconWrap:{},
-  lessonIconAvatar:{ backgroundColor:'#1976d2' },
+  lessonIconAvatar:{ backgroundColor:'rgba(255,255,255,0.25)' },
   headerTitle:{ fontSize:20, fontWeight:'800', color:'#ffffff', flex:0, letterSpacing:0.4 },
   headerMetaRow:{ flexDirection:'row', alignItems:'center', marginTop:4 },
   headerMetaText:{ fontSize:12.5, fontWeight:'700', color:'#ffffff', marginLeft:4, letterSpacing:0.5 },

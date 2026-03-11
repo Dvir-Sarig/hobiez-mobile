@@ -2,7 +2,7 @@ import React, { useEffect, useState, useReducer, useCallback } from 'react';
 import { View, Text, Button, ScrollView, Alert, ActivityIndicator, StyleSheet, TouchableOpacity, Pressable, Modal, Platform, RefreshControl } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { fetchUserInfo } from '../../auth/services/UserInfoUtils';
-import { fetchCoachLessons, createLesson, deleteLesson, fetchSingleLesson, fetchRegisteredClients, editLesson } from '../services/lessonService';
+import { fetchCoachLessons, createLesson, deleteLesson, fetchSingleLesson, fetchRegisteredClients, editLesson, deleteClientFromLesson } from '../services/lessonService';
 import { fetchClientGlobalInfo } from '../../profile/services/clientService';
 import LessonCard from '../components/view/CoachLessonCard';
 import CoachLessonModal from '../components/management/creation/CreateNewLessonModal';
@@ -10,6 +10,8 @@ import DeleteConfirmationModal from '../components/management/deletion/DeleteCon
 import EditLessonModal from '../components/management/editing/EditLessonModal';
 import RegisteredClientsModal from '../components/management/registration/RegisteredClientsModal';
 import ViewLessonModal from '../components/view/ViewLessonModal';
+import { fetchLessonRegistrations, confirmPayment, rejectPayment } from '../services/registrationService';
+import { RegistrationWithPayment } from '../types/Registration';
 import dayjs from 'dayjs';
 import { useAuth } from '../../auth/AuthContext';
 import { Lesson } from '../types/Lesson';
@@ -59,6 +61,7 @@ export default function CoachDashboardScreen() {
   const showDeleteConfirmationModal = modalState.screen === 'delete';
   const showRegisteredClientsModal = modalState.screen === 'registered';
   const [registeredClients, setRegisteredClients] = useState<{ id: string; name: string }[]>([]);
+  const [lessonRegistrations, setLessonRegistrations] = useState<RegistrationWithPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingRegisteredClients, setLoadingRegisteredClients] = useState(false);
   const [isCreatingLesson, setIsCreatingLesson] = useState(false);
@@ -236,7 +239,11 @@ export default function CoachDashboardScreen() {
   const loadRegisteredClients = async (lessonId: number) => {
     try {
       setLoadingRegisteredClients(true);
-      const clientIds = await fetchRegisteredClients(lessonId);
+      // Fetch both client IDs and registration data in parallel
+      const [clientIds, regs] = await Promise.all([
+        fetchRegisteredClients(lessonId),
+        fetchLessonRegistrations(lessonId).catch(() => [] as RegistrationWithPayment[]),
+      ]);
       const clientsWithInfo = await Promise.all(
         clientIds.map(async (id) => {
           try {
@@ -248,9 +255,11 @@ export default function CoachDashboardScreen() {
         })
       );
       setRegisteredClients(clientsWithInfo);
+      setLessonRegistrations(regs);
     } catch (error) {
       console.error('Error fetching clients:', (error as Error).message);
       setRegisteredClients([]);
+      setLessonRegistrations([]);
     } finally {
       setLoadingRegisteredClients(false);
     }
@@ -261,6 +270,17 @@ export default function CoachDashboardScreen() {
       loadRegisteredClients(selectedLessonForClients.id);
     }
   }, [selectedLessonForClients]);
+
+  // Fetch registrations silently when the view modal opens so pending count is shown immediately
+  useEffect(() => {
+    if (showViewLessonModal && lessonToView) {
+      fetchLessonRegistrations(lessonToView.id)
+        .then(regs => setLessonRegistrations(regs))
+        .catch(() => {});
+    } else if (!showViewLessonModal) {
+      setLessonRegistrations([]);
+    }
+  }, [showViewLessonModal, lessonToView?.id]);
 
   const generateDates = () => {
     const dates = [];
@@ -517,6 +537,7 @@ export default function CoachDashboardScreen() {
         isOpen={showViewLessonModal}
         onClose={() => dispatchModal({ type:'CLOSE' })}
         lesson={lessonToView}
+        pendingPaymentsCount={lessonRegistrations.filter(r => r.paymentStatus === 'PENDING').length}
         onEditClick={() => {
           if (lessonToView) setSelectedLesson(lessonToView);
           setEditLessonData({
@@ -554,6 +575,26 @@ export default function CoachDashboardScreen() {
           dispatchModal({ type:'CLOSE' });
         }}
         originScreen="CoachLessons"
+        registrations={lessonRegistrations}
+        onConfirmPayment={async (registrationId) => {
+          const updated = await confirmPayment(registrationId);
+          setLessonRegistrations(prev => prev.map(r => r.id === registrationId ? updated : r));
+        }}
+        onRejectPayment={async (registrationId) => {
+          const updated = await rejectPayment(registrationId);
+          setLessonRegistrations(prev => prev.map(r => r.id === registrationId ? updated : r));
+        }}
+        onUnregisterClient={async (clientId, clientName) => {
+          const lessonId = selectedLessonForClients?.id;
+          if (!lessonId) return;
+          await deleteClientFromLesson(clientId, lessonId);
+          // Remove client from local lists
+          setRegisteredClients(prev => prev.filter(c => c.id !== clientId));
+          setLessonRegistrations(prev => prev.filter(r => r.clientId !== clientId));
+          // Update lesson's registeredCount in lessons list
+          setLessons(prev => prev.map(l => l.id === lessonId ? { ...l, registeredCount: Math.max(0, (l.registeredCount ?? 1) - 1) } : l));
+          Alert.alert('Client Removed', `${clientName} has been unregistered from the lesson.`);
+        }}
       />
       <DeleteConfirmationModal
         isOpen={showDeleteConfirmationModal}

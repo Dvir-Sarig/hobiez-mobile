@@ -27,8 +27,12 @@ import RegisteredLessonCards from '../components/view/RegisteredLessonCards';
 import RegistrationLessonModal from '../components/management/registration/RegistrationLessonModal';
 import CoachProfileModal from '../../profile/components/modals/CoachProfileModal';
 import UnregisterConfirmationModal from '../components/management/registration/UnregisterConfirmationModal';
+import DeclarePaymentModal from '../components/payment/DeclarePaymentModal';
+import RegistrationSuccessModal from '../components/management/registration/RegistrationSuccessModal';
 import { useAuth } from '../../auth/AuthContext';
 import { Lesson } from '../types/Lesson';
+import { RegistrationWithPayment, PaymentMethod } from '../types/Registration';
+import { fetchLessonRegistrations, declarePayment } from '../services/registrationService';
 import  {SearchForm} from '../components/search/SearchForm';
 import { Location } from '../../profile/types/profile';
 import { lessonCacheService } from '../services/lessonCacheService';
@@ -60,6 +64,15 @@ export default function ClientDashboardScreen() {
   const [activeTab, setActiveTab] = useState<'available' | 'registered'>('available');
   const [refreshing, setRefreshing] = useState(false);
 
+  // Payment flow state
+  const [registrationMap, setRegistrationMap] = useState<Record<number, RegistrationWithPayment>>({});
+  const [paymentModalLesson, setPaymentModalLesson] = useState<Lesson | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Registration success modal
+  const [successLesson, setSuccessLesson] = useState<Lesson | null>(null);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute<any>();
   const { userId } = useAuth();
@@ -71,6 +84,41 @@ export default function ClientDashboardScreen() {
   const [currentScrollY, setCurrentScrollY] = useState(0); // track scroll
   const pendingScrollLessonIdRef = useRef<number | null>(null);
   const pendingScrollAfterRefreshRef = useRef<boolean>(false);
+
+  // Fetch registration/payment data for registered lessons
+  const fetchRegistrationData = async (lessons: Lesson[]) => {
+    if (!userId || lessons.length === 0) return;
+    const map: Record<number, RegistrationWithPayment> = {};
+    await Promise.all(
+      lessons.map(async (lesson) => {
+        try {
+          const regs = await fetchLessonRegistrations(lesson.id);
+          const mine = regs.find(r => r.clientId === userId && r.registrationStatus === 'ACTIVE');
+          if (mine) map[lesson.id] = mine;
+        } catch {}
+      })
+    );
+    setRegistrationMap(map);
+  };
+
+  const handleDeclarePayment = (lesson: Lesson) => {
+    setPaymentModalLesson(lesson);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handlePaymentDeclare = async (method: PaymentMethod, note?: string) => {
+    if (!paymentModalLesson) return;
+    const reg = registrationMap[paymentModalLesson.id];
+    if (!reg) return;
+    try {
+      const updated = await declarePayment(reg.id, method, note);
+      setRegistrationMap(prev => ({ ...prev, [paymentModalLesson.id]: updated }));
+      setIsPaymentModalOpen(false);
+      setPaymentModalLesson(null);
+    } catch (error) {
+      Alert.alert('Payment Error', (error as Error).message);
+    }
+  };
 
   // Function to handle refresh of all lesson data
   const refreshAllLessonData = async (forceRegisteredRefresh: boolean = false) => {
@@ -103,8 +151,15 @@ export default function ClientDashboardScreen() {
     try {
       if (!userId) return;
       await registerToLesson(userId, lessonId);
+      const justRegistered = selectedLesson;
       handleCloseModal();
-      
+
+      // Show success modal
+      if (justRegistered) {
+        setSuccessLesson(justRegistered);
+        setIsSuccessModalOpen(true);
+      }
+
       // Clear cache after registration
       await lessonCacheService.clearAllCache(userId);
       
@@ -160,6 +215,7 @@ export default function ClientDashboardScreen() {
         const cachedRegisteredLessons = await lessonCacheService.getRegisteredLessons(userId);
         if (cachedRegisteredLessons) {
           setRegisteredLessons(cachedRegisteredLessons);
+          fetchRegistrationData(cachedRegisteredLessons);
           return;
         }
       }
@@ -170,6 +226,8 @@ export default function ClientDashboardScreen() {
       // Cache the results (overwrite when forceRefresh too)
       await lessonCacheService.setRegisteredLessons(userId, lessonsWithCounts);
       setRegisteredLessons(lessonsWithCounts);
+      // Fetch payment/registration data for the registered lessons
+      fetchRegistrationData(lessonsWithCounts);
     } catch (e) {
       console.error('Error fetching registered lessons', e);
     } finally {
@@ -594,6 +652,8 @@ export default function ClientDashboardScreen() {
               }}
               isLoading={isLoadingRegisteredLessons}
               returnScrollY={currentScrollY}
+              registrationMap={registrationMap}
+              onDeclarePayment={handleDeclarePayment}
             />
           </View>
         )}
@@ -622,8 +682,23 @@ export default function ClientDashboardScreen() {
             onClose={() => setIsUnregisterModalOpen(false)}
             onConfirm={handleUnregister}
             coachInfo={lessonToUnregister.coachId ? coachInfoMap[lessonToUnregister.coachId] : undefined}
+            hasDeclaredPayment={
+              !!registrationMap[lessonToUnregister.id] &&
+              registrationMap[lessonToUnregister.id].paymentStatus !== 'NOT_SET'
+            }
           />
         )}
+        <RegistrationSuccessModal
+          isOpen={isSuccessModalOpen}
+          lesson={successLesson}
+          onClose={() => { setIsSuccessModalOpen(false); setSuccessLesson(null); }}
+          onMarkAsPaid={() => { if (successLesson) handleDeclarePayment(successLesson); }}
+        />
+        <DeclarePaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => { setIsPaymentModalOpen(false); setPaymentModalLesson(null); }}
+          onDeclare={handlePaymentDeclare}
+        />
       </ScrollView>
 
       {/* Floating calendar button only visible on 'registered' tab */}

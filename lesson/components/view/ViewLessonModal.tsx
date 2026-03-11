@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, ImageBackground } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Lesson } from '../../types/Lesson';
+import { getLessonBackground } from '../../types/LessonType';
 import { formatLessonTimeReadable, formatPrice } from '../../../shared/services/formatService';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface ViewLessonModalProps {
   lesson: Lesson | null;
@@ -15,14 +15,10 @@ interface ViewLessonModalProps {
   isEditing?: boolean;
   isDeleting?: boolean;
   isLoadingClients?: boolean;
+  pendingPaymentsCount?: number;
 }
 
-const getCapacityColor = (registered: number, limit: number) => {
-  const ratio = limit === 0 ? 0 : registered / limit;
-  if (ratio >= 0.9) return '#d32f2f';
-  if (ratio >= 0.6) return '#ed6c02';
-  return '#2e7d32';
-};
+const APP_BLUE = '#1976d2';
 
 const ViewLessonModal: React.FC<ViewLessonModalProps> = ({
   lesson,
@@ -33,14 +29,16 @@ const ViewLessonModal: React.FC<ViewLessonModalProps> = ({
   onDelete,
   isEditing = false,
   isDeleting = false,
-  isLoadingClients = false
+  isLoadingClients = false,
+  pendingPaymentsCount = 0,
 }) => {
   if (!lesson) return null;
 
   const registered = lesson.registeredCount ?? 0;
   const limit = lesson.capacityLimit ?? 0;
   const ratio = limit === 0 ? 0 : Math.min(1, registered / limit);
-  const capacityColor = getCapacityColor(registered, limit);
+  const capacityColor = APP_BLUE;
+  const lessonBg = getLessonBackground(lesson.title);
 
   // NEW: collapsible description
   const [showFullDesc, setShowFullDesc] = useState(false);
@@ -56,15 +54,34 @@ const ViewLessonModal: React.FC<ViewLessonModalProps> = ({
       <View style={styles.overlayPolished}>
         <View style={styles.glassCard}>
           {/* Header */}
-          <LinearGradient colors={['#0d47a1','#1976d2']} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerGradient}>
-            <View style={{flex:1, paddingRight:12}}>
-              <Text style={styles.modalTitle}>{lesson.title}</Text>
-              <Text style={styles.subtitleTime}>{formatLessonTimeReadable(lesson.time)}</Text>
+          {lessonBg ? (
+            <ImageBackground
+              source={lessonBg}
+              style={styles.headerGradient}
+              imageStyle={styles.headerImage}
+              resizeMode="cover"
+            >
+              <View style={styles.headerImageOverlay}>
+                <View style={{flex:1, paddingRight:12}}>
+                  <Text style={styles.modalTitle}>{lesson.title}</Text>
+                  <Text style={styles.subtitleTime}>{formatLessonTimeReadable(lesson.time)}</Text>
+                </View>
+                <TouchableOpacity onPress={onClose} style={styles.closeGradientBtn} accessibilityLabel="Close lesson details">
+                  <Icon name="close" size={22} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
+            </ImageBackground>
+          ) : (
+            <View style={styles.headerGradient}>
+              <View style={{flex:1, paddingRight:12}}>
+                <Text style={styles.modalTitle}>{lesson.title}</Text>
+                <Text style={styles.subtitleTime}>{formatLessonTimeReadable(lesson.time)}</Text>
+              </View>
+              <TouchableOpacity onPress={onClose} style={styles.closeGradientBtn} accessibilityLabel="Close lesson details">
+                <Icon name="close" size={22} color="#ffffff" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeGradientBtn} accessibilityLabel="Close lesson details">
-              <Icon name="close" size={22} color="#ffffff" />
-            </TouchableOpacity>
-          </LinearGradient>
+          )}
 
           <ScrollView style={{flex:1}} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {/* DESCRIPTION (collapsible) */}
@@ -113,6 +130,21 @@ const ViewLessonModal: React.FC<ViewLessonModalProps> = ({
                 <Icon name="people" size={16} color="#1466c3" style={{marginRight:6}} />
                 <Text style={styles.inlineActionText}>{isLoadingClients? 'Loading...':'View Registered'}</Text>
               </TouchableOpacity>
+              {pendingPaymentsCount > 0 && (
+                <TouchableOpacity
+                  style={styles.pendingAlert}
+                  onPress={() => onViewClients(lesson)}
+                  activeOpacity={0.75}
+                >
+                  <Icon name="hourglass-top" size={15} color="#b45309" />
+                  <Text style={styles.pendingAlertText}>
+                    {pendingPaymentsCount === 1
+                      ? '1 client is waiting for payment approval'
+                      : `${pendingPaymentsCount} clients are waiting for payment approval`}
+                  </Text>
+                  <Icon name="chevron-right" size={15} color="#b45309" />
+                </TouchableOpacity>
+              )}
             </View>
             <View style={{height:140}} />
           </ScrollView>
@@ -173,7 +205,9 @@ const MetricPill: React.FC<{ icon?: string; label: string; value: string; valueC
 const styles = StyleSheet.create({
   overlayPolished:{ flex:1, backgroundColor:'rgba(0,0,0,0.55)', justifyContent:'center', padding:20 },
   glassCard:{ flex:1, borderRadius:30, overflow:'hidden', backgroundColor:'rgba(255,255,255,0.94)', borderWidth:1, borderColor:'rgba(255,255,255,0.75)', maxHeight:'92%', shadowColor:'#000', shadowOpacity:0.2, shadowRadius:18, shadowOffset:{width:0,height:8} },
-  headerGradient:{ paddingVertical:20, paddingHorizontal:26, flexDirection:'row', alignItems:'flex-start', justifyContent:'space-between' },
+  headerGradient:{ backgroundColor:'#1976d2', paddingVertical:20, paddingHorizontal:26, flexDirection:'row', alignItems:'flex-start', justifyContent:'space-between' },
+  headerImage:{},
+  headerImageOverlay:{ backgroundColor:'rgba(0,0,0,0.28)', marginHorizontal:-26, marginVertical:-20, paddingVertical:20, paddingHorizontal:26, flexDirection:'row', alignItems:'flex-start', justifyContent:'space-between' },
   modalTitle:{ fontSize:20, fontWeight:'800', color:'#ffffff', letterSpacing:0.5, marginBottom:4 },
   subtitleTime:{ fontSize:12.5, fontWeight:'600', color:'rgba(255,255,255,0.82)', letterSpacing:0.4 },
   closeGradientBtn:{ width:42, height:42, borderRadius:16, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.4)' },
@@ -212,6 +246,8 @@ const styles = StyleSheet.create({
   inlineActionBtn:{ marginTop:14, flexDirection:'row', alignItems:'center', alignSelf:'flex-start', backgroundColor:'#f1f6fa', borderRadius:16, paddingVertical:8, paddingHorizontal:14, borderWidth:1, borderColor:'rgba(20,102,195,0.25)' },
   inlineActionText:{ fontSize:12.5, fontWeight:'700', color:'#1466c3' },
   btnIconLeft:{ marginRight:6 },
+  pendingAlert:{ marginTop:10, flexDirection:'row', alignItems:'center', gap:7, backgroundColor:'#fffbeb', borderRadius:14, paddingVertical:9, paddingHorizontal:12, borderWidth:1, borderColor:'rgba(180,83,9,0.25)' },
+  pendingAlertText:{ flex:1, fontSize:12.5, fontWeight:'700', color:'#b45309', lineHeight:17 },
 });
 
 export default ViewLessonModal;

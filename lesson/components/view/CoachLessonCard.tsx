@@ -10,13 +10,7 @@ interface LessonCardsProps {
   onEdit: (lesson: Lesson) => void; // tap card to open view modal
 }
 
-const getCapacityColor = (registered: number, capacity: number) => {
-  const safeCapacity = capacity > 0 ? capacity : 1;
-  const ratio = registered / safeCapacity;
-  if (ratio >= 0.95) return '#d32f2f';
-  if (ratio >= 0.75) return '#f57c00';
-  return '#2e7d32';
-};
+const APP_BLUE = '#1976d2';
 
 const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit }) => {
   const sorted = useMemo(() => lessons
@@ -29,7 +23,7 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit }) => {
         const registered = lesson.registeredCount ?? 0;
         const capacity = lesson.capacityLimit ?? 0;
         const pct = capacity > 0 ? Math.min(100, Math.round((registered / capacity)*100)) : 0;
-        const capColor = getCapacityColor(registered, capacity);
+        const capColor = APP_BLUE;
         const lessonBg = getLessonBackground(lesson.title);
         return (
           <TouchableOpacity

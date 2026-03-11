@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   ScrollView,
   View,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -29,10 +30,20 @@ export default function ClientAnalyticsDashboard() {
   const [analyticsData, setAnalyticsData] = useState<ClientAnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [coachInfoMap, setCoachInfoMap] = useState<Record<string, { name: string; profilePictureUrl?: string | null }>>({});
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const isRefreshRef = useRef(false);
+
+  const onRefresh = useCallback(() => {
+    isRefreshRef.current = true;
+    setRefreshing(true);
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
-      setLoading(true);
+      if (!isRefreshRef.current) setLoading(true);
+      isRefreshRef.current = false;
       try {
         if (!userId) {
           console.error('No user ID available');
@@ -70,11 +81,12 @@ export default function ClientAnalyticsDashboard() {
         setAnalyticsData(null);
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
 
     fetchAnalytics();
-  }, [currentMonth, userId]);
+  }, [currentMonth, userId, refreshTrigger]);
 
   const handlePrevMonth = () => setCurrentMonth(currentMonth.subtract(1, 'month'));
   const handleNextMonth = () => setCurrentMonth(currentMonth.add(1, 'month'));
@@ -119,7 +131,18 @@ export default function ClientAnalyticsDashboard() {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#fff"
+            colors={['#fff']}
+          />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>

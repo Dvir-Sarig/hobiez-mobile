@@ -9,15 +9,16 @@ import {
   Dimensions,
   ScrollView,
   Platform,
+  Alert,
+  ImageBackground,
 } from 'react-native';
 import { Lesson } from '../../../../lesson/types/Lesson';
 import { formatLessonTimeReadable, formatPrice } from '../../../../shared/services/formatService';
 import { MaterialIcons, Entypo, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { Avatar } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { fetchCoachGlobalInfo, CoachGlobalInfo } from '../../../../profile/services/coachService';
-import { getLessonIcon } from '../../../../lesson/types/LessonType';
+import { getLessonBackground, getLessonIcon } from '../../../../lesson/types/LessonType';
 
 interface Props {
   lesson: Lesson | null;
@@ -25,6 +26,7 @@ interface Props {
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
   coachInfo?: { name: string };
+  hasDeclaredPayment?: boolean;
 }
 
 // Capacity color (shared logic with registration)
@@ -42,6 +44,7 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
   onClose,
   onConfirm,
   coachInfo,
+  hasDeclaredPayment = false,
 }) => {
   const navigation = useNavigation<any>();
   const [isLoading, setIsLoading] = useState(false);
@@ -75,6 +78,7 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
   const coachName = coachGlobalInfo?.name || coachInfo?.name || 'Coach';
   const locationText = lesson.location?.address || [lesson.location?.city, lesson.location?.country].filter(Boolean).join(', ');
   const { IconComponent, iconName } = getLessonIcon(lesson.title);
+  const lessonBg = getLessonBackground(lesson.title);
 
   const handleCoachPress = () => {
     onClose();
@@ -82,6 +86,21 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
   };
 
   const handleUnregister = async () => {
+    // 6-hour cancellation rule
+    const lessonTime = new Date(lesson.time);
+    const now = new Date();
+    const hoursUntilLesson = (lessonTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (hoursUntilLesson < 6) {
+      Alert.alert(
+        'Cancellation Not Allowed',
+        'You cannot unregister from a lesson less than 6 hours before it starts.\n\nTo cancel your registration, please contact your coach directly (by phone or WhatsApp) and ask them to remove you from the lesson.',
+        [
+          { text: 'View Coach Contact', style: 'default', onPress: handleCoachPress },
+          { text: 'OK', style: 'cancel' },
+        ]
+      );
+      return;
+    }
     try {
       setIsLoading(true);
       await onConfirm();
@@ -102,25 +121,54 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
     <Modal visible={isOpen} animationType="fade" transparent>
       <View style={styles.overlay}>
         <View style={styles.shell}>
-          <LinearGradient colors={['#0d47a1','#1976d2']} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerBar}>
-            <View style={styles.headerLeft}>
-              <View style={styles.lessonIconWrap}>
-                <Avatar.Icon size={42} style={styles.lessonIconAvatar} icon={() => <IconComponent name={iconName} size={22} color="#ffffff" />} />
+          {lessonBg ? (
+            <ImageBackground
+              source={lessonBg}
+              style={styles.headerBar}
+              imageStyle={styles.headerImage}
+              resizeMode="cover"
+            >
+              <View style={styles.headerOverlay}>
+                <View style={styles.headerLeft}>
+                  <View style={styles.lessonIconWrap}>
+                    <Avatar.Icon size={42} style={styles.lessonIconAvatar} icon={() => <IconComponent name={iconName} size={22} color="#ffffff" />} />
+                  </View>
+                  <View style={styles.headerTextCol}>
+                    <Text style={styles.headerTitle} numberOfLines={1}>{lesson.title}</Text>
+                    <View style={styles.headerMetaRow}>
+                      <MaterialIcons name="event" size={14} color="#bbdefb" />
+                      <Text style={styles.headerMetaText}>{dateStr}</Text>
+                      <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginLeft:10 }} />
+                      <Text style={styles.headerMetaText}>{timeStr}</Text>
+                    </View>
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close unregister modal">
+                  <MaterialIcons name="close" size={22} color="#ffffff" />
+                </TouchableOpacity>
               </View>
-              <View style={styles.headerTextCol}>
-                <Text style={styles.headerTitle} numberOfLines={1}>{lesson.title}</Text>
-                <View style={styles.headerMetaRow}>
-                  <MaterialIcons name="event" size={14} color="#bbdefb" />
-                  <Text style={styles.headerMetaText}>{dateStr}</Text>
-                  <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginLeft:10 }} />
-                  <Text style={styles.headerMetaText}>{timeStr}</Text>
+            </ImageBackground>
+          ) : (
+            <View style={styles.headerBar}>
+              <View style={styles.headerLeft}>
+                <View style={styles.lessonIconWrap}>
+                  <Avatar.Icon size={42} style={styles.lessonIconAvatar} icon={() => <IconComponent name={iconName} size={22} color="#ffffff" />} />
+                </View>
+                <View style={styles.headerTextCol}>
+                  <Text style={styles.headerTitle} numberOfLines={1}>{lesson.title}</Text>
+                  <View style={styles.headerMetaRow}>
+                    <MaterialIcons name="event" size={14} color="#bbdefb" />
+                    <Text style={styles.headerMetaText}>{dateStr}</Text>
+                    <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginLeft:10 }} />
+                    <Text style={styles.headerMetaText}>{timeStr}</Text>
+                  </View>
                 </View>
               </View>
+              <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close unregister modal">
+                <MaterialIcons name="close" size={22} color="#ffffff" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close unregister modal">
-              <MaterialIcons name="close" size={22} color="#ffffff" />
-            </TouchableOpacity>
-          </LinearGradient>
+          )}
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={styles.metricRow}>
               {typeof lesson.price === 'number' && (
@@ -191,6 +239,24 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
               <Text style={styles.warningBody}>You will lose your secured spot. If the lesson fills you might not be able to rejoin. This action cannot be undone.</Text>
             </View>
 
+            {/* Payment refund notice */}
+            {hasDeclaredPayment && (
+              <View style={[styles.sectionCard, styles.refundCard]}>
+                <View style={styles.warningHeaderRow}>
+                  <MaterialIcons name="payments" size={20} color="#b45309" />
+                  <Text style={[styles.warningTitle, { color: '#b45309' }]}>Payment Already Declared</Text>
+                </View>
+                <Text style={styles.refundBody}>
+                  You marked this lesson as paid. If you already transferred money, contact the coach directly to request a refund before unregistering.
+                </Text>
+                <TouchableOpacity onPress={handleCoachPress} style={styles.contactCoachBtn} accessibilityLabel="Contact coach">
+                  <MaterialIcons name="person" size={15} color="#1976d2" />
+                  <Text style={styles.contactCoachText}>View Coach Contact</Text>
+                  <MaterialIcons name="chevron-right" size={15} color="#1976d2" />
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={{ height: 110 }} />
           </ScrollView>
           <View style={styles.footerBar}> 
@@ -216,11 +282,13 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   overlay:{ flex:1, backgroundColor:'rgba(0,0,0,0.55)', justifyContent:'center', padding:20 },
   shell:{ width: width * 0.92, backgroundColor:'rgba(255,255,255,0.96)', borderRadius:30, overflow:'hidden', maxHeight:'92%', alignSelf:'center', ...Platform.select({ ios:{ shadowColor:'#000', shadowOpacity:0.25, shadowRadius:18, shadowOffset:{width:0,height:8}}, android:{ elevation:10 } }) },
-  headerBar:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', paddingHorizontal:18, paddingVertical:16 },
+  headerBar:{ backgroundColor:'#1976d2', flexDirection:'row', alignItems:'center', justifyContent:'space-between', paddingHorizontal:18, paddingVertical:16 },
+  headerImage:{},
+  headerOverlay:{ backgroundColor:'rgba(0,0,0,0.28)', marginHorizontal:-18, marginVertical:-16, paddingHorizontal:18, paddingVertical:16, flexDirection:'row', alignItems:'center', justifyContent:'space-between' },
   headerLeft:{ flexDirection:'row', alignItems:'center', flex:1, gap:12 },
   headerTextCol:{ flex:1 },
   lessonIconWrap:{},
-  lessonIconAvatar:{ backgroundColor:'#1976d2' },
+  lessonIconAvatar:{ backgroundColor:'rgba(255,255,255,0.25)' },
   headerTitle:{ fontSize:20, fontWeight:'800', color:'#ffffff', letterSpacing:0.4 },
   headerMetaRow:{ flexDirection:'row', alignItems:'center', marginTop:4 },
   headerMetaText:{ fontSize:12.5, fontWeight:'700', color:'#ffffff', marginLeft:4, letterSpacing:0.5 },
@@ -247,6 +315,10 @@ const styles = StyleSheet.create({
   warningHeaderRow:{ flexDirection:'row', alignItems:'center', gap:10, marginBottom:10 },
   warningTitle:{ fontSize:15, fontWeight:'800', color:'#ff8f00', letterSpacing:0.5 },
   warningBody:{ fontSize:13, fontWeight:'600', color:'#7a5d00', lineHeight:19 },
+  refundCard:{ backgroundColor:'#fffbeb', borderColor:'rgba(180,83,9,0.30)' },
+  refundBody:{ fontSize:13, fontWeight:'600', color:'#92400e', lineHeight:19, marginBottom:12 },
+  contactCoachBtn:{ flexDirection:'row', alignItems:'center', gap:6, alignSelf:'flex-start', backgroundColor:'#f1f6fb', paddingHorizontal:12, paddingVertical:7, borderRadius:12, borderWidth:1, borderColor:'rgba(25,118,210,0.25)' },
+  contactCoachText:{ fontSize:12.5, fontWeight:'700', color:'#1976d2' },
   footerBar:{ flexDirection:'row', alignItems:'center', gap:14, padding:18, borderTopWidth:1, borderTopColor:'rgba(13,71,161,0.12)', backgroundColor:'rgba(255,255,255,0.94)' },
   cancelBtn:{ flex:1, backgroundColor:'rgba(255,255,255,0.55)', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:14, borderWidth:1.5, borderColor:'rgba(25,118,210,0.25)' },
   cancelBtnText:{ color:'#0d47a1', fontSize:14, fontWeight:'700', letterSpacing:0.4 },
