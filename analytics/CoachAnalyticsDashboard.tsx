@@ -89,6 +89,13 @@ const mockLessons: Lesson[] = [
 // Set to true to use mock data for testing (set to false for production)
 const USE_MOCK_DATA = false;
 
+const formatShekel = (amount: number, fractionDigits: number = 0): string => {
+  return `₪${amount.toLocaleString('he-IL', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })}`;
+};
+
 export default function CoachAnalyticsDashboard() {
   const { userId } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(dayjs());
@@ -218,7 +225,7 @@ export default function CoachAnalyticsDashboard() {
               <MetricCard
                 icon="attach-money"
                 label="Revenue"
-                value={`$${analyticsData.totalRevenue.toLocaleString()}`}
+                value={formatShekel(analyticsData.totalRevenue)}
                 subtext={`${analyticsData.registeredCount} registrations`}
                 bgGradient={['#1565c0', '#42a5f5']}
                 iconColor="#4fc3f7"
@@ -304,7 +311,7 @@ export default function CoachAnalyticsDashboard() {
                     <Text style={styles.breakdownText}>Total Revenue</Text>
                   </View>
                   <Text style={[styles.breakdownValue, styles.revenueHighlight]}>
-                    ${analyticsData.totalRevenue.toLocaleString()}
+                    {formatShekel(analyticsData.totalRevenue)}
                   </Text>
                 </View>
                 <View style={styles.breakdownDivider} />
@@ -314,7 +321,10 @@ export default function CoachAnalyticsDashboard() {
                     <Text style={styles.breakdownText}>Avg. per Registration</Text>
                   </View>
                   <Text style={styles.breakdownValue}>
-                    ${analyticsData.registeredCount > 0 ? (analyticsData.totalRevenue / analyticsData.registeredCount).toFixed(2) : '0'}
+                    {formatShekel(
+                      analyticsData.registeredCount > 0 ? analyticsData.totalRevenue / analyticsData.registeredCount : 0,
+                      2,
+                    )}
                   </Text>
                 </View>
               </View>
@@ -400,7 +410,7 @@ export default function CoachAnalyticsDashboard() {
                       <View style={styles.typeItemHeader}>
                         <Text style={styles.typeItemName}>{metric.type}</Text>
                         <View style={[styles.typeItemBadge, { backgroundColor: getTypeColor(index) }]}>
-                          <Text style={styles.typeItemRevenue}>${metric.revenue}</Text>
+                          <Text style={styles.typeItemRevenue}>{formatShekel(metric.revenue)}</Text>
                         </View>
                       </View>
 
@@ -453,7 +463,7 @@ export default function CoachAnalyticsDashboard() {
                       <View style={styles.weeklyHeader}>
                         <Text style={styles.weeklyLabel}>{week.dateRange}</Text>
                         <View style={styles.weeklyRevenueBadge}>
-                          <Text style={styles.weeklyRevenueText}>${week.revenue}</Text>
+                          <Text style={styles.weeklyRevenueText}>{formatShekel(week.revenue)}</Text>
                         </View>
                       </View>
 

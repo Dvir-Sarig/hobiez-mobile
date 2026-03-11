@@ -186,7 +186,6 @@ const ClientLessonCards: React.FC<ClientLessonCardsProps> = ({
                       )}
                       {lesson.price && (
                         <View style={styles.detailChip}>
-                          <Icon name="attach-money" size={14} color="#64b5f6" style={styles.chipIcon} />
                           <Text style={styles.detailChipText}>{formatPrice(lesson.price)}</Text>
                         </View>
                       )}

@@ -89,7 +89,7 @@ const ViewLessonModal: React.FC<ViewLessonModalProps> = ({
             {/* METRICS ROW (Duration + Price only) */}
             <View style={[styles.sectionBlock, styles.metricsRow]}> 
               <MetricPill icon="timer" label="Duration" value={`${lesson.duration} min`} />
-              <MetricPill icon="attach-money" label="Price" value={priceLabel} valueColor={lesson.price===0? '#2e7d32': undefined} />
+              <MetricPill label="Price" value={priceLabel} valueColor={lesson.price===0? '#2e7d32': undefined} />
             </View>
             {/* CAPACITY (combined simple card) */}
             <View style={[styles.sectionBlock, styles.capacityCard]}> 
@@ -160,9 +160,9 @@ const SectionCard: React.FC<{ icon: string; label: string; children: React.React
 );
 
 // Metric Pill
-const MetricPill: React.FC<{ icon: string; label: string; value: string; valueColor?: string; }> = ({ icon, label, value, valueColor }) => (
+const MetricPill: React.FC<{ icon?: string; label: string; value: string; valueColor?: string; }> = ({ icon, label, value, valueColor }) => (
   <View style={styles.metricPill}>
-    <Icon name={icon} size={14} color="#1976d2" style={{marginRight:6}} />
+    {icon ? <Icon name={icon} size={14} color="#1976d2" style={{marginRight:6}} /> : null}
     <View style={{flex:1}}>
       <Text style={styles.metricPillLabel}>{label}</Text>
       <Text style={[styles.metricPillValue, valueColor && {color:valueColor}]} numberOfLines={1}>{value}</Text>

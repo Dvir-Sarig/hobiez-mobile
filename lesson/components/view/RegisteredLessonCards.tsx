@@ -137,7 +137,6 @@ const RegisteredLessonCardItem: React.FC<{
                 <Text style={styles.detailChipText}>{lesson.duration} min</Text>
               </View>
               <View style={styles.detailChip}>
-                <Icon name="attach-money" size={14} color="#64b5f6" style={styles.chipIcon} />
                 <Text style={styles.detailChipText}>{formatPrice(lesson.price)}</Text>
               </View>
             </View>

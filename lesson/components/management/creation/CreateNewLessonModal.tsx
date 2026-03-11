@@ -257,13 +257,13 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
                   <View style={styles.metricBlock}>
                     <Text style={styles.metricLabel}>Price</Text>
                     <View style={styles.metricInputRow}>
-                      <Icon name="attach-money" size={16} color="#1976d2" style={styles.metricIcon} />
+                      <Text style={styles.metricCurrencyIcon}>₪</Text>
                       <TextInput
                         style={styles.metricNumberInput}
                         keyboardType="numeric"
                         value={newLesson.price ? newLesson.price.toString() : ''}
                         onChangeText={v=> handleNumberChange('price', v, true)}
-                        placeholder="$"
+                        placeholder="₪"
                         placeholderTextColor="#7a8ea2"
                       />
                     </View>
@@ -321,6 +321,7 @@ const styles = StyleSheet.create({
   metricLabel:{ fontSize:11, fontWeight:'800', letterSpacing:0.6, color:'#0d47a1', textTransform:'uppercase', marginBottom:6 },
   metricInputRow:{ flexDirection:'row', alignItems:'center', backgroundColor:'#f3f7fb', borderRadius:14, borderWidth:1, borderColor:'rgba(25,118,210,0.18)', paddingVertical:8, paddingHorizontal:10 },
   metricIcon:{ marginRight:6 },
+  metricCurrencyIcon:{ marginRight:6, fontSize:16, fontWeight:'800', color:'#1976d2', lineHeight:16 },
   metricNumberInput:{ flex:1, fontSize:13, fontWeight:'700', color:'#0d47a1', paddingVertical:2 },
   footerBar:{ position:'absolute', left:0, right:0, bottom:0, flexDirection:'row', gap:14, padding:20, backgroundColor:'rgba(255,255,255,0.9)', borderTopWidth:1, borderTopColor:'rgba(25,118,210,0.15)', shadowColor:'#000', shadowOpacity:0.18, shadowRadius:14, shadowOffset:{width:0,height:4} },
   cancelBtn:{ flex:1, backgroundColor:'rgba(255,255,255,0.55)', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:16, borderWidth:1.5, borderColor:'rgba(25,118,210,0.25)' },

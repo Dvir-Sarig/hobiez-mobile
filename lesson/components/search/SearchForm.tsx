@@ -175,7 +175,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQu
                 )}
                 {!!searchQuery.maxPrice && (
                   <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, maxPrice:''})}>
-                    <Text style={styles.compactChipText}>≤ ${searchQuery.maxPrice}</Text>
+                    <Text style={styles.compactChipText}>≤ ₪{searchQuery.maxPrice}</Text>
                     <MaterialIcons name="close" size={14} color="#0d47a1" />
                   </Pressable>
                 )}
@@ -217,7 +217,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQu
                   </Pressable>
                   <TextInput
                     style={[styles.compactInput, focusedField==='maxPrice' && styles.compactInputFocused]}
-                    placeholder="Max Price"
+                    placeholder="Max Price (₪)"
                     placeholderTextColor="#78909c"
                     keyboardType="numeric"
                     value={searchQuery.maxPrice}
@@ -257,7 +257,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQu
                     )}
                     {!!searchQuery.maxPrice && (
                       <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, maxPrice:''})}>
-                        <Text style={styles.compactChipText}>≤ ${searchQuery.maxPrice}</Text>
+                        <Text style={styles.compactChipText}>≤ ₪{searchQuery.maxPrice}</Text>
                         <MaterialIcons name="close" size={14} color="#0d47a1" />
                       </Pressable>
                     )}
