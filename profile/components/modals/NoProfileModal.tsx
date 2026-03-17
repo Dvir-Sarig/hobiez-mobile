@@ -9,7 +9,7 @@ interface NoProfileModalProps {
 }
 
 const NoProfileModal: React.FC<NoProfileModalProps> = ({ isOpen, onClose, userType = 'coach' }) => {
-    const noun = userType === 'coach' ? 'coach' : 'client';
+    const noun = userType === 'coach' ? 'המאמן' : 'הלקוח';
     return (
         <Modal
             visible={isOpen}
@@ -20,12 +20,12 @@ const NoProfileModal: React.FC<NoProfileModalProps> = ({ isOpen, onClose, userTy
             <View style={styles.overlay}>
                 <View style={styles.modalContent}>
                     <MaterialIcons name="person-off" size={48} color="#1976d2" />
-                    <Text style={styles.title}>Profile Not Available</Text>
+                    <Text style={styles.title}>הפרופיל אינו זמין</Text>
                     <Text style={styles.message}>
-                        This {noun} hasn't created a profile yet. Please check back later.
+                        {noun} עדיין לא יצר פרופיל. אנא בדוק שוב מאוחר יותר.
                     </Text>
                     <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                        <Text style={styles.closeButtonText}>Close</Text>
+                        <Text style={styles.closeButtonText}>סגור</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -56,11 +56,14 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '600',
         marginTop: 12,
+        textAlign: 'left',
+        writingDirection: 'rtl',
     },
     message: {
         fontSize: 16,
         color: '#555',
-        textAlign: 'center',
+        textAlign: 'left',
+        writingDirection: 'rtl',
         marginVertical: 12,
     },
     closeButton: {
@@ -73,6 +76,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: '600',
         fontSize: 16,
+        writingDirection: 'rtl',
     },
 });
 

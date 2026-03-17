@@ -7,6 +7,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { ClientProfile } from '../../types/profile';
 import BaseProfileView from './BaseProfileView';
+import { getLessonTypeDisplayName } from '../../../lesson/types/LessonType';
 
 interface ClientProfileViewProps {
   profileData: ClientProfile;
@@ -27,27 +28,27 @@ export default function ClientProfileView({
     >
       {/* Hobbies */}
       <View style={styles.section}>
-        <SectionHeader icon="sports" title="Hobbies" />
+        <SectionHeader icon="sports" title="תחביבים" />
         <View style={styles.chipContainer}>
           {profileData.hobbies?.map((hobby, i) => (
             <View key={i} style={styles.primaryChip}>
-              <Text style={styles.primaryChipText}>{hobby}</Text>
+              <Text style={styles.primaryChipText}>{getLessonTypeDisplayName(hobby)}</Text>
             </View>
           ))}
-          {(!profileData.hobbies || profileData.hobbies.length===0) && <Text style={styles.emptyText}>No hobbies added yet</Text>}
+          {(!profileData.hobbies || profileData.hobbies.length===0) && <Text style={styles.emptyText}>עדיין לא נוספו תחביבים</Text>}
         </View>
       </View>
 
       {/* Languages */}
       <View style={[styles.section,{marginBottom:42}]}>
-        <SectionHeader icon="language" title="Languages" />
+        <SectionHeader icon="language" title="שפות" />
         <View style={styles.chipContainer}>
           {profileData.genericProfile.languages?.map((lang,i)=>(
             <View key={i} style={styles.secondaryChip}>
               <Text style={styles.secondaryChipText}>{lang}</Text>
             </View>
           ))}
-          {(!profileData.genericProfile.languages || profileData.genericProfile.languages.length===0) && <Text style={styles.emptyText}>No languages listed</Text>}
+          {(!profileData.genericProfile.languages || profileData.genericProfile.languages.length===0) && <Text style={styles.emptyText}>אין שפות ברשימה</Text>}
         </View>
       </View>
     </BaseProfileView>
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e3f2fd',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginEnd: 10,
   },
   sectionTitle: {
     fontSize: 15,
@@ -98,6 +99,8 @@ const styles = StyleSheet.create({
     color: '#0d47a1',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   chipContainer: {
     flexDirection: 'row',
@@ -119,6 +122,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.3,
+    writingDirection: 'rtl',
   },
   secondaryChip: {
     backgroundColor: '#1565c0',
@@ -135,10 +139,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.3,
+    writingDirection: 'rtl',
   },
   emptyText: {
     color: '#607d8b',
     fontSize: 13,
     fontStyle: 'italic',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
 });

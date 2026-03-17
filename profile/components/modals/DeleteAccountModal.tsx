@@ -34,17 +34,17 @@ export default function DeleteAccountModal({
 
     const handleDelete = async () => {
         if (!password.trim()) {
-            Alert.alert('Error', 'Please enter your password');
+            Alert.alert('שגיאה', 'אנא הקלד את הסיסמה שלך');
             return;
         }
 
         Alert.alert(
-            'Confirm Deletion',
-            'This action cannot be undone. Are you sure you want to delete your account?',
+            'אישור מחיקה',
+            'לא ניתן לבטל פעולה זו. האם אתה בטוח שברצונך למחוק את החשבון?',
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: 'ביטול', style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: 'מחק',
                     style: 'destructive',
                     onPress: async () => {
                         setLoading(true);
@@ -66,7 +66,7 @@ export default function DeleteAccountModal({
                             // Close modal
                             onClose();
                         } catch (error) {
-                            Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete account');
+                            Alert.alert('שגיאה', error instanceof Error ? error.message : 'מחיקת החשבון נכשלה');
                         } finally {
                             setLoading(false);
                         }
@@ -98,32 +98,32 @@ export default function DeleteAccountModal({
                     >
                         <View style={styles.headerContent}>
                             <Ionicons name="trash" size={24} color="white" />
-                            <Text style={styles.headerTitle}>Delete Account</Text>
+                            <Text style={styles.headerTitle}>מחיקת חשבון</Text>
                         </View>
                     </LinearGradient>
 
                     <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                         <View style={styles.warningContainer}>
                             <Ionicons name="warning" size={24} color="#f39c12" />
-                            <Text style={styles.warningTitle}>This action cannot be undone!</Text>
+                            <Text style={styles.warningTitle}>לא ניתן לבטל פעולה זו!</Text>
                             <Text style={styles.warningText}>
-                                Deleting your account will permanently remove:
+                                מחיקת החשבון תסיר לצמיתות:
                             </Text>
                             <View style={styles.bulletList}>
-                                <Text style={styles.bulletPoint}>• Your profile and personal information</Text>
-                                <Text style={styles.bulletPoint}>• All your lesson registrations</Text>
-                                <Text style={styles.bulletPoint}>• Your account credentials</Text>
+                                <Text style={styles.bulletPoint}>• הפרופיל שלך ומידע אישי</Text>
+                                <Text style={styles.bulletPoint}>• כל הרישומים שלך לשיעורים</Text>
+                                <Text style={styles.bulletPoint}>• פרטי החשבון שלך</Text>
                                 {userType === 'coach' && (
-                                    <Text style={styles.bulletPoint}>• All lessons you've created</Text>
+                                    <Text style={styles.bulletPoint}>• כל השיעורים שיצרת</Text>
                                 )}
                             </View>
                         </View>
 
                         <View style={styles.inputContainer}>
-                            <Text style={styles.inputLabel}>To confirm deletion, please enter your password:</Text>
+                            <Text style={styles.inputLabel}>כדי לאשר מחיקה, אנא הקלד את הסיסמה שלך:</Text>
                             <TextInput
                                 style={styles.passwordInput}
-                                placeholder="Enter your password"
+                                placeholder="הקלד את הסיסמה שלך"
                                 secureTextEntry
                                 value={password}
                                 onChangeText={setPassword}
@@ -138,7 +138,7 @@ export default function DeleteAccountModal({
                             onPress={handleClose}
                             disabled={loading}
                         >
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                            <Text style={styles.cancelButtonText}>ביטול</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -151,7 +151,7 @@ export default function DeleteAccountModal({
                             ) : (
                                 <>
                                     <Ionicons name="trash" size={16} color="white" />
-                                    <Text style={styles.deleteButtonText}>Delete Account</Text>
+                                    <Text style={styles.deleteButtonText}>מחק חשבון</Text>
                                 </>
                             )}
                         </TouchableOpacity>
@@ -189,6 +189,8 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: 'bold',
+        textAlign: 'left',
+        writingDirection: 'rtl',
     },
     content: {
         padding: 20,
@@ -207,19 +209,25 @@ const styles = StyleSheet.create({
         color: '#856404',
         marginTop: 8,
         marginBottom: 8,
+        textAlign: 'left',
+        writingDirection: 'rtl',
     },
     warningText: {
         fontSize: 14,
         color: '#856404',
         marginBottom: 8,
+        textAlign: 'left',
+        writingDirection: 'rtl',
     },
     bulletList: {
-        marginLeft: 8,
+        marginStart: 8,
     },
     bulletPoint: {
         fontSize: 14,
         color: '#856404',
         marginBottom: 4,
+        textAlign: 'left',
+        writingDirection: 'rtl',
     },
     inputContainer: {
         marginBottom: 20,
@@ -228,6 +236,8 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#333',
         marginBottom: 8,
+        textAlign: 'left',
+        writingDirection: 'rtl',
     },
     passwordInput: {
         borderWidth: 1,
@@ -261,6 +271,7 @@ const styles = StyleSheet.create({
         color: '#6c757d',
         fontSize: 16,
         fontWeight: '500',
+        writingDirection: 'rtl',
     },
     deleteButton: {
         backgroundColor: '#dc3545',
@@ -269,6 +280,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '500',
+        writingDirection: 'rtl',
     },
     disabledButton: {
         opacity: 0.6,

@@ -18,6 +18,7 @@ import PublicCoachCalendarView from '../calendars/coach/PublicCoachCalendarView'
 import CreateCoachProfile from '../profile/components/creation/CreateCoachProfile';
 import CreateClientProfile from '../profile/components/creation/CreateClientProfile';
 import { DrawerActions } from '@react-navigation/native';
+import { Dimensions } from 'react-native';
 import SettingsScreen from '../settings/SettingsScreen';
 
 const Drawer = createDrawerNavigator();
@@ -28,9 +29,12 @@ const DrawerNavigator = ({ userType, initialScreen }: { userType: string | null;
       initialRouteName={initialScreen || "Home"}
       screenOptions={({navigation}) => ({
         headerShown: true,
+        drawerPosition: 'right',
+        drawerType: 'front',
+        overlayColor: 'rgba(0,0,0,0.5)',
         drawerStyle: {
           backgroundColor: '#0d47a1',
-          width: 280,
+          width: Dimensions.get('window').width * 0.75,
         },
         headerStyle: {
           backgroundColor: '#0d47a1',
@@ -44,6 +48,7 @@ const DrawerNavigator = ({ userType, initialScreen }: { userType: string | null;
             <MaterialCommunityIcons name="menu" size={28} color="#fff" />
           </TouchableOpacity>
         ),
+        headerRight: () => null,
         headerTitle: () => (
           <View style={styles.headerTitle}>
             <MaterialCommunityIcons name="karate" size={24} color="#fff" />

@@ -4,17 +4,17 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { PaymentStatus, PaymentMethod } from '../../types/Registration';
 
 const STATUS_CONFIG: Record<PaymentStatus, { label: string; color: string; bg: string; icon: keyof typeof MaterialIcons.glyphMap }> = {
-  NOT_SET: { label: 'Not Paid', color: '#78909c', bg: 'rgba(120,144,156,0.12)', icon: 'payment' },
-  PENDING: { label: 'Pending', color: '#f57c00', bg: 'rgba(245,124,0,0.12)', icon: 'hourglass-top' },
-  CONFIRMED: { label: 'Confirmed', color: '#43a047', bg: 'rgba(67,160,71,0.12)', icon: 'check-circle' },
-  REJECTED: { label: 'Rejected', color: '#e53935', bg: 'rgba(229,57,53,0.12)', icon: 'cancel' },
+  NOT_SET: { label: 'לא שולם', color: '#78909c', bg: 'rgba(120,144,156,0.12)', icon: 'payment' },
+  PENDING: { label: 'בהמתנה', color: '#f57c00', bg: 'rgba(245,124,0,0.12)', icon: 'hourglass-top' },
+  CONFIRMED: { label: 'מאושר', color: '#43a047', bg: 'rgba(67,160,71,0.12)', icon: 'check-circle' },
+  REJECTED: { label: 'נדחה', color: '#e53935', bg: 'rgba(229,57,53,0.12)', icon: 'cancel' },
 };
 
 const METHOD_CONFIG: Record<PaymentMethod, { label: string; icon: string; iconFamily: 'material' | 'community' | 'bit-image' | 'paybox-image'; color: string }> = {
-  BIT: { label: 'Bit', icon: 'bit-logo', iconFamily: 'bit-image', color: '#0b2f35' },
-  PAYBOX: { label: 'PayBox', icon: 'paybox-logo', iconFamily: 'paybox-image', color: '#0891b2' },
-  CASH: { label: 'Cash', icon: 'payments', iconFamily: 'material', color: '#16a34a' },
-  OTHER: { label: 'Other', icon: 'more-horiz', iconFamily: 'material', color: '#64748b' },
+  BIT: { label: 'ביט', icon: 'bit-logo', iconFamily: 'bit-image', color: '#0b2f35' },
+  PAYBOX: { label: 'פייבוקס', icon: 'paybox-logo', iconFamily: 'paybox-image', color: '#0891b2' },
+  CASH: { label: 'מזומן', icon: 'payments', iconFamily: 'material', color: '#16a34a' },
+  OTHER: { label: 'אחר', icon: 'more-horiz', iconFamily: 'material', color: '#64748b' },
 };
 
 const BitLogoMark: React.FC<{ size?: number }> = ({ size = 14 }) => (
@@ -120,6 +120,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.3,
+    writingDirection: 'rtl',
   },
   compactBadge: {
     flexDirection: 'row',
@@ -131,15 +132,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   inlineMethodWrap: {
-    marginLeft: 2,
-    borderLeftWidth: 1,
-    borderLeftColor: 'rgba(15,23,42,0.18)',
-    paddingLeft: 4,
+    marginStart: 2,
+    borderStartWidth: 1,
+    borderStartColor: 'rgba(15,23,42,0.18)',
+    paddingStart: 4,
   },
   compactText: {
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.2,
+    writingDirection: 'rtl',
   },
   methodChip: {
     flexDirection: 'row',
@@ -154,6 +156,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.2,
+    writingDirection: 'rtl',
   },
 });
 

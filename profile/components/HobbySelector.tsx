@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SupportedHobby, SUPPORTED_HOBBIES } from '../types/profile';
+import { getLessonTypeDisplayName } from '../../lesson/types/LessonType';
 
 interface Props {
   selectedHobbies: SupportedHobby[];
@@ -15,7 +16,7 @@ const HobbySelector: React.FC<Props> = ({ selectedHobbies, onAdd, onRemove, edit
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <MaterialIcons name="sports" size={24} color="#1976d2" />
-        <Text style={styles.label}>Hobbies</Text>
+        <Text style={styles.label}>תחביבים</Text>
       </View>
       <View style={styles.chipContainer}>
         {selectedHobbies.map((hobby) => (
@@ -24,7 +25,7 @@ const HobbySelector: React.FC<Props> = ({ selectedHobbies, onAdd, onRemove, edit
             onPress={() => editable && onRemove(hobby)} 
             style={styles.chipSelected}
           >
-            <Text style={styles.chipText}>{hobby}</Text>
+            <Text style={styles.chipText}>{getLessonTypeDisplayName(hobby)}</Text>
             {editable && <MaterialIcons name="close" size={16} color="#fff" style={styles.closeIcon} />}
           </TouchableOpacity>
         ))}
@@ -34,7 +35,7 @@ const HobbySelector: React.FC<Props> = ({ selectedHobbies, onAdd, onRemove, edit
             onPress={() => onAdd(hobby)} 
             style={styles.chip}
           >
-            <Text style={styles.chipTextUnselected}>{hobby}</Text>
+            <Text style={styles.chipTextUnselected}>{getLessonTypeDisplayName(hobby)}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -64,9 +65,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#1976d2',
-    marginLeft: 8,
+    marginStart: 8,
     letterSpacing: 1,
     textTransform: 'uppercase',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   chipContainer: {
     flexDirection: 'row',
@@ -97,14 +100,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '600',
+    writingDirection: 'rtl',
   },
   chipTextUnselected: {
     color: '#334155',
     fontSize: 13,
     fontWeight: '600',
+    writingDirection: 'rtl',
   },
   closeIcon: {
-    marginLeft: 6,
+    marginStart: 6,
   },
 });
 

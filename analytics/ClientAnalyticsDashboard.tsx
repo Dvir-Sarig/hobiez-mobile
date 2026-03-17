@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
+import { getLessonTypeDisplayName } from '../lesson/types/LessonType';
 import { useAuth } from '../auth/AuthContext';
 import { Lesson } from '../lesson/types/Lesson';
 import { fetchClientRegisteredLessons } from '../lesson/services/lessonService';
@@ -66,7 +67,7 @@ export default function ClientAnalyticsDashboard() {
                 const coachInfo = await fetchCoachGlobalInfo(coachId);
                 return [coachId, { name: coachInfo.name, profilePictureUrl: coachInfo.profilePictureUrl }] as const;
               } catch {
-                return [coachId, { name: 'Unknown Coach', profilePictureUrl: null }] as const;
+                return [coachId, { name: 'מאמן לא ידוע', profilePictureUrl: null }] as const;
               }
             })
           );
@@ -92,7 +93,7 @@ export default function ClientAnalyticsDashboard() {
   const handleNextMonth = () => setCurrentMonth(currentMonth.add(1, 'month'));
 
   const topHours = analyticsData ? getTopHoursForClient(analyticsData.hoursData, 3) : [];
-  const getCoachDisplayName = (coachId: string) => coachInfoMap[coachId]?.name || 'Unknown Coach';
+  const getCoachDisplayName = (coachId: string) => coachInfoMap[coachId]?.name || 'מאמן לא ידוע';
   const getCoachProfileImage = (coachId: string) => coachInfoMap[coachId]?.profilePictureUrl || null;
 
   const MetricCard = ({
@@ -149,25 +150,25 @@ export default function ClientAnalyticsDashboard() {
             <View style={styles.headerIconBadge}>
               <MaterialIcons name="analytics" size={24} color="#fff" />
             </View>
-            <Text style={styles.headerTitle}>Your Progress</Text>
+            <Text style={styles.headerTitle}>ההתקדמות שלך</Text>
           </View>
-          <Text style={styles.headerSubtitle}>Track your lessons and learning journey</Text>
+          <Text style={styles.headerSubtitle}>עקוב אחר השיעורים ומסע הלמידה שלך</Text>
         </View>
 
         {/* Month Navigation */}
         <View style={styles.monthNav}>
-          <TouchableOpacity onPress={handlePrevMonth} style={styles.monthNavBtn}>
-            <MaterialIcons name="chevron-left" size={24} color="#fff" />
-          </TouchableOpacity>
-          <View style={styles.monthDisplay}>
-            <Text style={styles.monthText}>{currentMonth.format('MMMM YYYY')}</Text>
-          </View>
           <TouchableOpacity
             onPress={handleNextMonth}
             disabled={currentMonth.isAfter(dayjs())}
             style={[styles.monthNavBtn, currentMonth.isAfter(dayjs()) && styles.monthNavBtnDisabled]}
           >
             <MaterialIcons name="chevron-right" size={24} color={currentMonth.isAfter(dayjs()) ? '#ffffff66' : '#fff'} />
+          </TouchableOpacity>
+          <View style={styles.monthDisplay}>
+            <Text style={styles.monthText}>{currentMonth.format('MMMM YYYY')}</Text>
+          </View>
+          <TouchableOpacity onPress={handlePrevMonth} style={styles.monthNavBtn}>
+            <MaterialIcons name="chevron-left" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
 
@@ -181,32 +182,32 @@ export default function ClientAnalyticsDashboard() {
             <View style={styles.metricsGrid}>
               <MetricCard
                 icon="school"
-                label="Total Lessons"
+                label="סה״כ שיעורים"
                 value={analyticsData.totalLessons.toString()}
                 bgGradient={['#1565c0', '#1e88e5']}
                 iconColor="#42a5f5"
               />
               <MetricCard
                 icon="sports"
-                label="Favorite Hobby"
-                value={analyticsData.mostPopularType || 'N/A'}
-                subtext={analyticsData.lessonsByType.length > 0 ? `${analyticsData.lessonsByType[0].count} lessons` : 'No data'}
+                label="תחביב מועדף"
+                value={analyticsData.mostPopularType ? getLessonTypeDisplayName(analyticsData.mostPopularType) : 'אין'}
+                subtext={analyticsData.lessonsByType.length > 0 ? `${analyticsData.lessonsByType[0].count} שיעורים` : 'אין נתונים'}
                 bgGradient={['#0d47a1', '#1565c0']}
                 iconColor="#64b5f6"
               />
               <MetricCard
                 icon="person"
-                label="Top Coach"
-                value={analyticsData.mostActiveCoach ? getCoachDisplayName(analyticsData.mostActiveCoach.coachId) : 'N/A'}
-                subtext={analyticsData.mostActiveCoach ? `${analyticsData.mostActiveCoach.lessonCount} lessons • ${analyticsData.mostActiveCoach.percentage}%` : 'No data'}
+                label="מאמן מוביל"
+                value={analyticsData.mostActiveCoach ? getCoachDisplayName(analyticsData.mostActiveCoach.coachId) : 'אין'}
+                subtext={analyticsData.mostActiveCoach ? `${analyticsData.mostActiveCoach.lessonCount} שיעורים • ${analyticsData.mostActiveCoach.percentage}%` : 'אין נתונים'}
                 bgGradient={['#1565c0', '#42a5f5']}
                 iconColor="#4fc3f7"
               />
               <MetricCard
                 icon="schedule"
-                label="Favorite Time"
-                value={topHours.length > 0 ? formatHour(topHours[0].hour) : 'N/A'}
-                subtext={topHours.length > 0 ? `${topHours[0].lessonCount} lessons` : 'No data'}
+                label="שעה מועדפת"
+                value={topHours.length > 0 ? formatHour(topHours[0].hour) : 'אין'}
+                subtext={topHours.length > 0 ? `${topHours[0].lessonCount} שיעורים` : 'אין נתונים'}
                 bgGradient={['#0d47a1', '#42a5f5']}
                 iconColor="#81d4fa"
               />
@@ -216,22 +217,22 @@ export default function ClientAnalyticsDashboard() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="dumbbell" size={20} color="#ff6b6b" />
-                <Text style={styles.sectionTitle}>Your Interests</Text>
+                <Text style={styles.sectionTitle}>התחביבים שלך</Text>
               </View>
-              <Text style={styles.sectionSubtitle}>Breakdown of lessons by type</Text>
+              <Text style={styles.sectionSubtitle}>פילוח שיעורים לפי סוג</Text>
 
               {analyticsData.lessonsByType.length > 0 ? (
                 <View style={styles.typesContainer}>
                   {analyticsData.lessonsByType.map((type, index) => (
                     <View key={type.type} style={styles.typeCard}>
                       <View style={styles.typeHeader}>
-                        <Text style={styles.typeLabel}>{type.type}</Text>
+                        <Text style={styles.typeLabel}>{getLessonTypeDisplayName(type.type)}</Text>
                         <View style={[styles.percentBadge, { backgroundColor: getTypeColor(index) }]}>
                           <Text style={styles.percentText}>{type.percentage}%</Text>
                         </View>
                       </View>
                       <View style={styles.typeStats}>
-                        <Text style={styles.typeStatText}>{type.count} lesson{type.count !== 1 ? 's' : ''}</Text>
+                        <Text style={styles.typeStatText}>{type.count} {type.count !== 1 ? 'שיעורים' : 'שיעור'}</Text>
                       </View>
                       <View style={styles.progressBar}>
                         <View
@@ -250,7 +251,7 @@ export default function ClientAnalyticsDashboard() {
               ) : (
                 <View style={styles.emptyPlaceholder}>
                   <MaterialCommunityIcons name="dumbbell" size={40} color="#cbd5e1" />
-                  <Text style={styles.emptyText}>No lessons yet</Text>
+                  <Text style={styles.emptyText}>עדיין אין שיעורים</Text>
                 </View>
               )}
             </View>
@@ -259,9 +260,9 @@ export default function ClientAnalyticsDashboard() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="fire" size={20} color="#ff6b6b" />
-                <Text style={styles.sectionTitle}>Your Peak Hours</Text>
+                <Text style={styles.sectionTitle}>שעות השיא שלך</Text>
               </View>
-              <Text style={styles.sectionSubtitle}>When you typically take lessons</Text>
+              <Text style={styles.sectionSubtitle}>מתי אתה בדרך כלל לוקח שיעורים</Text>
 
               {topHours.length > 0 ? (
                 <View style={styles.hoursContainer}>
@@ -275,7 +276,7 @@ export default function ClientAnalyticsDashboard() {
                       </View>
                       <View style={styles.hourStats}>
                         <MaterialIcons name="schedule" size={16} color="#64b5f6" />
-                        <Text style={styles.hourStatText}>{hour.lessonCount} lesson{hour.lessonCount !== 1 ? 's' : ''}</Text>
+                        <Text style={styles.hourStatText}>{hour.lessonCount} {hour.lessonCount !== 1 ? 'שיעורים' : 'שיעור'}</Text>
                       </View>
                       <View style={styles.progressBar}>
                         <View
@@ -294,7 +295,7 @@ export default function ClientAnalyticsDashboard() {
               ) : (
                 <View style={styles.emptyPlaceholder}>
                   <MaterialCommunityIcons name="clock-outline" size={40} color="#cbd5e1" />
-                  <Text style={styles.emptyText}>No lessons scheduled yet</Text>
+                  <Text style={styles.emptyText}>עדיין אין שיעורים מתוכננים</Text>
                 </View>
               )}
             </View>
@@ -303,9 +304,9 @@ export default function ClientAnalyticsDashboard() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="human-greeting" size={20} color="#64b5f6" />
-                <Text style={styles.sectionTitle}>Your Coaches</Text>
+                <Text style={styles.sectionTitle}>המאמנים שלך</Text>
               </View>
-              <Text style={styles.sectionSubtitle}>Most lessons from these coaches</Text>
+              <Text style={styles.sectionSubtitle}>הכי הרבה שיעורים מהמאמנים האלה</Text>
 
               {analyticsData.topCoaches.length > 0 ? (
                 <View style={styles.coachesContainer}>
@@ -326,12 +327,12 @@ export default function ClientAnalyticsDashboard() {
                         </View>
                         <View style={styles.coachInfo}>
                           <Text style={styles.coachName}>{getCoachDisplayName(coach.coachId)}</Text>
-                          <Text style={styles.coachPercentage}>{coach.percentage}% of lessons</Text>
+                          <Text style={styles.coachPercentage}>{coach.percentage}% מהשיעורים</Text>
                         </View>
                       </View>
                       <View style={styles.coachStats}>
                         <MaterialIcons name="school" size={16} color="#42a5f5" />
-                        <Text style={styles.coachStatText}>{coach.lessonCount} lesson{coach.lessonCount !== 1 ? 's' : ''}</Text>
+                        <Text style={styles.coachStatText}>{coach.lessonCount} {coach.lessonCount !== 1 ? 'שיעורים' : 'שיעור'}</Text>
                       </View>
                     </View>
                   ))}
@@ -339,7 +340,7 @@ export default function ClientAnalyticsDashboard() {
               ) : (
                 <View style={styles.emptyPlaceholder}>
                   <MaterialCommunityIcons name="human-greeting" size={40} color="#cbd5e1" />
-                  <Text style={styles.emptyText}>No coaches booked</Text>
+                  <Text style={styles.emptyText}>עדיין אין מאמנים</Text>
                 </View>
               )}
             </View>
@@ -348,9 +349,9 @@ export default function ClientAnalyticsDashboard() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="chart-pie" size={20} color="#9c27b0" />
-                <Text style={styles.sectionTitle}>Lessons by Coach</Text>
+                <Text style={styles.sectionTitle}>שיעורים לפי מאמן</Text>
               </View>
-              <Text style={styles.sectionSubtitle}>Breakdown of lesson types per coach</Text>
+              <Text style={styles.sectionSubtitle}>פילוח סוגי שיעורים לפי מאמן</Text>
 
               {analyticsData.coachDetails.length > 0 ? (
                 <View style={styles.coachDetailsContainer}>
@@ -368,7 +369,7 @@ export default function ClientAnalyticsDashboard() {
                             )}
                             <Text style={styles.coachDetailName}>{getCoachDisplayName(coach.coachId)}</Text>
                           </View>
-                          <Text style={styles.coachDetailTotal}>{coach.totalLessons} lesson{coach.totalLessons !== 1 ? 's' : ''}</Text>
+                          <Text style={styles.coachDetailTotal}>{coach.totalLessons} {coach.totalLessons !== 1 ? 'שיעורים' : 'שיעור'}</Text>
                         </View>
                       </View>
 
@@ -376,7 +377,7 @@ export default function ClientAnalyticsDashboard() {
                         {coach.lessonsByType.map((type, idx) => (
                           <View key={type.type} style={styles.coachTypeItem}>
                             <View style={styles.typeItemHeader}>
-                              <Text style={styles.typeItemLabel}>{type.type}</Text>
+                              <Text style={styles.typeItemLabel}>{getLessonTypeDisplayName(type.type)}</Text>
                               <View style={[styles.typeItemBadge, { backgroundColor: getTypeColor(idx) }]}>
                                 <Text style={styles.typeItemCount}>{type.count}</Text>
                               </View>
@@ -404,7 +405,7 @@ export default function ClientAnalyticsDashboard() {
               ) : (
                 <View style={styles.emptyPlaceholder}>
                   <MaterialCommunityIcons name="chart-pie" size={40} color="#cbd5e1" />
-                  <Text style={styles.emptyText}>No coaches yet</Text>
+                  <Text style={styles.emptyText}>עדיין אין מאמנים</Text>
                 </View>
               )}
             </View>
@@ -412,7 +413,7 @@ export default function ClientAnalyticsDashboard() {
         ) : (
           <View style={styles.emptyState}>
             <MaterialIcons name="info" size={48} color="#ffffff88" />
-            <Text style={styles.emptyStateText}>No lessons taken this month</Text>
+            <Text style={styles.emptyStateText}>אין שיעורים בחודש זה</Text>
           </View>
         )}
 
@@ -448,6 +449,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
+    gap: 12,
   },
   headerIconBadge: {
     width: 48,
@@ -456,17 +458,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   headerTitle: {
+    flex: 1,
     fontSize: 28,
     fontWeight: '700',
     color: '#fff',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   headerSubtitle: {
+    width: '100%',
     fontSize: 14,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 8,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   monthNav: {
     flexDirection: 'row',
@@ -498,6 +505,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   metricsGrid: {
     paddingHorizontal: 16,
@@ -517,6 +526,7 @@ const styles = StyleSheet.create({
   metricCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 16,
   },
   metricIconBox: {
     width: 56,
@@ -524,7 +534,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
   },
   metricTextBox: {
     flex: 1,
@@ -536,16 +545,22 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   metricValue: {
     fontSize: 24,
     fontWeight: '700',
     color: '#fff',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   metricSubtext: {
     fontSize: 11,
     color: 'rgba(255,255,255,0.6)',
     marginTop: 2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   section: {
     marginHorizontal: 16,
@@ -563,17 +578,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+    gap: 8,
   },
   sectionTitle: {
+    flex: 1,
     fontSize: 16,
     fontWeight: '700',
     color: '#0d47a1',
-    marginLeft: 8,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   sectionSubtitle: {
+    width: '100%',
     fontSize: 13,
     color: '#7a8a99',
     marginBottom: 16,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   typesContainer: {
     gap: 12,
@@ -595,6 +616,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#0d47a1',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   percentBadge: {
     paddingHorizontal: 12,
@@ -613,6 +636,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#475569',
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   hoursContainer: {
     gap: 12,
@@ -634,6 +659,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#0d47a1',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   rankBadge: {
     paddingHorizontal: 10,
@@ -655,6 +682,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#475569',
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   coachesContainer: {
     gap: 12,
@@ -670,6 +699,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    gap: 10,
   },
   coachRank: {
     width: 36,
@@ -677,7 +707,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   coachRankText: {
     fontSize: 12,
@@ -685,7 +714,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   coachAvatarWrap: {
-    marginRight: 10,
+    marginStart: 0,
   },
   coachAvatar: {
     width: 40,
@@ -708,10 +737,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0d47a1',
     marginBottom: 2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   coachPercentage: {
     fontSize: 11,
     color: '#7a8a99',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   coachStats: {
     flexDirection: 'row',
@@ -722,6 +755,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#475569',
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   progressBar: {
     height: 6,
@@ -743,6 +778,8 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 12,
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   loadingContainer: {
     paddingVertical: 80,
@@ -759,6 +796,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     marginTop: 16,
     textAlign: 'center',
+    writingDirection: 'rtl',
   },
   coachDetailsContainer: {
     gap: 12,
@@ -780,12 +818,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 6,
+    gap: 10,
   },
   coachDetailAvatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    marginRight: 10,
   },
   coachDetailAvatarFallback: {
     width: 36,
@@ -794,18 +832,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#e2e8f0',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
   },
   coachDetailName: {
     fontSize: 14,
     fontWeight: '700',
     color: '#0d47a1',
     flex: 1,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   coachDetailTotal: {
     fontSize: 14,
     fontWeight: '700',
     color: '#1565c0',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   coachTypesList: {
     gap: 10,
@@ -827,6 +868,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#1e293b',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   typeItemBadge: {
     paddingHorizontal: 10,
@@ -859,6 +902,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#64748b',
     minWidth: 32,
-    textAlign: 'right',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
 });

@@ -64,7 +64,7 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
     const validation = validateClientProfile(formData);
     setErrors(validation.errors);
     if (!validation.valid) {
-      Alert.alert('Validation', firstError(validation.errors) || 'Please fix errors');
+      Alert.alert('שגיאה', firstError(validation.errors) || 'אנא תקן את השגיאות');
       return;
     }
     setLoading(true);
@@ -73,7 +73,7 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
       await createClientProfile(userInfo.id, formData);
       navigation.navigate('MainDrawer', { screen: 'Profile' });
     } catch (err) {
-      Alert.alert('Error', (err as Error).message || 'Failed to create profile');
+      Alert.alert('שגיאה', (err as Error).message || 'יצירת הפרופיל נכשלה');
     } finally {
       setLoading(false);
     }
@@ -86,15 +86,15 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
           <View style={styles.avatarWrapper}>
             <MaterialIcons name="emoji-people" size={40} color="#1976d2" />
           </View>
-          <Text style={styles.title}>Create Your Client Profile</Text>
+          <Text style={styles.title}>צור את פרופיל הלקוח שלך</Text>
           <Text style={styles.subtitle}>
-            Tell us about yourself and discover amazing coaches to help you achieve your goals
+            ספר לנו על עצמך וגלה מאמנים מדהימים שיעזרו לך להשיג את היעדים שלך
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Basic Info</Text>
-          <Text style={styles.label}>Profile Picture</Text>
+          <Text style={styles.sectionHeader}>מידע בסיסי</Text>
+          <Text style={styles.label}>תמונת פרופיל</Text>
           <ImagePickerComponent
             currentImageUrl={formData.genericProfile.profilePictureUrl}
             onImageChange={(imageUrl) =>
@@ -107,19 +107,19 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
           />
 
           <View style={styles.fieldGroupReadonly}>  
-            <Text style={styles.smallLabel}>Name</Text>
-            <View style={styles.readonlyPill}><Text style={styles.readonlyText}>{formData.genericProfile.name || 'Loading...'}</Text></View>
+            <Text style={styles.smallLabel}>שם</Text>
+            <View style={styles.readonlyPill}><Text style={styles.readonlyText}>{formData.genericProfile.name || 'טוען...'}</Text></View>
           </View>
 
           <View style={styles.fieldGroupReadonly}>  
-            <Text style={styles.smallLabel}>Email</Text>
-            <View style={styles.readonlyPill}><Text style={styles.readonlyText}>{formData.genericProfile.email || 'Loading...'}</Text></View>
+            <Text style={styles.smallLabel}>אימייל</Text>
+            <View style={styles.readonlyPill}><Text style={styles.readonlyText}>{formData.genericProfile.email || 'טוען...'}</Text></View>
           </View>
 
-          <Text style={styles.label}>Phone Number</Text>
+          <Text style={styles.label}>מספר טלפון</Text>
           <TextInput
             style={[styles.input, errors['genericProfile.phoneNumber'] && styles.inputError]}
-            placeholder="e.g. +1234567890"
+            placeholder="לדוגמה +1234567890"
             placeholderTextColor="#90a4ae"
             value={formData.genericProfile.phoneNumber || ''}
             onChangeText={(value) =>
@@ -131,12 +131,12 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
           />
           {errors['genericProfile.phoneNumber'] && <Text style={styles.errorText}>{errors['genericProfile.phoneNumber']}</Text>}
 
-          <Text style={styles.label}>About Me</Text>
+          <Text style={styles.label}>אודותיי</Text>
           <TextInput
             style={[styles.input, styles.textArea, errors['genericProfile.userDescription'] && styles.inputError]}
             multiline
             numberOfLines={4}
-            placeholder="Write a short introduction... (min 10 chars)"
+            placeholder="כתוב הצגה קצרה... (לפחות 10 תווים)"
             placeholderTextColor="#90a4ae"
             value={formData.genericProfile.userDescription}
             onChangeText={(value) =>
@@ -150,7 +150,7 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Location</Text>
+          <Text style={styles.sectionHeader}>מיקום</Text>
           <LocationField
             location={formData.genericProfile.location}
             onLocationSelect={(location) =>
@@ -164,7 +164,7 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Interests & Languages</Text>
+          <Text style={styles.sectionHeader}>תחביבים ושפות</Text>
           <HobbySelector
             selectedHobbies={formData.hobbies as SupportedHobby[]}
             onAdd={(hobby) =>
@@ -211,11 +211,11 @@ export default function CreateClientProfileScreen({ navigation }: { navigation: 
 
       <View style={styles.fabContainer}>
         <TouchableOpacity style={styles.primaryFab} disabled={loading} onPress={handleSubmit}>
-          <Text style={styles.fabText}>{loading ? 'Creating...' : 'Create Profile'}</Text>
+          <Text style={styles.fabText}>{loading ? 'יוצר...' : 'צור פרופיל'}</Text>
         </TouchableOpacity>
       </View>
 
-      <LoadingModal visible={loading} message="Creating your profile..." />
+      <LoadingModal visible={loading} message="יוצר את הפרופיל שלך..." />
     </LinearGradient>
   );
 }
@@ -241,12 +241,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
     marginTop: 16,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   subtitle: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.85)',
     marginTop: 8,
     lineHeight: 20,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   section: {
     backgroundColor: 'rgba(255,255,255,0.96)',
@@ -268,6 +272,8 @@ const styles = StyleSheet.create({
     letterSpacing:1,
     textTransform:'uppercase',
     marginBottom:10,
+    textAlign:'left',
+    writingDirection:'rtl',
   },
   label: {
     fontSize: 14,
@@ -275,6 +281,8 @@ const styles = StyleSheet.create({
     color: '#1976d2',
     marginBottom: 8,
     marginTop: 4,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   smallLabel:{
     fontSize:12,
@@ -283,6 +291,8 @@ const styles = StyleSheet.create({
     marginBottom:4,
     textTransform:'uppercase',
     letterSpacing:0.5,
+    textAlign:'left',
+    writingDirection:'rtl',
   },
   input: {
     backgroundColor: '#f1f5f9',
@@ -307,7 +317,9 @@ const styles = StyleSheet.create({
     marginTop: -8,
     marginBottom: 12,
     fontSize: 12,
-    fontWeight:'600'
+    fontWeight:'600',
+    textAlign:'left',
+    writingDirection:'rtl',
   },
   readonlyPill:{
     backgroundColor:'#e3f2fd',
@@ -319,7 +331,9 @@ const styles = StyleSheet.create({
   readonlyText:{
     color:'#0d47a1',
     fontSize:15,
-    fontWeight:'600'
+    fontWeight:'600',
+    textAlign:'left',
+    writingDirection:'rtl',
   },
   fieldGroupReadonly:{
     marginBottom:4,
@@ -336,7 +350,8 @@ const styles = StyleSheet.create({
   fabText:{
     color:'#1976d2',
     fontSize:16,
-    fontWeight:'700'
+    fontWeight:'700',
+    writingDirection:'rtl',
   },
   fabContainer:{
     position:'absolute',

@@ -17,7 +17,7 @@ const LanguageSelector: React.FC<Props> = ({ selectedLanguages, onAdd, onRemove,
       {!hideHeader && (
         <View style={styles.headerContainer}>
           <MaterialIcons name="translate" size={24} color="#1976d2" />
-          <Text style={styles.label}>Languages</Text>
+          <Text style={styles.label}>שפות</Text>
         </View>
       )}
       <View style={styles.chipContainer}>
@@ -67,9 +67,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#1976d2',
-    marginLeft: 8,
+    marginStart: 8,
     letterSpacing: 1,
     textTransform: 'uppercase',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   chipContainer: {
     flexDirection: 'row',
@@ -100,14 +102,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '600',
+    writingDirection: 'rtl',
   },
   chipTextUnselected: {
     color: '#334155',
     fontSize: 13,
     fontWeight: '600',
+    writingDirection: 'rtl',
   },
   closeIcon: {
-    marginLeft: 6,
+    marginStart: 6,
   },
 });
 

@@ -20,13 +20,13 @@ const CoachProfileModal: React.FC<CoachProfileModalProps> = ({ isOpen, onClose, 
           {coachInfo ? (
             <>
               <Text style={styles.title}>{coachInfo.name}</Text>
-              <Text style={styles.body}>Email: {coachInfo.email}</Text>
+              <Text style={styles.body}>אימייל: {coachInfo.email}</Text>
               <Pressable style={styles.button} onPress={onClose}>
-                <Text style={styles.buttonText}>Close</Text>
+                <Text style={styles.buttonText}>סגור</Text>
               </Pressable>
             </>
           ) : (
-            <Text>Loading coach info...</Text>
+            <Text>טוען פרטי מאמן...</Text>
           )}
         </View>
       </View>
@@ -57,13 +57,15 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   body: {
     fontSize: 16,
     color: '#555',
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   button: {
     backgroundColor: '#1976d2',
@@ -75,6 +77,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+    writingDirection: 'rtl',
   },
 });
 

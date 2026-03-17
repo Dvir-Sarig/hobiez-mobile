@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { he } from "date-fns/locale";
 import dayjs from 'dayjs';
 
 export const formatLessonTimeReadable = (time: string) => {
@@ -12,7 +13,7 @@ export const formatLessonTimeReadable = (time: string) => {
     
     // Create a new date with the exact time components
     const exactDate = new Date(year, month, day, hours, minutes);
-    return format(exactDate, "dd MMM yyyy, HH:mm");
+    return format(exactDate, "dd MMM yyyy, HH:mm", { locale: he });
 };
 
 export const formatPrice = (price: number) => {

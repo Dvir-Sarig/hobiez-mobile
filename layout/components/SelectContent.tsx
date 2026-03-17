@@ -16,7 +16,7 @@ export default function SelectContent({ userInfo }: SelectContentProps) {
                 <MaterialIcons name="person" size={24} color="#fff" />
             </View>
             <View style={styles.userDetails}>
-                <Text style={styles.name}>{userInfo?.name || 'User Name'}</Text>
+                <Text style={styles.name}>{userInfo?.name || 'שם משתמש'}</Text>
                 <Text style={styles.email}>{userInfo?.email || 'user@email.com'}</Text>
             </View>
             <OptionsMenu />

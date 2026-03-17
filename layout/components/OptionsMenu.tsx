@@ -47,11 +47,11 @@ export default function OptionsMenu({ onClose }: OptionsMenuProps) {
                 <TouchableOpacity style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
                     <View style={styles.modalContent}>
                         <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.menuItem}>
-                            <Text style={styles.menuText}>Settings</Text>
+                            <Text style={styles.menuText}>הגדרות</Text>
                         </TouchableOpacity>
                         <View style={styles.divider} />
                         <TouchableOpacity onPress={handleLogout} style={styles.menuItem}>
-                            <Text style={[styles.menuText, { color: 'red' }]}>Logout</Text>
+                            <Text style={[styles.menuText, { color: 'red' }]}>התנתקות</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>

@@ -1,8 +1,33 @@
 import dayjs from 'dayjs';
+import 'dayjs/locale/he';
 import { Lesson } from '../../../lesson/types/Lesson';
 import { CalendarEvent } from '../types/calendar.types';
 
+// Set Hebrew locale globally for dayjs
+dayjs.locale('he');
+
 const CAL_DEBUG = true;
+
+/** Hebrew day names (Sunday=0 … Saturday=6) */
+const HE_DAYS_FULL = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'] as const;
+const HE_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'] as const;
+
+/** Get full Hebrew day name for a dayjs date */
+export const hebrewDayName = (d: dayjs.Dayjs): string => HE_DAYS_FULL[d.day()];
+
+/** Format a date as "D בחודש YYYY" in Hebrew */
+export const hebrewDateLabel = (d: dayjs.Dayjs): string =>
+  `${d.date()} ${HE_MONTHS[d.month()]} ${d.year()}`;
+
+/** Build a Hebrew week-range string for header (e.g. "12 מרץ – 18 מרץ 2026") */
+export const hebrewWeekRange = (anchor: dayjs.Dayjs): string => {
+  const start = anchor.startOf('week'); // Sunday (weekStartsOn=0 with he locale)
+  const end = start.add(6, 'day');      // Saturday
+  if (start.month() === end.month()) {
+    return `${start.date()} – ${end.date()} ${HE_MONTHS[start.month()]} ${start.year()}`;
+  }
+  return `${start.date()} ${HE_MONTHS[start.month()]} – ${end.date()} ${HE_MONTHS[end.month()]} ${end.year()}`;
+};
 
 // Parse a naive local datetime string (YYYY-MM-DDTHH:mm[:ss]) without applying timezone shifts.
 const parseNaiveLocal = (raw: string): Date => {

@@ -3,7 +3,7 @@ import SecureStorage from "./SecureStorage";
 
 export const deleteAccount = async (password: string): Promise<void> => {
     const token = await SecureStorage.getToken();
-    if (!token) throw new Error('No authentication token found');
+    if (!token) throw new Error('לא נמצא אסימון אימות');
 
     const body = { password };
 
@@ -19,15 +19,15 @@ export const deleteAccount = async (password: string): Promise<void> => {
         });
     } catch (e) {
         console.error('[deleteAccount] network error', e);
-        throw new Error('Network error');
+        throw new Error('שגיאת רשת');
     }
 
     const raw = await response.text();
 
     if (!response.ok) {
-        if (response.status === 400) throw new Error('Invalid password');
-        if (response.status === 401) throw new Error('Unauthorized');
-        if (response.status === 404) throw new Error('Account not found');
-        throw new Error(raw || 'Server error deleting account');
+        if (response.status === 400) throw new Error('סיסמה שגויה');
+        if (response.status === 401) throw new Error('אין הרשאה');
+        if (response.status === 404) throw new Error('החשבון לא נמצא');
+        throw new Error(raw || 'שגיאת שרת במחיקת החשבון');
     }
 };

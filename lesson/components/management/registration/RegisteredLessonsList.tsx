@@ -35,7 +35,7 @@ const RegisteredLessonsList: React.FC<RegisteredLessonsListProps> = ({
   const navigation = useNavigation<any>();
 
   const renderLesson = ({ item }: { item: Lesson }) => {
-    const coachName = coachInfoMap[item.coachId]?.name || 'Loading...';
+    const coachName = coachInfoMap[item.coachId]?.name || 'טוען...';
 
     return (
         <View style={styles.card}>
@@ -45,18 +45,18 @@ const RegisteredLessonsList: React.FC<RegisteredLessonsListProps> = ({
               <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.time}>{formatLessonTimeReadable(item.time)}</Text>
               <TouchableOpacity onPress={() => navigation.navigate('CoachProfile', { coachId: item.coachId })}>
-                <Text style={styles.coachLink}>Coach: {coachName}</Text>
+                <Text style={styles.coachLink}>מאמן: {coachName}</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity onPress={() => onOpenDeleteModal(item)} style={styles.unregisterBtn}>
-              <Text style={styles.unregisterText}>Unregister</Text>
+              <Text style={styles.unregisterText}>ביטול רישום</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.details}>
             <Text style={styles.description}>{item.description}</Text>
             <Text style={styles.secondary}>
-              Duration: {item.duration} min | Price: {formatPrice(item.price)} | Capacity: {item.capacityLimit} | Registered: {item.registeredCount}
+              משך: {item.duration} דק׳ | מחיר: {formatPrice(item.price)} | תפוסה: {item.capacityLimit} | רשומים: {item.registeredCount}
             </Text>
           </View>
         </View>
@@ -65,9 +65,9 @@ const RegisteredLessonsList: React.FC<RegisteredLessonsListProps> = ({
 
   return (
       <View style={{ padding: 16 }}>
-        <Text style={styles.header}>My Registered Lessons</Text>
+        <Text style={styles.header}>השיעורים שנרשמתי אליהם</Text>
         {registeredLessons.length === 0 ? (
-            <Text style={styles.emptyText}>You are not registered for any lessons.</Text>
+            <Text style={styles.emptyText}>אינך רשום לאף שיעור.</Text>
         ) : (
             <FlatList
                 data={registeredLessons}
@@ -85,6 +85,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1565c0',
     marginBottom: 12,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   card: {
     backgroundColor: '#fff',
@@ -99,7 +101,7 @@ const styles = StyleSheet.create({
   },
   avatar: {
     backgroundColor: '#1565c0',
-    marginRight: 12,
+    marginEnd: 12,
   },
   lessonInfo: {
     flex: 1,
@@ -107,17 +109,23 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: '600',
     fontSize: 16,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   time: {
     fontSize: 13,
     color: '#666',
     marginTop: 2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   coachLink: {
     fontSize: 13,
     color: '#1565c0',
     marginTop: 2,
     textDecorationLine: 'underline',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   unregisterBtn: {
     paddingVertical: 6,
@@ -132,16 +140,20 @@ const styles = StyleSheet.create({
   },
   details: {
     marginTop: 12,
-    paddingLeft: 52,
+    paddingStart: 52,
   },
   description: {
     fontSize: 13,
     color: '#444',
     marginBottom: 4,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   secondary: {
     fontSize: 12,
     color: '#666',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   emptyText: {
     fontSize: 14,

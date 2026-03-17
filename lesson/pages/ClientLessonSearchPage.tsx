@@ -116,7 +116,7 @@ export default function ClientDashboardScreen() {
       setIsPaymentModalOpen(false);
       setPaymentModalLesson(null);
     } catch (error) {
-      Alert.alert('Payment Error', (error as Error).message);
+      Alert.alert('שגיאת תשלום', (error as Error).message);
     }
   };
 
@@ -175,15 +175,15 @@ export default function ClientDashboardScreen() {
       const errorMessage = (error as Error).message;
       if (errorMessage.includes("already registered")) {
         Alert.alert(
-          "Time Slot Unavailable",
-          "You already have a lesson scheduled at this time. Please choose a different time slot.",
-          [{ text: "OK", style: "default" }]
+          "מועד לא זמין",
+          "כבר יש לך שיעור במועד הזה. נא לבחור מועד אחר.",
+          [{ text: "אישור", style: "default" }]
         );
       } else {
         Alert.alert(
-          "Registration Failed",
-          "We couldn't register you for this lesson. Please try again later.",
-          [{ text: "OK", style: "default" }]
+          "ההרשמה נכשלה",
+          "לא הצלחנו לרשום אותך לשיעור. נסה שוב מאוחר יותר.",
+          [{ text: "אישור", style: "default" }]
         );
       }
     }
@@ -201,7 +201,7 @@ export default function ClientDashboardScreen() {
       // Refresh all lesson data
       await refreshAllLessonData();
     } catch (error) {
-      Alert.alert('Error', (error as Error).message);
+      Alert.alert('שגיאה', (error as Error).message);
     }
   };
 
@@ -235,20 +235,29 @@ export default function ClientDashboardScreen() {
     }
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (queryOverride?: {
+    maxPrice: string;
+    lessonType: string;
+    maxParticipants: string;
+    coachName: string;
+    location: Location | null;
+    radiusKm?: number | null;
+    day?: Date | null;
+  }) => {
     try {
       setIsLoadingLessons(true);
+      const effectiveQuery = queryOverride ?? searchQuery;
       const searchRequest = {
-        maxPrice: searchQuery.maxPrice ? parseFloat(searchQuery.maxPrice) : null,
-        lessonType: searchQuery.lessonType || null,
-        maxParticipants: searchQuery.maxParticipants ? parseInt(searchQuery.maxParticipants, 10) : null,
-        coachName: searchQuery.coachName || null,
-        location: searchQuery.location?.latitude && searchQuery.location?.longitude ? {
-          latitude: searchQuery.location.latitude,
-          longitude: searchQuery.location.longitude,
-          radiusKm: searchQuery.radiusKm
+        maxPrice: effectiveQuery.maxPrice ? parseFloat(effectiveQuery.maxPrice) : null,
+        lessonType: effectiveQuery.lessonType || null,
+        maxParticipants: effectiveQuery.maxParticipants ? parseInt(effectiveQuery.maxParticipants, 10) : null,
+        coachName: effectiveQuery.coachName || null,
+        location: effectiveQuery.location?.latitude && effectiveQuery.location?.longitude ? {
+          latitude: effectiveQuery.location.latitude,
+          longitude: effectiveQuery.location.longitude,
+          radiusKm: effectiveQuery.radiusKm
         } : null,
-        day: searchQuery.day ? searchQuery.day.toISOString().split('T')[0] : null
+        day: effectiveQuery.day ? effectiveQuery.day.toISOString().split('T')[0] : null
       };
 
       // First try to search in cache
@@ -294,7 +303,7 @@ export default function ClientDashboardScreen() {
               lesson.location.latitude,
               lesson.location.longitude
             );
-            if (distance > searchRequest.location.radiusKm) {
+            if (typeof searchRequest.location.radiusKm === 'number' && distance > searchRequest.location.radiusKm) {
               return false;
             }
           }
@@ -429,7 +438,7 @@ export default function ClientDashboardScreen() {
             style={({ pressed }) => [styles.simpleActionBtnWide, pressed && { opacity:0.75 }]}
           >
             <MaterialIcons name="calendar-month" size={16} color="#ffffff" />
-            <Text style={styles.simpleActionBtnText}>Calendar</Text>
+            <Text style={styles.simpleActionBtnText}>לוח שנה</Text>
           </Pressable>
         )}
       </View>
@@ -578,13 +587,13 @@ export default function ClientDashboardScreen() {
         style={[styles.tabButton, activeTab==='available' && styles.tabButtonActive]}
         onPress={()=>setActiveTab('available')}
       >
-        <Text style={[styles.tabButtonText, activeTab==='available' && styles.tabButtonTextActive]}>Available ({availableCount})</Text>
+        <Text style={[styles.tabButtonText, activeTab==='available' && styles.tabButtonTextActive]}>זמינים ({availableCount})</Text>
       </Pressable>
       <Pressable
         style={[styles.tabButton, activeTab==='registered' && styles.tabButtonActive]}
         onPress={()=>setActiveTab('registered')}
       >
-        <Text style={[styles.tabButtonText, activeTab==='registered' && styles.tabButtonTextActive]}>Registered ({registeredCount})</Text>
+        <Text style={[styles.tabButtonText, activeTab==='registered' && styles.tabButtonTextActive]}>רשומים ({registeredCount})</Text>
       </Pressable>
     </View>
   );
@@ -610,9 +619,9 @@ export default function ClientDashboardScreen() {
         <View style={styles.heroHeader}> 
           <View style={styles.heroTitleRow}> 
             <MaterialIcons name="search" size={26} color="#ffffff" style={styles.heroTitleIcon} />
-            <Text style={styles.heroTitle}>Find Your Next Lesson</Text>
+            <Text style={styles.heroTitle}>מצא את השיעור הבא</Text>
           </View>
-          <Text style={styles.heroSubtitle}>Browse, register and manage your schedule</Text>
+          <Text style={styles.heroSubtitle}>חפש, הירשם ונהל את לוח הזמנים שלך</Text>
         </View>
 
         {/* Filter Card */}
@@ -738,8 +747,8 @@ const styles = StyleSheet.create({
   heroHeader:{ paddingTop:Platform.OS==='ios'? 40:28, paddingHorizontal:18, paddingBottom:16 },
   heroTitleRow:{ flexDirection:'row', alignItems:'center', gap:10 },
   heroTitleIcon:{ opacity:0.95 },
-  heroTitle:{ fontSize:26, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
-  heroSubtitle:{ marginTop:6, fontSize:13, fontWeight:'600', color:'rgba(255,255,255,0.85)' },
+  heroTitle:{ fontSize:26, fontWeight:'800', color:'#ffffff', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
+  heroSubtitle:{ marginTop:6, fontSize:13, fontWeight:'600', color:'rgba(255,255,255,0.85)', textAlign:'left', writingDirection:'rtl' },
   filterCard:{ marginHorizontal:16, padding:0, backgroundColor:'transparent', borderWidth:0, borderColor:'transparent', shadowColor:'transparent' },
   sectionWrapper:{ marginTop:8 },
   // Removed sectionBodyCard visual container to allow cards to expand
@@ -747,12 +756,12 @@ const styles = StyleSheet.create({
   // Tweak existing header cards inside SectionHeader via overrides
   sectionHeaderCard:{ backgroundColor:'rgba(255,255,255,0.14)', borderWidth:1, borderColor:'rgba(255,255,255,0.30)', marginHorizontal:16, paddingVertical:12, paddingHorizontal:18, borderRadius:26, shadowColor:'#000', shadowOpacity:0.16, shadowRadius:10, shadowOffset:{width:0,height:4} },
   registeredHeaderCard:{ backgroundColor:'rgba(255,255,255,0.18)' },
-  sectionHeaderText:{ fontSize:16, fontWeight:'800', color:'#ffffff', flexShrink:1 },
+  sectionHeaderText:{ fontSize:16, fontWeight:'800', color:'#ffffff', flexShrink:1, textAlign:'left', writingDirection:'rtl' },
   registeredHeaderText:{ color:'#e8f5e9' },
   calendarButton:{ backgroundColor:'rgba(255,255,255,0.25)', paddingHorizontal:14, paddingVertical:8, borderRadius:16, borderWidth:1, borderColor:'rgba(255,255,255,0.45)' },
   calendarButtonPressed:{ backgroundColor:'rgba(255,255,255,0.35)' },
   calendarButtonContent:{ flexDirection:'row', alignItems:'center', gap:6 },
-  calendarButtonText:{ color:'#ffffff', fontSize:12, fontWeight:'700' },
+  calendarButtonText:{ color:'#ffffff', fontSize:12, fontWeight:'700', writingDirection:'rtl' },
   refreshButton:{ padding:6 },
   refreshIcon:{ fontSize:18, color:'#ffffff' },
   // Newly added: missing headerContent style used in SectionHeader
@@ -761,7 +770,7 @@ const styles = StyleSheet.create({
   tabSwitcherContainer:{ marginTop:26, flexDirection:'row', marginHorizontal:16, backgroundColor:'rgba(255,255,255,0.12)', padding:6, borderRadius:24, borderWidth:1, borderColor:'rgba(255,255,255,0.28)', gap:6, marginBottom:4 },
   tabButton:{ flex:1, paddingVertical:10, borderRadius:16, alignItems:'center', justifyContent:'center' },
   tabButtonActive:{ backgroundColor:'rgba(255,255,255,0.85)', shadowColor:'#000', shadowOpacity:0.15, shadowRadius:6, shadowOffset:{width:0,height:3} },
-  tabButtonText:{ color:'#e3f2fd', fontWeight:'700', fontSize:13, letterSpacing:0.3 },
+  tabButtonText:{ color:'#e3f2fd', fontWeight:'700', fontSize:13, letterSpacing:0.3, writingDirection:'rtl' },
   tabButtonTextActive:{ color:'#0d47a1' },
   // Newly added decorative bubbles styles
   decorBubbleOne:{ position:'absolute', top:-70, left:-50, width:180, height:180, borderRadius:90, backgroundColor:'rgba(255,255,255,0.08)' },
@@ -776,14 +785,14 @@ const styles = StyleSheet.create({
   sectionIconWrapRegistered:{ backgroundColor:'rgba(255,255,255,0.22)' },
   sectionIconText:{ fontSize:22 },
   sectionHeaderTitleCol:{ flex:1 },
-  sectionHeaderTitle:{ fontSize:16, fontWeight:'800', color:'#ffffff', letterSpacing:0.3 },
-  sectionHeaderSubtitle:{ marginTop:2, fontSize:11, fontWeight:'600', color:'rgba(255,255,255,0.80)', letterSpacing:0.4 },
+  sectionHeaderTitle:{ fontSize:16, fontWeight:'800', color:'#ffffff', letterSpacing:0.3, textAlign:'left', writingDirection:'rtl' },
+  sectionHeaderSubtitle:{ marginTop:2, fontSize:11, fontWeight:'600', color:'rgba(255,255,255,0.80)', letterSpacing:0.4, textAlign:'left', writingDirection:'rtl' },
   sectionCountPill:{ backgroundColor:'rgba(255,255,255,0.20)', paddingHorizontal:10, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor:'rgba(255,255,255,0.35)' },
-  sectionCountText:{ color:'#ffffff', fontSize:13, fontWeight:'800' },
+  sectionCountText:{ color:'#ffffff', fontSize:13, fontWeight:'800', writingDirection:'rtl' },
   sectionHeaderActions:{ flexDirection:'row', alignItems:'center', gap:8 },
   sectionActionBtn:{ backgroundColor:'rgba(255,255,255,0.20)', borderRadius:14, padding:8, borderWidth:1, borderColor:'rgba(255,255,255,0.35)' },
   sectionActionBtnWide:{ flexDirection:'row', alignItems:'center', gap:4, paddingHorizontal:12, height:38, borderRadius:12, backgroundColor:'rgba(255,255,255,0.22)', borderWidth:1, borderColor:'rgba(255,255,255,0.40)' },
-  sectionActionBtnText:{ color:'#ffffff', fontSize:11, fontWeight:'700', letterSpacing:0.5 },
+  sectionActionBtnText:{ color:'#ffffff', fontSize:11, fontWeight:'700', letterSpacing:0.5, writingDirection:'rtl' },
   // --- Simplified Section Header (new styles) ---
   simpleSectionHeader:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginHorizontal:16, marginTop:8, paddingVertical:12, paddingHorizontal:20, borderRadius:26, backgroundColor:'rgba(255,255,255,0.22)', borderWidth:1, borderColor:'rgba(255,255,255,0.45)', shadowColor:'#0d47a1', shadowOpacity:0.22, shadowRadius:12, shadowOffset:{width:0,height:6} },
   simpleHeaderLeft:{ flexDirection:'row', alignItems:'center', flex:1, gap:12 },
@@ -791,14 +800,14 @@ const styles = StyleSheet.create({
   simpleHeaderIconCircleRegistered:{ backgroundColor:'rgba(255,255,255,0.34)', borderColor:'rgba(255,255,255,0.65)' },
   simpleHeaderIconText:{ fontSize:22 },
   simpleHeaderTitleCol:{ flex:1 },
-  simpleHeaderTitle:{ fontSize:17, fontWeight:'800', color:'#ffffff', letterSpacing:0.4 },
-  simpleHeaderSubtitle:{ marginTop:2, fontSize:11, fontWeight:'600', color:'rgba(255,255,255,0.85)', letterSpacing:0.5 },
+  simpleHeaderTitle:{ fontSize:17, fontWeight:'800', color:'#ffffff', letterSpacing:0.4, textAlign:'left', writingDirection:'rtl' },
+  simpleHeaderSubtitle:{ marginTop:2, fontSize:11, fontWeight:'600', color:'rgba(255,255,255,0.85)', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
   simpleCountPill:{ backgroundColor:'rgba(255,255,255,0.20)', paddingHorizontal:10, paddingVertical:6, borderRadius:14, borderWidth:1, borderColor:'rgba(255,255,255,0.32)' },
-  simpleCountPillText:{ color:'#ffffff', fontSize:12, fontWeight:'700' },
+  simpleCountPillText:{ color:'#ffffff', fontSize:12, fontWeight:'700', writingDirection:'rtl' },
   simpleActionRow:{ flexDirection:'row', alignItems:'center', gap:8 },
   simpleActionBtn:{ width:38, height:38, borderRadius:12, alignItems:'center', justifyContent:'center', backgroundColor:'rgba(255,255,255,0.18)', borderWidth:1, borderColor:'rgba(255,255,255,0.30)' },
   simpleActionBtnWide:{ flexDirection:'row', alignItems:'center', gap:4, paddingHorizontal:12, height:38, borderRadius:12, backgroundColor:'rgba(255,255,255,0.22)', borderWidth:1, borderColor:'rgba(255,255,255,0.40)' },
-  simpleActionBtnText:{ color:'#ffffff', fontSize:11, fontWeight:'700', letterSpacing:0.5 },
+  simpleActionBtnText:{ color:'#ffffff', fontSize:11, fontWeight:'700', letterSpacing:0.5, writingDirection:'rtl' },
   // Preserve original style keys referenced elsewhere
   container:{ backgroundColor:'#eef3f8' }, header:{}, searchBox:{}, input:{}, button:{}, buttonText:{}, sectionTitle:{}, emptyText:{}, headerRow:{}, headerActions:{ flexDirection:'row', alignItems:'center', gap:8 }, calendarIcon:{ fontSize:20 },
 });

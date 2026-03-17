@@ -7,7 +7,7 @@ import {
   Modal,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { lessonTypes, LessonType } from '../../lesson/types/LessonType';
+import { lessonTypes, LessonType, getLessonTypeDisplayName } from '../../lesson/types/LessonType';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface Props {
@@ -35,12 +35,12 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLab
 
   return (
     <View style={styles.container}>
-      {!hideLabel && <Text style={styles.label}>Skills</Text>}
+      {!hideLabel && <Text style={styles.label}>כישורים</Text>}
       {/* Selected chips */}
       <View style={styles.chipsContainer}>
         {selectedSkills.map((skill, index) => (
           <View key={index} style={styles.skillPill}>
-            <Text style={styles.skillPillText}>{`${skill}`}</Text>
+            <Text style={styles.skillPillText}>{getLessonTypeDisplayName(skill)}</Text>
             <TouchableOpacity onPress={() => onRemove(skill)} style={styles.removePillBtn}>
               <MaterialIcons name="close" size={14} color="#fff" />
             </TouchableOpacity>
@@ -54,7 +54,7 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLab
         onPress={() => setModalVisible(true)}
       >
         <MaterialIcons name="add-circle-outline" size={18} color="#fff" style={{marginRight:6}} />
-        <Text style={styles.addButtonText}>Add Skill</Text>
+        <Text style={styles.addButtonText}>הוסף כישור</Text>
       </TouchableOpacity>
 
       {/* Modal with pickers */}
@@ -66,17 +66,17 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLab
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Add Skill</Text>
+            <Text style={styles.modalTitle}>הוסף כישור</Text>
 
-            <Text style={styles.modalLabel}>Type</Text>
+            <Text style={styles.modalLabel}>סוג</Text>
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={selectedSport}
                 onValueChange={(itemValue) => setSelectedSport(itemValue)}
               >
-                <Picker.Item label="Select a sport..." value={null} />
+                <Picker.Item label="בחר ספורט..." value={null} />
                 {availableHobbies.map((hobby) => (
-                  <Picker.Item key={hobby} label={hobby} value={hobby} />
+                  <Picker.Item key={hobby} label={getLessonTypeDisplayName(hobby)} value={hobby} />
                 ))}
               </Picker>
             </View>
@@ -93,14 +93,14 @@ export default function SkillSelector({ selectedSkills, onAdd, onRemove, hideLab
                 onPress={handleAdd}
                 disabled={!selectedSport}
               >
-                <Text style={styles.confirmButtonText}>Add</Text>
+                <Text style={styles.confirmButtonText}>הוסף</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>ביטול</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -131,6 +131,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 1,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   chipsContainer: {
     flexDirection: 'row',
@@ -141,7 +143,7 @@ const styles = StyleSheet.create({
   chip: { // legacy unused kept
     backgroundColor: '#e3f2fd',
     borderRadius: 18,
-    marginRight: 4,
+    marginEnd: 4,
   },
   skillPill: {
     flexDirection: 'row',
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
-    marginRight: 4,
+    marginEnd: 4,
     marginBottom: 6,
   },
   skillPillText: {
@@ -162,9 +164,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.3,
+    writingDirection: 'rtl',
   },
   removePillBtn: {
-    marginLeft: 8,
+    marginStart: 8,
     width: 20,
     height: 20,
     borderRadius: 10,
@@ -190,6 +193,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
     letterSpacing: 0.5,
+    writingDirection: 'rtl',
   },
   modalOverlay: {
     flex: 1,
@@ -212,6 +216,8 @@ const styles = StyleSheet.create({
     color: '#0d47a1',
     marginBottom: 14,
     letterSpacing: 0.5,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   modalLabel: {
     fontWeight: '600',
@@ -221,6 +227,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   pickerWrapper: {
     borderWidth: 1.5,
@@ -241,7 +249,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     alignItems: 'center',
-    marginRight: 10,
+    marginEnd: 10,
     shadowColor: '#000',
     shadowOpacity: 0.18,
     shadowRadius: 6,
@@ -254,6 +262,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     letterSpacing: 0.5,
+    writingDirection: 'rtl',
   },
   cancelButton: {
     flex: 1,
@@ -261,7 +270,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     alignItems: 'center',
-    marginLeft: 10,
+    marginStart: 10,
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
   },
@@ -269,5 +278,6 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontWeight: '700',
     letterSpacing: 0.5,
+    writingDirection: 'rtl',
   },
 });

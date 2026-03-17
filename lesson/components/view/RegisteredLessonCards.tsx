@@ -14,7 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Lesson } from '../../types/Lesson';
 import { RegistrationWithPayment } from '../../types/Registration';
 import { formatLessonTimeReadable, formatPrice } from '../../../shared/services/formatService';
-import { getLessonIcon, getLessonBackground } from '../../types/LessonType';
+import { getLessonIcon, getLessonBackground, getLessonTypeDisplayName } from '../../types/LessonType';
 import { useNavigation } from '@react-navigation/native';
 import PaymentStatusBadge from '../payment/PaymentStatusBadge';
 
@@ -113,13 +113,13 @@ const RegisteredLessonCardItem: React.FC<{
             resizeMode="cover"
           >
             <View style={styles.titleBarContent}>
-              <Text numberOfLines={1} style={styles.titleBarTextBig}>{lesson.title}</Text>
+              <Text numberOfLines={1} style={styles.titleBarTextBig}>{getLessonTypeDisplayName(lesson.title)}</Text>
             </View>
           </ImageBackground>
         ) : (
           <View style={styles.titleBar}>
             <View style={styles.titleBarContent}>
-              <Text numberOfLines={1} style={styles.titleBarTextBig}>{lesson.title}</Text>
+              <Text numberOfLines={1} style={styles.titleBarTextBig}>{getLessonTypeDisplayName(lesson.title)}</Text>
             </View>
           </View>
         )}
@@ -140,7 +140,7 @@ const RegisteredLessonCardItem: React.FC<{
             <View style={styles.detailRowWrap}>
               <View style={styles.detailChip}>
                 <Icon name="timer" size={14} color="#64b5f6" style={styles.chipIcon} />
-                <Text style={styles.detailChipText}>{lesson.duration} min</Text>
+                <Text style={styles.detailChipText}>{lesson.duration} דק׳</Text>
               </View>
               <View style={styles.detailChip}>
                 <Text style={styles.detailChipText}>{formatPrice(lesson.price)}</Text>
@@ -165,7 +165,7 @@ const RegisteredLessonCardItem: React.FC<{
               >
                 <Icon name="payment" size={14} color="#ffffff" />
                 <Text style={styles.markPaidBtnText}>
-                  {registration.paymentStatus === 'REJECTED' ? 'Retry Payment' : 'Mark as Paid'}
+                  {registration.paymentStatus === 'REJECTED' ? 'נסה תשלום שוב' : 'סמן כשולם'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -206,8 +206,8 @@ const RegisteredLessonCards: React.FC<RegisteredLessonCardsProps> = ({
     return (
       <View style={styles.emptyContainer}>
         <Icon name="event-busy" size={48} color="#90caf9" />
-        <Text style={styles.emptyTitle}>No Registered Lessons</Text>
-        <Text style={styles.emptyText}>You haven't registered for any lessons yet.</Text>
+        <Text style={styles.emptyTitle}>אין שיעורים רשומים</Text>
+        <Text style={styles.emptyText}>עדיין לא נרשמת לשיעורים.</Text>
       </View>
     );
   }
@@ -280,6 +280,8 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.18)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   cardContentRow: {
     flexDirection: 'row',
@@ -305,6 +307,8 @@ const styles = StyleSheet.create({
     color: '#1976d2',
     fontWeight: '700',
     letterSpacing: 0.2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   lessonLocation: {
     fontSize: 16,
@@ -312,6 +316,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
     maxWidth: 120,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   lessonCoach: {
     fontSize: 16,
@@ -319,6 +325,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
     maxWidth: 120,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   capacityCol: {
     alignItems: 'flex-end',
@@ -336,7 +344,7 @@ const styles = StyleSheet.create({
     minWidth: 70,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginStart: 8,
     position: 'absolute',
     bottom: -40,
     right: 0,
@@ -345,10 +353,11 @@ const styles = StyleSheet.create({
   capacityText: {
     fontSize: 14,
     fontWeight: '700',
+    writingDirection: 'rtl',
   },
   unregisterIconBtn: {
     marginTop: 8,
-    marginLeft: 8,
+    marginStart: 8,
     width: 30,
     height: 30,
     borderRadius: 15,
@@ -364,7 +373,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
     marginBottom: 2,
     paddingHorizontal: 0,
-    marginLeft: -6,
+    marginStart: -6,
   },
   detailChip: {
     flexDirection: 'row',
@@ -376,12 +385,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.22)',
   },
-  chipIcon: { marginRight: 4 },
-  detailChipText: { fontSize: 16, fontWeight: '700', color: '#1976d2', letterSpacing: 0.2 },
+  chipIcon: { marginEnd: 4 },
+  detailChipText: { fontSize: 16, fontWeight: '700', color: '#1976d2', letterSpacing: 0.2, textAlign: 'left', writingDirection: 'rtl' },
   // metaRow and emptyContainer unchanged
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  metaCoach: { fontSize: 13.5, color: 'rgba(255,255,255,0.95)', fontWeight: '500', maxWidth: 150 },
-  metaLocation: { flex: 1, fontSize: 12.5, color: 'rgba(255,255,255,0.70)', textAlign: 'right' },
+  metaCoach: { fontSize: 13.5, color: 'rgba(255,255,255,0.95)', fontWeight: '500', maxWidth: 150, textAlign: 'left', writingDirection: 'rtl' },
+  metaLocation: { flex: 1, fontSize: 12.5, color: 'rgba(255,255,255,0.70)', textAlign: 'left', writingDirection: 'rtl' },
   emptyContainer: {
     padding: 32,
     alignItems: 'center',
@@ -391,8 +400,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginTop: 14, marginBottom: 6 },
-  emptyText: { fontSize: 14, color: 'rgba(255,255,255,0.75)', textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginTop: 14, marginBottom: 6, textAlign: 'left', writingDirection: 'rtl' },
+  emptyText: { fontSize: 14, color: 'rgba(255,255,255,0.75)', textAlign: 'center', lineHeight: 20, writingDirection: 'rtl' },
   // Skeleton pieces
   skelAvatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.15)' },
   skelTitle: { height: 14, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 6, marginBottom: 6, width: '70%' },
@@ -430,6 +439,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.3,
+    writingDirection: 'rtl',
   },
 });
 

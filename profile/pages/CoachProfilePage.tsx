@@ -77,7 +77,7 @@ export default function CoachProfilePage() {
       try {
         setIsLoading(true);
         setError(null);
-        if (!coachId) throw new Error('No coach ID provided');
+        if (!coachId) throw new Error('לא סופק מזהה מאמן');
         const profile = await fetchPublicCoachProfile(coachId);
         const invalid = !profile || (profile && Object.keys(profile).length === 0); // removed id requirement
         if (invalid) {
@@ -95,7 +95,7 @@ export default function CoachProfilePage() {
           setShowNoProfileModal(true);
           setError(null);
         } else {
-          setError(error.message || 'An error occurred while fetching profile data');
+          setError(error.message || 'אירעה שגיאה בעת טעינת נתוני הפרופיל');
         }
       } finally {
         setIsLoading(false);
@@ -119,7 +119,7 @@ export default function CoachProfilePage() {
   useEffect(() => {
     navigation.setOptions({
       headerShown: true,
-      headerTitle: 'Coach Profile',
+      headerTitle: 'פרופיל מאמן',
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
@@ -166,7 +166,7 @@ export default function CoachProfilePage() {
           accessibilityLabel="Return to previous list"
           activeOpacity={0.7}
         >
-          <MaterialIcons name="arrow-back" size={26} color="#1976d2" />
+          <MaterialIcons name="arrow-forward" size={26} color="#1976d2" />
         </TouchableOpacity>
       )}
       {fromRegistrationModal && lessonId && (
@@ -178,7 +178,7 @@ export default function CoachProfilePage() {
           accessibilityLabel="Return to lesson registration"
           activeOpacity={0.7}
         >
-          <MaterialIcons name="arrow-back" size={26} color="#1976d2" />
+          <MaterialIcons name="arrow-forward" size={26} color="#1976d2" />
         </TouchableOpacity>
       )}
       {fromUnregisterModal && lessonId && (
@@ -190,7 +190,7 @@ export default function CoachProfilePage() {
           accessibilityLabel="Return to unregister lesson"
           activeOpacity={0.7}
         >
-          <MaterialIcons name="arrow-back" size={26} color="#1976d2" />
+          <MaterialIcons name="arrow-forward" size={26} color="#1976d2" />
         </TouchableOpacity>
       )}
       {profileData ? (
@@ -225,6 +225,8 @@ const styles = StyleSheet.create({
     color: '#d32f2f',
     fontSize: 16,
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   headerButton: {
     flexDirection: 'row',
@@ -234,7 +236,8 @@ const styles = StyleSheet.create({
   headerButtonText: {
     color: '#fff',
     fontSize: 16,
-    marginLeft: 4,
+    marginStart: 4,
+    writingDirection: 'rtl',
   },
   returnIconButton: {
     position: 'absolute',

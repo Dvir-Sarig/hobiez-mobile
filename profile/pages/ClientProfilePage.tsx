@@ -62,7 +62,7 @@ export default function ClientProfilePage() {
       try {
         setIsLoading(true);
         setError(null);
-        if (!clientId) throw new Error('No client ID provided');
+        if (!clientId) throw new Error('לא סופק מזהה לקוח');
         const profile = await fetchPublicClientProfile(clientId);
         const invalid = !profile || (profile && Object.keys(profile).length === 0); // removed id property requirement
         if (invalid) {
@@ -79,7 +79,7 @@ export default function ClientProfilePage() {
             setShowNoProfileModal(true);
             setError(null);
         } else {
-          setError(error.message || 'An error occurred while fetching profile data');
+          setError(error.message || 'אירעה שגיאה בעת טעינת נתוני הפרופיל');
         }
       } finally {
         setIsLoading(false);
@@ -101,7 +101,7 @@ export default function ClientProfilePage() {
   useEffect(() => {
     navigation.setOptions({
       headerShown: true,
-      headerTitle: 'Client Profile',
+      headerTitle: 'פרופיל לקוח',
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
@@ -148,7 +148,7 @@ export default function ClientProfilePage() {
           accessibilityLabel="Return to registered clients"
           activeOpacity={0.7}
         >
-          <MaterialIcons name="arrow-back" size={26} color="#1976d2" />
+          <MaterialIcons name="arrow-forward" size={26} color="#1976d2" />
         </TouchableOpacity>
       )}
       {profileData ? (
@@ -182,6 +182,8 @@ const styles = StyleSheet.create({
     color: '#d32f2f',
     fontSize: 16,
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   headerButton: {
     flexDirection: 'row',
@@ -191,7 +193,8 @@ const styles = StyleSheet.create({
   headerButtonText: {
     color: '#fff',
     fontSize: 16,
-    marginLeft: 4,
+    marginStart: 4,
+    writingDirection: 'rtl',
   },
   returnIconButton: {
     position: 'absolute',

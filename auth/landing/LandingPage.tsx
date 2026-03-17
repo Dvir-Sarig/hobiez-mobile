@@ -88,20 +88,20 @@ export default function LandingPage() {
                     style={styles.heroInner}
                 >
                     <Text style={styles.title}>Hobinet</Text>
-                    <Text style={styles.subtitle}>Turn your hobby into a habit</Text>
+                    <Text style={styles.subtitle}>הפוך את התחביב שלך להרגל</Text>
 
                     <View style={styles.features}>
                         <View style={styles.featureItem}>
                             <Ionicons name="calendar-outline" size={24} color={tokens.colors.textOnDark} style={styles.featureIcon} />
-                            <Text style={styles.featureText}>Book & manage lessons</Text>
+                            <Text style={styles.featureText}>הזמן ונהל שיעורים</Text>
                         </View>
                         <View style={styles.featureItem}>
                             <Ionicons name="people-outline" size={24} color={tokens.colors.textOnDark} style={styles.featureIcon} />
-                            <Text style={styles.featureText}>Connect with coaches & clients</Text>
+                            <Text style={styles.featureText}>התחבר למאמנים ולקוחות</Text>
                         </View>
                         <View style={styles.featureItem}>
                             <Ionicons name="star-outline" size={24} color={tokens.colors.textOnDark} style={styles.featureIcon} />
-                            <Text style={styles.featureText}>Grow your skills faster</Text>
+                            <Text style={styles.featureText}>שפר את הכישורים שלך מהר יותר</Text>
                         </View>
                     </View>
 
@@ -109,17 +109,17 @@ export default function LandingPage() {
                         <TouchableOpacity
                             style={[styles.button, styles.primaryLightButton]}
                             onPress={() => navigation.navigate('SignIn')}
-                            accessibilityLabel="Sign in to your account"
+                            accessibilityLabel="התחבר לחשבון שלך"
                         >
-                            <Text style={styles.primaryLightButtonText}>Sign In</Text>
+                            <Text style={styles.primaryLightButtonText}>התחברות</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={[styles.button, styles.primaryButton]}
                             onPress={openModal}
-                            accessibilityLabel="Create a new account"
+                            accessibilityLabel="צור חשבון חדש"
                         >
-                            <Text style={styles.primaryButtonText}>Get Started</Text>
+                            <Text style={styles.primaryButtonText}>בואו נתחיל</Text>
                         </TouchableOpacity>
                     </View>
                 </Pressable>
@@ -129,9 +129,9 @@ export default function LandingPage() {
                     <Animated.View style={[styles.modalBackdrop, { opacity: backdropOpacity }]}> 
                         <Animated.View style={[styles.modalContainer, { transform: [{ translateY: cardTranslate }] }]}> 
                             <LinearGradient colors={[tokens.colors.primaryDark, tokens.colors.primary]} style={styles.modalHeaderGradient}>
-                                <Text style={styles.modalTitle}>Join Hobinet</Text>
-                                <Text style={styles.modalSubtitle}>Choose your role</Text>
-                                <TouchableOpacity onPress={closeModal} style={styles.closeIconBtn} accessibilityLabel="Close role selection">
+                                <Text style={styles.modalTitle}>הצטרף ל-Hobinet</Text>
+                                <Text style={styles.modalSubtitle}>בחר את התפקיד שלך</Text>
+                                <TouchableOpacity onPress={closeModal} style={styles.closeIconBtn} accessibilityLabel="סגור בחירת תפקיד">
                                     <Ionicons name="close" size={24} color={tokens.colors.textOnDark} />
                                 </TouchableOpacity>
                             </LinearGradient>
@@ -140,35 +140,35 @@ export default function LandingPage() {
                                 <Pressable
                                     style={({ pressed }) => [styles.optionBox, pressed && styles.optionBoxPressed]}
                                     onPress={() => handleRoleSelect('client')}
-                                    accessibilityLabel="Join as a client"
+                                    accessibilityLabel="הצטרף כלקוח"
                                 >
                                     <View style={styles.optionIconContainer}>
                                         <Ionicons name="person-outline" size={26} color={tokens.colors.primary} />
                                     </View>
                                     <View style={styles.optionContent}>
-                                        <Text style={styles.optionTitle}>Client</Text>
-                                        <Text style={styles.optionText}>Discover & book lessons with expert coaches</Text>
+                                        <Text style={styles.optionTitle}>לקוח</Text>
+                                        <Text style={styles.optionText}>גלה והזמן שיעורים עם מאמנים מומחים</Text>
                                     </View>
-                                    <Ionicons name="chevron-forward" size={22} color={tokens.colors.primary} />
+                                    <Ionicons name="chevron-back" size={22} color={tokens.colors.primary} />
                                 </Pressable>
 
                                 <Pressable
                                     style={({ pressed }) => [styles.optionBox, pressed && styles.optionBoxPressed]}
                                     onPress={() => handleRoleSelect('coach')}
-                                    accessibilityLabel="Join as a coach"
+                                    accessibilityLabel="הצטרף כמאמן"
                                 >
                                     <View style={styles.optionIconContainer}>
                                         <Ionicons name="school-outline" size={26} color={tokens.colors.primary} />
                                     </View>
                                     <View style={styles.optionContent}>
-                                        <Text style={styles.optionTitle}>Coach</Text>
-                                        <Text style={styles.optionText}>Share expertise & grow your coaching business</Text>
+                                        <Text style={styles.optionTitle}>מאמן</Text>
+                                        <Text style={styles.optionText}>שתף מומחיות והרחב את העסק שלך</Text>
                                     </View>
-                                    <Ionicons name="chevron-forward" size={22} color={tokens.colors.primary} />
+                                    <Ionicons name="chevron-back" size={22} color={tokens.colors.primary} />
                                 </Pressable>
 
-                                <TouchableOpacity onPress={closeModal} style={styles.secondaryDismissBtn} accessibilityLabel="Cancel and close">
-                                    <Text style={styles.secondaryDismissBtnText}>Cancel</Text>
+                                <TouchableOpacity onPress={closeModal} style={styles.secondaryDismissBtn} accessibilityLabel="ביטול וסגירה">
+                                    <Text style={styles.secondaryDismissBtnText}>ביטול</Text>
                                 </TouchableOpacity>
                             </View>
                         </Animated.View>
@@ -212,11 +212,13 @@ const styles = StyleSheet.create({
         color: tokens.colors.textSubtle,
         fontWeight: tokens.fontWeight.medium as any,
         marginBottom: tokens.space.xl,
+        textAlign: 'left',
+        writingDirection: 'rtl',
     },
     features: { width: '100%', marginBottom: tokens.space.xl },
     featureItem: { flexDirection: 'row', alignItems: 'center', marginBottom: tokens.space.md },
-    featureIcon: { marginRight: tokens.space.md },
-    featureText: { color: tokens.colors.textOnDark, fontSize: RFValue(15), fontWeight: tokens.fontWeight.semibold as any },
+    featureIcon: { marginEnd: tokens.space.md },
+    featureText: { color: tokens.colors.textOnDark, fontSize: RFValue(15), fontWeight: tokens.fontWeight.semibold as any, textAlign: 'left', writingDirection: 'rtl' },
     buttonGroup: { flexDirection: 'row', gap: tokens.space.md },
     button: {
         flex: 1,
@@ -226,9 +228,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     primaryLightButton: { backgroundColor: tokens.colors.light },
-    primaryLightButtonText: { color: tokens.colors.primary, fontSize: RFValue(15), fontWeight: tokens.fontWeight.bold as any },
+    primaryLightButtonText: { color: tokens.colors.primary, fontSize: RFValue(15), fontWeight: tokens.fontWeight.bold as any, textAlign: 'left', writingDirection: 'rtl' },
     primaryButton: { backgroundColor: tokens.colors.primary },
-    primaryButtonText: { color: tokens.colors.textOnDark, fontSize: RFValue(15), fontWeight: tokens.fontWeight.bold as any },
+    primaryButtonText: { color: tokens.colors.textOnDark, fontSize: RFValue(15), fontWeight: tokens.fontWeight.bold as any, textAlign: 'left', writingDirection: 'rtl' },
     // Modal
     modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', paddingHorizontal: tokens.space.md },
     modalContainer: {
@@ -244,9 +246,9 @@ const styles = StyleSheet.create({
         paddingBottom: tokens.space.lg,
         paddingHorizontal: tokens.space.xl,
     },
-    modalTitle: { fontSize: RFValue(22), fontWeight: tokens.fontWeight.bold as any, color: tokens.colors.textOnDark, marginBottom: 4 },
-    modalSubtitle: { fontSize: RFValue(14), color: 'rgba(255,255,255,0.80)', fontWeight: tokens.fontWeight.medium as any },
-    closeIconBtn: { position: 'absolute', top: Platform.OS === 'ios' ? 14 : 10, right: 10, padding: 10 },
+    modalTitle: { fontSize: RFValue(22), fontWeight: tokens.fontWeight.bold as any, color: tokens.colors.textOnDark, marginBottom: 4, textAlign: 'left', writingDirection: 'rtl' },
+    modalSubtitle: { fontSize: RFValue(14), color: 'rgba(255,255,255,0.80)', fontWeight: tokens.fontWeight.medium as any, textAlign: 'left', writingDirection: 'rtl' },
+    closeIconBtn: { position: 'absolute', top: Platform.OS === 'ios' ? 14 : 10, end: 10, padding: 10 },
     modalContentScroll: { padding: tokens.space.xl },
     optionBox: {
         flexDirection: 'row',
@@ -266,11 +268,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#e3f2fd',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: tokens.space.lg,
+        marginEnd: tokens.space.lg,
     },
     optionContent: { flex: 1 },
-    optionTitle: { fontSize: RFValue(16), fontWeight: tokens.fontWeight.bold as any, color: tokens.colors.primary, marginBottom: 4 },
-    optionText: { fontSize: RFValue(13), color: '#516079', fontWeight: tokens.fontWeight.medium as any },
+    optionTitle: { fontSize: RFValue(16), fontWeight: tokens.fontWeight.bold as any, color: tokens.colors.primary, marginBottom: 4, textAlign: 'left', writingDirection: 'rtl' },
+    optionText: { fontSize: RFValue(13), color: '#516079', fontWeight: tokens.fontWeight.medium as any, textAlign: 'left', writingDirection: 'rtl' },
     secondaryDismissBtn: { marginTop: tokens.space.sm, paddingVertical: tokens.space.md, alignItems: 'center' },
-    secondaryDismissBtnText: { color: tokens.colors.primary, fontSize: RFValue(15), fontWeight: tokens.fontWeight.bold as any },
+    secondaryDismissBtnText: { color: tokens.colors.primary, fontSize: RFValue(15), fontWeight: tokens.fontWeight.bold as any, textAlign: 'left', writingDirection: 'rtl' },
 });

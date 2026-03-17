@@ -42,6 +42,20 @@ export enum LessonType {
 
 export const lessonTypes = Object.values(LessonType);
 
+export const getLessonTypeDisplayName = (type: string): string => {
+    switch (type) {
+        case LessonType.Tennis: return 'טניס';
+        case LessonType.Yoga: return 'יוגה';
+        case LessonType.Surf: return 'גלישה';
+        case LessonType.Football: return 'כדורגל';
+        case LessonType.Basketball: return 'כדורסל';
+        case LessonType.Paddle: return 'פאדל';
+        case LessonType.Gym: return 'חדר כושר';
+        case LessonType.Boxing: return 'איגרוף';
+        default: return type;
+    }
+};
+
 export const getLessonIcon = (
     type: string
 ): { IconComponent: ComponentType<any>; iconName: string } => {

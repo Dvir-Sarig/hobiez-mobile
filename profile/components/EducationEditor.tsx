@@ -61,7 +61,7 @@ export default function EducationEditor({ educationList, onChange, hideTitle }: 
 
   return (
     <View style={{ marginTop: 12 }}>
-      {!hideTitle && <Text style={styles.title}>Education</Text>}
+      {!hideTitle && <Text style={styles.title}>השכלה</Text>}
 
       {educationList.map((edu, index) => (
         <View key={index} style={styles.entry}>
@@ -73,19 +73,19 @@ export default function EducationEditor({ educationList, onChange, hideTitle }: 
             </View>
           <TextInput
             style={styles.input}
-            placeholder="Institution"
+            placeholder="מוסד"
             value={edu.institution}
             onChangeText={(val) => updateItem(index, { institution: val })}
           />
           <TextInput
             style={styles.input}
-            placeholder="Degree"
+            placeholder="תואר"
             value={edu.degree}
             onChangeText={(val) => updateItem(index, { degree: val })}
           />
           <TextInput
             style={styles.input}
-            placeholder="Field of Study"
+            placeholder="תחום לימוד"
             value={edu.fieldOfStudy}
             onChangeText={(val) => updateItem(index, { fieldOfStudy: val })}
           />
@@ -94,26 +94,26 @@ export default function EducationEditor({ educationList, onChange, hideTitle }: 
             style={styles.dateButton}
             onPress={() => setShowDatePicker({ index, field: 'startDate' })}
           >
-            <Text style={styles.dateText}>Start Date: {edu.startDate}</Text>
+            <Text style={styles.dateText}>תאריך התחלה: {edu.startDate}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.dateButton}
             onPress={() => setShowDatePicker({ index, field: 'endDate' })}
           >
-            <Text style={styles.dateText}>End Date: {edu.endDate || 'Present'}</Text>
+            <Text style={styles.dateText}>תאריך סיום: {edu.endDate || 'כרגע'}</Text>
           </TouchableOpacity>
 
           <TextInput
             style={styles.input}
-            placeholder="Description"
+            placeholder="תיאור"
             value={edu.description || ''}
             onChangeText={(val) => updateItem(index, { description: val })}
             multiline
           />
           <TextInput
             style={styles.input}
-            placeholder="GPA"
+            placeholder="ממוצע"
             value={edu.gpa?.toString() || ''}
             keyboardType="numeric"
             onChangeText={(val) => updateItem(index, { gpa: parseFloat(val) || null })}
@@ -136,7 +136,7 @@ export default function EducationEditor({ educationList, onChange, hideTitle }: 
 
       <TouchableOpacity onPress={addItem} style={styles.addButton}>
         <MaterialIcons name="add-circle-outline" size={18} color="#fff" style={{marginRight:6}} />
-        <Text style={styles.addText}>Add Education</Text>
+        <Text style={styles.addText}>הוסף השכלה</Text>
       </TouchableOpacity>
     </View>
   );
@@ -148,6 +148,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#0d47a1',
     marginBottom: 16,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   entry: {
     marginBottom: 20,
@@ -208,6 +210,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1565c0',
     fontWeight: '600',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   removeButton: {
     display:'none'
@@ -235,6 +239,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
     letterSpacing:0.5,
+    writingDirection: 'rtl',
   },
 });
 

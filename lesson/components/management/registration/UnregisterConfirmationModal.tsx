@@ -18,7 +18,7 @@ import { MaterialIcons, Entypo, Ionicons, FontAwesome5 } from '@expo/vector-icon
 import { Avatar } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { fetchCoachGlobalInfo, CoachGlobalInfo } from '../../../../profile/services/coachService';
-import { getLessonBackground, getLessonIcon } from '../../../../lesson/types/LessonType';
+import { getLessonBackground, getLessonIcon, getLessonTypeDisplayName } from '../../../../lesson/types/LessonType';
 
 interface Props {
   lesson: Lesson | null;
@@ -75,10 +75,13 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
   const timeDate = new Date(lesson.time);
   const dateStr = timeDate.toLocaleDateString();
   const timeStr = timeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const coachName = coachGlobalInfo?.name || coachInfo?.name || 'Coach';
+  const coachName = coachGlobalInfo?.name || coachInfo?.name || 'מאמן';
   const locationText = lesson.location?.address || [lesson.location?.city, lesson.location?.country].filter(Boolean).join(', ');
   const { IconComponent, iconName } = getLessonIcon(lesson.title);
   const lessonBg = getLessonBackground(lesson.title);
+  const lessonDisplayName = getLessonTypeDisplayName(lesson.title);
+  const hoursUntilLesson = (new Date(lesson.time).getTime() - Date.now()) / (1000 * 60 * 60);
+  const isCloseToLesson = hoursUntilLesson <= 24 && hoursUntilLesson > 6;
 
   const handleCoachPress = () => {
     onClose();
@@ -92,11 +95,11 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
     const hoursUntilLesson = (lessonTime.getTime() - now.getTime()) / (1000 * 60 * 60);
     if (hoursUntilLesson < 6) {
       Alert.alert(
-        'Cancellation Not Allowed',
-        'You cannot unregister from a lesson less than 6 hours before it starts.\n\nTo cancel your registration, please contact your coach directly (by phone or WhatsApp) and ask them to remove you from the lesson.',
+        'ביטול לא מותר',
+        'לא ניתן לבטל רישום לשיעור פחות מ-6 שעות לפני תחילתו.\n\nכדי לבטל את הרישום, אנא צור קשר עם המאמן שלך ישירות (בטלפון או בוואטסאפ) ובקש ממנו להסיר אותך מהשיעור.',
         [
-          { text: 'View Coach Contact', style: 'default', onPress: handleCoachPress },
-          { text: 'OK', style: 'cancel' },
+          { text: 'צפה בפרטי מאמן', style: 'default', onPress: handleCoachPress },
+          { text: 'אישור', style: 'cancel' },
         ]
       );
       return;
@@ -134,16 +137,17 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
                     <Avatar.Icon size={42} style={styles.lessonIconAvatar} icon={() => <IconComponent name={iconName} size={22} color="#ffffff" />} />
                   </View>
                   <View style={styles.headerTextCol}>
-                    <Text style={styles.headerTitle} numberOfLines={1}>{lesson.title}</Text>
+                    <Text style={styles.headerEyebrow}>ביטול רישום</Text>
+                    <Text style={styles.headerTitle} numberOfLines={1}>{lessonDisplayName}</Text>
                     <View style={styles.headerMetaRow}>
                       <MaterialIcons name="event" size={14} color="#bbdefb" />
                       <Text style={styles.headerMetaText}>{dateStr}</Text>
-                      <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginLeft:10 }} />
+                      <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginStart:10 }} />
                       <Text style={styles.headerMetaText}>{timeStr}</Text>
                     </View>
                   </View>
                 </View>
-                <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close unregister modal">
+                <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="סגור חלון ביטול רישום">
                   <MaterialIcons name="close" size={22} color="#ffffff" />
                 </TouchableOpacity>
               </View>
@@ -155,21 +159,32 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
                   <Avatar.Icon size={42} style={styles.lessonIconAvatar} icon={() => <IconComponent name={iconName} size={22} color="#ffffff" />} />
                 </View>
                 <View style={styles.headerTextCol}>
-                  <Text style={styles.headerTitle} numberOfLines={1}>{lesson.title}</Text>
+                  <Text style={styles.headerEyebrow}>ביטול רישום</Text>
+                  <Text style={styles.headerTitle} numberOfLines={1}>{lessonDisplayName}</Text>
                   <View style={styles.headerMetaRow}>
                     <MaterialIcons name="event" size={14} color="#bbdefb" />
                     <Text style={styles.headerMetaText}>{dateStr}</Text>
-                    <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginLeft:10 }} />
+                    <MaterialIcons name="schedule" size={14} color="#bbdefb" style={{ marginStart:10 }} />
                     <Text style={styles.headerMetaText}>{timeStr}</Text>
                   </View>
                 </View>
               </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close unregister modal">
+              <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="סגור חלון ביטול רישום">
                 <MaterialIcons name="close" size={22} color="#ffffff" />
               </TouchableOpacity>
             </View>
           )}
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.intentCard}>
+              <View style={styles.intentIconWrap}>
+                <MaterialIcons name="exit-to-app" size={20} color="#d32f2f" />
+              </View>
+              <View style={styles.intentTextCol}>
+                <Text style={styles.intentTitle}>לעזוב את השיעור הזה?</Text>
+                <Text style={styles.intentBody}>המקום שלך ישתחרר מיידית ויוכל להיתפס על ידי משתתף אחר.</Text>
+              </View>
+            </View>
+
             <View style={styles.metricRow}>
               {typeof lesson.price === 'number' && (
                 <View style={[styles.metricChip, styles.metricChipEmphasisDanger]}>
@@ -180,9 +195,13 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
               {lesson.duration ? (
                 <View style={[styles.metricChip, styles.metricChipEmphasisDanger]}>
                   <Ionicons name="timer-outline" size={16} color="#0d47a1" />
-                  <Text style={[styles.metricChipText, styles.metricChipTextEmphasisDanger]}>{lesson.duration}m</Text>
+                  <Text style={[styles.metricChipText, styles.metricChipTextEmphasisDanger]}>{lesson.duration} דק׳</Text>
                 </View>
               ) : null}
+              <View style={[styles.metricChip, styles.metricChipSoft]}>
+                <MaterialIcons name="event-available" size={16} color="#0d47a1" />
+                <Text style={styles.metricChipText}>{formatLessonTimeReadable(lesson.time)}</Text>
+              </View>
             </View>
 
             {/* Capacity */}
@@ -191,20 +210,30 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
                 <View style={styles.sectionHeaderRow}>
                   <View style={styles.sectionHeaderLeft}>
                     <FontAwesome5 name="users" size={16} color={capacityColor} />
-                    <Text style={styles.sectionTitle}>Capacity</Text>
+                    <Text style={styles.sectionTitle}>תפוסה</Text>
                   </View>
                   <View style={[styles.capacityPill, { borderColor: capacityColor }]}> 
                     <Text style={[styles.capacityPillText, { color: capacityColor }]}>{registered}/{capacity}</Text>
                   </View>
                 </View>
-                <Text style={styles.capacityHint}>{registered >= capacity ? 'Fully booked' : capacity - registered <= 2 ? 'Almost full — last spots' : registered === 0 ? 'Be the first to join' : 'Spots available'}</Text>
+                <Text style={styles.capacityHint}>{registered >= capacity ? 'מלא' : capacity - registered <= 2 ? 'כמעט מלא — מקומות אחרונים' : registered === 0 ? 'היה הראשון להצטרף' : 'מקומות פנויים'}</Text>
+              </View>
+            )}
+
+            {isCloseToLesson && (
+              <View style={[styles.sectionCard, styles.urgencyCard]}>
+                <View style={styles.warningHeaderRow}>
+                  <MaterialIcons name="schedule-send" size={20} color="#1565c0" />
+                  <Text style={[styles.warningTitle, styles.urgencyTitle]}>השיעור מתקרב</Text>
+                </View>
+                <Text style={styles.urgencyBody}>נותרו פחות מ-24 שעות לתחילת השיעור. אם אינך בטוח, מומלץ לעדכן גם את המאמן ישירות כדי למנוע אי-הבנות.</Text>
               </View>
             )}
 
             {/* Description */}
             {!!lesson.description && (
               <View style={styles.sectionCard}>
-                <Text style={styles.sectionLabel}>Description</Text>
+                <Text style={styles.sectionLabel}>תיאור</Text>
                 <Text style={styles.bodyText}>{lesson.description}</Text>
               </View>
             )}
@@ -212,9 +241,9 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
             {/* Location */}
             {locationText ? (
               <View style={styles.sectionCard}>
-                <Text style={styles.sectionLabel}>Location</Text>
+                <Text style={styles.sectionLabel}>מיקום</Text>
                 <View style={styles.inlineRow}>
-                  <Entypo name="location-pin" size={18} color="#b71c1c" style={{ marginRight:6 }} />
+                  <Entypo name="location-pin" size={18} color="#b71c1c" style={{ marginStart:6 }} />
                   <Text style={styles.bodyText} numberOfLines={2}>{locationText}</Text>
                 </View>
               </View>
@@ -222,11 +251,11 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
 
             {/* Coach */}
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionLabel}>Coach</Text>
-              <TouchableOpacity onPress={handleCoachPress} style={styles.coachRow} accessibilityLabel="View coach profile">
+              <Text style={styles.sectionLabel}>מאמן</Text>
+              <TouchableOpacity onPress={handleCoachPress} style={styles.coachRow} accessibilityLabel="צפה בפרופיל מאמן">
                 {renderCoachAvatar()}
-                <Text style={styles.coachNameText} numberOfLines={1}>{isLoadingCoachInfo ? 'Loading...' : coachName}</Text>
-                <MaterialIcons name="chevron-right" size={20} color="#b71c1c" />
+                <Text style={styles.coachNameText} numberOfLines={1}>{isLoadingCoachInfo ? 'טוען...' : coachName}</Text>
+                <MaterialIcons name="chevron-left" size={20} color="#b71c1c" />
               </TouchableOpacity>
             </View>
 
@@ -234,9 +263,9 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
             <View style={[styles.sectionCard, styles.warningCard]}> 
               <View style={styles.warningHeaderRow}> 
                 <MaterialIcons name="warning" size={20} color="#ff8f00" />
-                <Text style={styles.warningTitle}>Leaving this Lesson</Text>
+                <Text style={styles.warningTitle}>עזיבת שיעור זה</Text>
               </View>
-              <Text style={styles.warningBody}>You will lose your secured spot. If the lesson fills you might not be able to rejoin. This action cannot be undone.</Text>
+              <Text style={styles.warningBody}>תאבד את המקום השמור שלך. אם השיעור יתמלא לאחר הביטול, ייתכן שלא תוכל להצטרף מחדש. פעולה זו אינה ניתנת לביטול מתוך האפליקציה.</Text>
             </View>
 
             {/* Payment refund notice */}
@@ -244,15 +273,15 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
               <View style={[styles.sectionCard, styles.refundCard]}>
                 <View style={styles.warningHeaderRow}>
                   <MaterialIcons name="payments" size={20} color="#b45309" />
-                  <Text style={[styles.warningTitle, { color: '#b45309' }]}>Payment Already Declared</Text>
+                  <Text style={[styles.warningTitle, { color: '#b45309' }]}>תשלום כבר הוצהר</Text>
                 </View>
                 <Text style={styles.refundBody}>
-                  You marked this lesson as paid. If you already transferred money, contact the coach directly to request a refund before unregistering.
+                  סימנת שיעור זה כשולם. אם כבר העברת כסף, צור קשר עם המאמן ישירות כדי לבקש החזר לפני ביטול הרישום.
                 </Text>
-                <TouchableOpacity onPress={handleCoachPress} style={styles.contactCoachBtn} accessibilityLabel="Contact coach">
+                <TouchableOpacity onPress={handleCoachPress} style={styles.contactCoachBtn} accessibilityLabel="צור קשר עם מאמן">
                   <MaterialIcons name="person" size={15} color="#1976d2" />
-                  <Text style={styles.contactCoachText}>View Coach Contact</Text>
-                  <MaterialIcons name="chevron-right" size={15} color="#1976d2" />
+                  <Text style={styles.contactCoachText}>צפה בפרטי מאמן</Text>
+                  <MaterialIcons name="chevron-left" size={15} color="#1976d2" />
                 </TouchableOpacity>
               </View>
             )}
@@ -260,14 +289,17 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
             <View style={{ height: 110 }} />
           </ScrollView>
           <View style={styles.footerBar}> 
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} disabled={isLoading} accessibilityLabel="Cancel unregistration"> 
-              <Text style={[styles.cancelBtnText, isLoading && { opacity:0.5 }]}>Keep Spot</Text>
+            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} disabled={isLoading} accessibilityLabel="ביטול"> 
+              <Text style={[styles.cancelBtnText, isLoading && { opacity:0.5 }]}>שמור מקום</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.dangerBtn, isLoading && styles.dangerBtnDisabled]} onPress={handleUnregister} disabled={isLoading} accessibilityLabel="Confirm unregistration"> 
+            <TouchableOpacity style={[styles.dangerBtn, isLoading && styles.dangerBtnDisabled]} onPress={handleUnregister} disabled={isLoading} accessibilityLabel="אישור ביטול רישום"> 
               {isLoading ? (
                 <ActivityIndicator size="small" color="#ffffff" />
               ) : (
-                <Text style={styles.dangerBtnText}>Unregister</Text>
+                <View style={styles.dangerBtnContent}>
+                  <Ionicons name="exit-outline" size={17} color="#ffffff" />
+                  <Text style={styles.dangerBtnText}>בטל רישום</Text>
+                </View>
               )}
             </TouchableOpacity>
           </View>
@@ -289,42 +321,53 @@ const styles = StyleSheet.create({
   headerTextCol:{ flex:1 },
   lessonIconWrap:{},
   lessonIconAvatar:{ backgroundColor:'rgba(255,255,255,0.25)' },
-  headerTitle:{ fontSize:20, fontWeight:'800', color:'#ffffff', letterSpacing:0.4 },
+  headerEyebrow:{ fontSize:11.5, fontWeight:'800', color:'rgba(255,255,255,0.82)', letterSpacing:0.8, marginBottom:3, textAlign:'left', writingDirection:'rtl' },
+  headerTitle:{ fontSize:20, fontWeight:'800', color:'#ffffff', letterSpacing:0.4, textAlign:'left', writingDirection:'rtl' },
   headerMetaRow:{ flexDirection:'row', alignItems:'center', marginTop:4 },
-  headerMetaText:{ fontSize:12.5, fontWeight:'700', color:'#ffffff', marginLeft:4, letterSpacing:0.5 },
+  headerMetaText:{ fontSize:12.5, fontWeight:'700', color:'#ffffff', marginStart:4, letterSpacing:0.5, writingDirection:'rtl' },
   closeBtn:{ width:40, height:40, borderRadius:14, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.4)' },
   scrollContent:{ padding:20, paddingBottom:0 },
+  intentCard:{ flexDirection:'row', alignItems:'flex-start', gap:12, backgroundColor:'#fff5f5', borderRadius:20, padding:16, borderWidth:1, borderColor:'rgba(211,47,47,0.18)', marginBottom:18 },
+  intentIconWrap:{ width:38, height:38, borderRadius:14, backgroundColor:'rgba(211,47,47,0.10)', alignItems:'center', justifyContent:'center', flexShrink:0 },
+  intentTextCol:{ flex:1 },
+  intentTitle:{ fontSize:15, fontWeight:'800', color:'#b71c1c', marginBottom:4, textAlign:'left', writingDirection:'rtl' },
+  intentBody:{ fontSize:13, fontWeight:'600', color:'#7f1d1d', lineHeight:19, textAlign:'left', writingDirection:'rtl' },
   metricRow:{ flexDirection:'row', flexWrap:'wrap', gap:8, marginBottom:22 },
   metricChip:{ flexDirection:'row', alignItems:'center', gap:4, backgroundColor:'#f1f5f9', paddingVertical:6, paddingHorizontal:10, borderRadius:14, borderWidth:1, borderColor:'rgba(13,71,161,0.12)' },
+  metricChipSoft:{ backgroundColor:'#f6fbff', borderColor:'rgba(21,101,192,0.16)' },
   metricChipEmphasisDanger:{ backgroundColor:'#ffffff', paddingVertical:8, paddingHorizontal:14, borderWidth:1, borderColor:'rgba(13,71,161,0.25)', shadowColor:'#0d47a1', shadowOpacity:0.08, shadowRadius:6, shadowOffset:{width:0,height:3} },
-  metricChipText:{ fontSize:12, fontWeight:'700', color:'#0d47a1', letterSpacing:0.3 },
+  metricChipText:{ fontSize:12, fontWeight:'700', color:'#0d47a1', letterSpacing:0.3, writingDirection:'rtl' },
   metricChipTextEmphasisDanger:{ fontSize:14, fontWeight:'800', letterSpacing:0.5 },
   sectionCard:{ backgroundColor:'#ffffff', borderRadius:22, padding:18, marginBottom:18, borderWidth:1, borderColor:'rgba(13,71,161,0.08)', shadowColor:'#0d47a1', shadowOpacity:0.05, shadowRadius:10, shadowOffset:{width:0,height:4} },
   sectionHeaderRow:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:10 },
   sectionHeaderLeft:{ flexDirection:'row', alignItems:'center', gap:8 },
-  sectionTitle:{ fontSize:14, fontWeight:'700', color:'#0d47a1', letterSpacing:0.4 },
-  sectionLabel:{ fontSize:12, fontWeight:'800', color:'#0d47a1', marginBottom:8, letterSpacing:0.6, textTransform:'uppercase' },
-  bodyText:{ fontSize:14, fontWeight:'500', color:'#0f172a', lineHeight:20 },
+  sectionTitle:{ fontSize:14, fontWeight:'700', color:'#0d47a1', letterSpacing:0.4, textAlign:'left', writingDirection:'rtl' },
+  sectionLabel:{ fontSize:12, fontWeight:'800', color:'#0d47a1', marginBottom:8, letterSpacing:0.6, textTransform:'uppercase', textAlign:'left', writingDirection:'rtl' },
+  bodyText:{ fontSize:14, fontWeight:'500', color:'#0f172a', lineHeight:20, textAlign:'left', writingDirection:'rtl' },
   inlineRow:{ flexDirection:'row', alignItems:'center' },
   capacityPill:{ paddingHorizontal:12, paddingVertical:6, borderRadius:18, borderWidth:1, backgroundColor:'#fef2f2', minWidth:70, alignItems:'center' },
   capacityPillText:{ fontSize:13, fontWeight:'800', letterSpacing:0.5 },
-  capacityHint:{ fontSize:11, fontWeight:'600', color:'rgba(183,28,28,0.75)', letterSpacing:0.4 },
+  capacityHint:{ fontSize:11, fontWeight:'600', color:'rgba(183,28,28,0.75)', letterSpacing:0.4, writingDirection:'rtl' },
   coachRow:{ flexDirection:'row', alignItems:'center', gap:12, paddingVertical:4 },
-  coachNameText:{ fontSize:15, fontWeight:'700', color:'#0d47a1', flex:1 },
+  coachNameText:{ fontSize:15, fontWeight:'700', color:'#0d47a1', flex:1, textAlign:'left', writingDirection:'rtl' },
   warningCard:{ backgroundColor:'#fff8e1', borderColor:'rgba(255,143,0,0.35)' },
+  urgencyCard:{ backgroundColor:'#eef6ff', borderColor:'rgba(21,101,192,0.22)' },
   warningHeaderRow:{ flexDirection:'row', alignItems:'center', gap:10, marginBottom:10 },
-  warningTitle:{ fontSize:15, fontWeight:'800', color:'#ff8f00', letterSpacing:0.5 },
-  warningBody:{ fontSize:13, fontWeight:'600', color:'#7a5d00', lineHeight:19 },
+  warningTitle:{ fontSize:15, fontWeight:'800', color:'#ff8f00', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
+  warningBody:{ fontSize:13, fontWeight:'600', color:'#7a5d00', lineHeight:19, textAlign:'left', writingDirection:'rtl' },
+  urgencyTitle:{ color:'#1565c0' },
+  urgencyBody:{ fontSize:13, fontWeight:'600', color:'#1e3a8a', lineHeight:19, textAlign:'left', writingDirection:'rtl' },
   refundCard:{ backgroundColor:'#fffbeb', borderColor:'rgba(180,83,9,0.30)' },
-  refundBody:{ fontSize:13, fontWeight:'600', color:'#92400e', lineHeight:19, marginBottom:12 },
+  refundBody:{ fontSize:13, fontWeight:'600', color:'#92400e', lineHeight:19, marginBottom:12, textAlign:'left', writingDirection:'rtl' },
   contactCoachBtn:{ flexDirection:'row', alignItems:'center', gap:6, alignSelf:'flex-start', backgroundColor:'#f1f6fb', paddingHorizontal:12, paddingVertical:7, borderRadius:12, borderWidth:1, borderColor:'rgba(25,118,210,0.25)' },
-  contactCoachText:{ fontSize:12.5, fontWeight:'700', color:'#1976d2' },
+  contactCoachText:{ fontSize:12.5, fontWeight:'700', color:'#1976d2', textAlign:'left', writingDirection:'rtl' },
   footerBar:{ flexDirection:'row', alignItems:'center', gap:14, padding:18, borderTopWidth:1, borderTopColor:'rgba(13,71,161,0.12)', backgroundColor:'rgba(255,255,255,0.94)' },
   cancelBtn:{ flex:1, backgroundColor:'rgba(255,255,255,0.55)', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:14, borderWidth:1.5, borderColor:'rgba(25,118,210,0.25)' },
-  cancelBtnText:{ color:'#0d47a1', fontSize:14, fontWeight:'700', letterSpacing:0.4 },
-  dangerBtn:{ flex:1.4, backgroundColor:'#1976d2', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:14, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{width:0,height:4} },
+  cancelBtnText:{ color:'#0d47a1', fontSize:14, fontWeight:'700', letterSpacing:0.4, textAlign:'left', writingDirection:'rtl' },
+  dangerBtn:{ flex:1.4, backgroundColor:'#d32f2f', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:14, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{width:0,height:4} },
   dangerBtnDisabled:{ backgroundColor:'#90a4ae' },
-  dangerBtnText:{ color:'#ffffff', fontSize:15, fontWeight:'800', letterSpacing:0.5 },
+  dangerBtnContent:{ flexDirection:'row', alignItems:'center', gap:6 },
+  dangerBtnText:{ color:'#ffffff', fontSize:15, fontWeight:'800', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
 });
 
 export default UnregisterConfirmationModal;

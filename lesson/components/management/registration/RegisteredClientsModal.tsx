@@ -84,12 +84,12 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
   const handleRemoveClient = (clientId: string, clientName: string) => {
     if (!onUnregisterClient) return;
     Alert.alert(
-      'Remove Client',
-      `Are you sure you want to remove ${clientName} from this lesson? This will unregister them and cannot be undone.`,
+      'הסרת לקוח',
+      `האם אתה בטוח שברצונך להסיר את ${clientName} מהשיעור? זה יבטל את הרישום שלהם ולא ניתן לבטל.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'ביטול', style: 'cancel' },
         {
-          text: 'Remove',
+          text: 'הסר',
           style: 'destructive',
           onPress: async () => {
             setRemoveLoading(clientId);
@@ -145,7 +145,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
     const reg = registrationByClient[item.id];
     const isProcessing = reg ? actionLoading === reg.id : false;
     const isRemoving = removeLoading === item.id;
-    const displayName = info?.name || item.name || `Client ${item.id}`;
+    const displayName = info?.name || item.name || `לקוח ${item.id}`;
     return (
       <TouchableOpacity onPress={() => handleClientPress(item.id)} style={styles.clientCard} activeOpacity={0.7} accessibilityLabel={`View ${displayName} profile`}>
         {/* Top row: avatar + name + remove + chevron */}
@@ -157,9 +157,9 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
           )}
           <View style={styles.clientInfo}>
             <Text style={styles.clientName} numberOfLines={1}>{displayName}</Text>
-            <Text style={styles.clientEmail} numberOfLines={1}>{info?.email || 'Tap to view profile'}</Text>
+            <Text style={styles.clientEmail} numberOfLines={1}>{info?.email || 'לחץ לצפייה בפרופיל'}</Text>
           </View>
-          <MaterialIcons name="chevron-right" size={20} color="#94a3b8" />
+          <MaterialIcons name="chevron-left" size={20} color="#94a3b8" />
         </View>
 
         {/* Payment strip — compact inline row */}
@@ -174,7 +174,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
                     onPress={(e) => { e.stopPropagation?.(); handleConfirm(reg.id); }}
                     disabled={isProcessing}
                     activeOpacity={0.7}
-                    accessibilityLabel="Confirm payment"
+                    accessibilityLabel="אישור תשלום"
                   >
                     {isProcessing ? <ActivityIndicator size={12} color="#fff" /> : <MaterialIcons name="check" size={14} color="#ffffff" />}
                   </TouchableOpacity>
@@ -183,7 +183,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
                     onPress={(e) => { e.stopPropagation?.(); handleReject(reg.id); }}
                     disabled={isProcessing}
                     activeOpacity={0.7}
-                    accessibilityLabel="Reject payment"
+                    accessibilityLabel="דחיית תשלום"
                   >
                     <MaterialIcons name="close" size={14} color="#1976d2" />
                   </TouchableOpacity>
@@ -200,7 +200,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
                   {isRemoving ? (
                     <ActivityIndicator size={12} color="#ffffff" />
                   ) : (
-                    <Text style={styles.unregisterBtnText}>Unregister</Text>
+                    <Text style={styles.unregisterBtnText}>ביטול רישום</Text>
                   )}
                 </TouchableOpacity>
               )}
@@ -224,7 +224,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
               {isRemoving ? (
                 <ActivityIndicator size={12} color="#ffffff" />
               ) : (
-                <Text style={styles.unregisterBtnText}>Unregister</Text>
+                <Text style={styles.unregisterBtnText}>ביטול רישום</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -246,7 +246,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
                 <Ionicons name="people-circle" size={26} color="#ffffff" />
               </View>
               <View style={styles.headerTextCol}> 
-                <Text style={styles.headerTitle}>Registered Clients</Text>
+                <Text style={styles.headerTitle}>לקוחות רשומים</Text>
               </View>
             </View>
             <View style={styles.headerRight}> 
@@ -254,7 +254,7 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
                 <Ionicons name="people-outline" size={14} color="#0d47a1" />
                 <Text style={styles.countPillText}>{total}</Text>
               </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close registered clients modal"> 
+              <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="סגור חלון לקוחות רשומים"> 
                 <MaterialIcons name="close" size={22} color="#ffffff" />
               </TouchableOpacity>
             </View>
@@ -265,8 +265,8 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
             {showEmpty && (
               <View style={styles.emptyStateBox}> 
                 <Ionicons name="person-add-outline" size={26} color="#1976d2" style={{ marginBottom:10 }} />
-                <Text style={styles.emptyTitle}>No clients yet</Text>
-                <Text style={styles.emptySubtitle}>Share the lesson to attract participants.</Text>
+                <Text style={styles.emptyTitle}>עדיין אין לקוחות</Text>
+                <Text style={styles.emptySubtitle}>שתף את השיעור כדי למשוך משתתפים.</Text>
               </View>
             )}
 
@@ -291,8 +291,8 @@ const RegisteredClientsModal: React.FC<RegisteredClientsModalProps> = ({
 
           {/* Footer */}
           <View style={styles.footerBar}> 
-            <TouchableOpacity style={styles.closeFooterBtn} onPress={onClose} accessibilityLabel="Close modal"> 
-              <Text style={styles.closeFooterBtnText}>Close</Text>
+            <TouchableOpacity style={styles.closeFooterBtn} onPress={onClose} accessibilityLabel="סגור חלון"> 
+              <Text style={styles.closeFooterBtnText}>סגור</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -309,26 +309,26 @@ const styles = StyleSheet.create({
   headerRight:{ flexDirection:'row', alignItems:'center', gap:12 },
   headerIconBadge:{ width:46, height:46, borderRadius:16, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.4)' },
   headerTextCol:{ flex:1 },
-  headerTitle:{ fontSize:19, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
-  headerSubtitle:{ fontSize:12, fontWeight:'600', color:'rgba(255,255,255,0.85)', marginTop:2 },
+  headerTitle:{ fontSize:19, fontWeight:'800', color:'#ffffff', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
+  headerSubtitle:{ fontSize:12, fontWeight:'600', color:'rgba(255,255,255,0.85)', marginTop:2, textAlign:'left', writingDirection:'rtl' },
   closeBtn:{ width:40, height:40, borderRadius:14, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.4)' },
   countPill:{ flexDirection:'row', alignItems:'center', gap:6, backgroundColor:'#ffffff', paddingHorizontal:12, paddingVertical:8, borderRadius:20, borderWidth:1, borderColor:'rgba(13,71,161,0.25)', shadowColor:'#0d47a1', shadowOpacity:0.1, shadowRadius:6, shadowOffset:{width:0,height:3} },
-  countPillText:{ fontSize:13, fontWeight:'800', color:'#0d47a1', letterSpacing:0.4 },
+  countPillText:{ fontSize:13, fontWeight:'800', color:'#0d47a1', letterSpacing:0.4, writingDirection:'rtl' },
   contentWrap:{ paddingHorizontal:20, paddingTop:16, paddingBottom:0 },
   emptyStateBox:{ alignItems:'center', paddingVertical:26, paddingHorizontal:10 },
-  emptyTitle:{ fontSize:15, fontWeight:'800', color:'#0d47a1', marginBottom:4 },
-  emptySubtitle:{ fontSize:12.5, fontWeight:'600', color:'#475569', textAlign:'center', lineHeight:18 },
+  emptyTitle:{ fontSize:15, fontWeight:'800', color:'#0d47a1', marginBottom:4, textAlign:'left', writingDirection:'rtl' },
+  emptySubtitle:{ fontSize:12.5, fontWeight:'600', color:'#475569', textAlign:'center', lineHeight:18, writingDirection:'rtl' },
   clientCard:{ padding:14, marginVertical:6, borderBottomWidth:1, borderBottomColor:'rgba(13,71,161,0.08)' },
   clientRow:{ flexDirection:'row', alignItems:'center' },
-  clientInfo:{ flex:1, marginLeft:10 },
+  clientInfo:{ flex:1, marginStart:10 },
   separator:{ height:0 },
   avatarImg:{ backgroundColor:'rgba(13,71,161,0.10)' },
   avatarFallback:{ backgroundColor:'#1976d2' },
-  clientName:{ fontSize:14, fontWeight:'700', color:'#0f172a' },
-  clientEmail:{ fontSize:11.5, fontWeight:'500', color:'#64748b', marginTop:1 },
+  clientName:{ fontSize:14, fontWeight:'700', color:'#0f172a', textAlign:'left', writingDirection:'rtl' },
+  clientEmail:{ fontSize:11.5, fontWeight:'500', color:'#64748b', marginTop:1, textAlign:'left', writingDirection:'rtl' },
   paymentStrip:{ marginTop:8, paddingTop:8, borderTopWidth:1, borderTopColor:'rgba(13,71,161,0.06)', gap:6 },
   paymentTopRow:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', gap:8 },
-  paymentNote:{ fontSize:11, fontWeight:'500', color:'#94a3b8', fontStyle:'italic' },
+  paymentNote:{ fontSize:11, fontWeight:'500', color:'#94a3b8', fontStyle:'italic', writingDirection:'rtl' },
   actionRow:{ flexDirection:'row', gap:6 },
   actionBtn:{ width:30, height:30, borderRadius:15, alignItems:'center', justifyContent:'center' },
   actionBtnDisabled:{ opacity:0.45 },
@@ -344,9 +344,9 @@ const styles = StyleSheet.create({
   closeFooterBtnText:{ color:'#0d47a1', fontSize:14, fontWeight:'700', letterSpacing:0.4 },
   removeBtn:{ width:38, height:38, borderRadius:14, alignItems:'center', justifyContent:'center', backgroundColor:'rgba(239,68,68,0.10)', marginRight:8 },
   removeBtnDisabled:{ opacity:0.45 },
-  unregisterBtn:{ paddingHorizontal:14, paddingVertical:8, borderRadius:12, backgroundColor:'#1976d2', marginLeft:'auto' },
+  unregisterBtn:{ paddingHorizontal:14, paddingVertical:8, borderRadius:12, backgroundColor:'#1976d2', marginStart:'auto' },
   unregisterBtnDisabled:{ opacity:0.6 },
-  unregisterBtnText:{ color:'#ffffff', fontSize:12, fontWeight:'700', letterSpacing:0.5 },
+  unregisterBtnText:{ color:'#ffffff', fontSize:12, fontWeight:'700', letterSpacing:0.5, writingDirection:'rtl' },
   unregisterFallbackRow:{ paddingTop:8, marginTop:8, borderTopWidth:1, borderTopColor:'rgba(13,71,161,0.06)', flexDirection:'row', justifyContent:'flex-end' },
 });
 

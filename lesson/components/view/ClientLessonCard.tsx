@@ -14,7 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Lesson } from '../../types/Lesson';
 import { formatLessonTimeReadable } from '../../../shared/services/formatService';
 import { formatPrice } from '../../../shared/services/formatService';
-import { getLessonIcon, getLessonBackground } from '../../types/LessonType';
+import { getLessonIcon, getLessonBackground, getLessonTypeDisplayName } from '../../types/LessonType';
 import { useNavigation } from '@react-navigation/native';
 
 interface ClientLessonCardsProps {
@@ -96,9 +96,9 @@ const ClientLessonCards: React.FC<ClientLessonCardsProps> = ({
   if (lessons.length === 0) {
     return (
       <View style={styles.noResultsContainer}>
-        <Text style={styles.noResultsTitle}>No Lessons Found</Text>
+        <Text style={styles.noResultsTitle}>לא נמצאו שיעורים</Text>
         <Text style={styles.noResultsText}>
-          Try adjusting your search filters or check back later for new lessons.
+          נסה לשנות את מסנני החיפוש או בדוק שוב מאוחר יותר.
         </Text>
       </View>
     );
@@ -151,13 +151,13 @@ const ClientLessonCards: React.FC<ClientLessonCardsProps> = ({
                   resizeMode="cover"
                 >
                   <View style={styles.titleBarContent}>
-                    <Text numberOfLines={1} style={styles.titleBarTextBig}>{lesson.title}</Text>
+                    <Text numberOfLines={1} style={styles.titleBarTextBig}>{getLessonTypeDisplayName(lesson.title)}</Text>
                   </View>
                 </ImageBackground>
               ) : (
                 <View style={styles.titleBar}>
                   <View style={styles.titleBarContent}>
-                    <Text numberOfLines={1} style={styles.titleBarTextBig}>{lesson.title}</Text>
+                    <Text numberOfLines={1} style={styles.titleBarTextBig}>{getLessonTypeDisplayName(lesson.title)}</Text>
                   </View>
                 </View>
               )}
@@ -181,7 +181,7 @@ const ClientLessonCards: React.FC<ClientLessonCardsProps> = ({
                       {lesson.duration && (
                         <View style={styles.detailChip}>
                           <Icon name="timer" size={14} color="#64b5f6" style={styles.chipIcon} />
-                          <Text style={styles.detailChipText}>{lesson.duration} min</Text>
+                          <Text style={styles.detailChipText}>{lesson.duration} דק׳</Text>
                         </View>
                       )}
                       {lesson.price && (
@@ -216,6 +216,8 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0,0,0,0.18)',
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
+        textAlign: 'left',
+        writingDirection: 'rtl',
       },
     // titleBarOverlay removed
     titleBarContent: {
@@ -259,7 +261,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1565c0',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 4,
   },
   titleBarText: {
     fontSize: 16,
@@ -267,6 +268,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     letterSpacing: 0.2,
     flex: 1,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   cardContentRow: {
     flexDirection: 'row',
@@ -291,6 +294,8 @@ const styles = StyleSheet.create({
     color: '#1976d2',
     fontWeight: '700',
     letterSpacing: 0.2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   lessonLocation: {
     fontSize: 16,
@@ -298,6 +303,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
     maxWidth: 120,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   lessonCoach: {
     fontSize: 16,
@@ -305,6 +312,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
     maxWidth: 120,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
     detailRowWrap: {
       flexDirection: 'row',
@@ -314,7 +323,7 @@ const styles = StyleSheet.create({
       marginTop: -2,
       marginBottom: 2,
       paddingHorizontal: 0,
-      marginLeft: -6,
+      marginStart: -6,
     },
     detailChip: {
       flexDirection: 'row',
@@ -326,8 +335,8 @@ const styles = StyleSheet.create({
       borderWidth: 1,
       borderColor: 'rgba(255,255,255,0.22)',
     },
-    chipIcon: { marginRight: 4 },
-    detailChipText: { fontSize: 16, fontWeight: '700', color: '#1976d2', letterSpacing: 0.2 },
+    chipIcon: { marginEnd: 4 },
+    detailChipText: { fontSize: 16, fontWeight: '700', color: '#1976d2', letterSpacing: 0.2, textAlign: 'left', writingDirection: 'rtl' },
   capacityCol: {
     alignItems: 'flex-end',
     justifyContent: 'center',
@@ -343,12 +352,13 @@ const styles = StyleSheet.create({
     minWidth: 70,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginStart: 8,
     marginTop: 45,
   },
   capacityText: {
     fontSize: 14,
     fontWeight: '700',
+    writingDirection: 'rtl',
   },
   noResultsContainer: {
     padding: 28,
@@ -364,12 +374,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
     marginBottom: 6,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   noResultsText: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.75)',
     textAlign: 'center',
     lineHeight: 20,
+    writingDirection: 'rtl',
   },
   // Skeleton styles (glassy look)
   skelAvatar: {

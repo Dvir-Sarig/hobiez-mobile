@@ -33,9 +33,9 @@ const ImagePickerComponent: React.FC<ImagePickerProps> = ({
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
-        'Permission Required',
-        'Sorry, we need camera roll permissions to upload images.',
-        [{ text: 'OK' }]
+        'נדרשת הרשאה',
+        'סליחה, אנו צריכים הרשאת גלריה כדי להעלות תמונות.',
+        [{ text: 'אישור' }]
       );
       return false;
     }
@@ -59,7 +59,7 @@ const ImagePickerComponent: React.FC<ImagePickerProps> = ({
         await uploadImage(result.assets[0]);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+      Alert.alert('שגיאה', 'בחירת התמונה נכשלה');
     }
   };
 
@@ -69,9 +69,9 @@ const ImagePickerComponent: React.FC<ImagePickerProps> = ({
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
-        'Permission Required',
-        'Sorry, we need camera permissions to take photos.',
-        [{ text: 'OK' }]
+        'נדרשת הרשאה',
+        'סליחה, אנו צריכים הרשאת מצלמה כדי לצלם.',
+        [{ text: 'אישור' }]
       );
       return;
     }
@@ -87,13 +87,13 @@ const ImagePickerComponent: React.FC<ImagePickerProps> = ({
         await uploadImage(result.assets[0]);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo');
+      Alert.alert('שגיאה', 'צילום נכשל');
     }
   };
 
   const uploadImage = async (imageAsset: ImagePicker.ImagePickerAsset) => {
     if (!token) {
-      Alert.alert('Error', 'Authentication required');
+      Alert.alert('שגיאה', 'נדרשת אימות');
       return;
     }
 
@@ -103,7 +103,7 @@ const ImagePickerComponent: React.FC<ImagePickerProps> = ({
       const response = await uploadProfileImage(imageAsset, token);
       onImageChange(response.imageUrl);
     } catch (error) {
-      Alert.alert('Upload Failed', (error as Error).message || 'Failed to upload image');
+      Alert.alert('העלאה נכשלה', (error as Error).message || 'העלאת התמונה נכשלה');
     } finally {
       setUploading(false);
     }
@@ -113,12 +113,12 @@ const ImagePickerComponent: React.FC<ImagePickerProps> = ({
     if (!currentImageUrl || !token) return;
 
     Alert.alert(
-      'Delete Profile Picture',
-      'Are you sure you want to delete your profile picture?',
+      'מחיקת תמונת פרופיל',
+      'האם אתה בטוח שברצונך למחוק את תמונת הפרופיל?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'ביטול', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'מחק',
           style: 'destructive',
           onPress: async () => {
             setUploading(true);
@@ -126,7 +126,7 @@ const ImagePickerComponent: React.FC<ImagePickerProps> = ({
               await deleteProfileImage(currentImageUrl, token);
               onImageChange(null);
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete image');
+              Alert.alert('שגיאה', 'מחיקת התמונה נכשלה');
             } finally {
               setUploading(false);
             }
@@ -140,13 +140,13 @@ const ImagePickerComponent: React.FC<ImagePickerProps> = ({
     if (disabled || uploading) return;
 
     Alert.alert(
-      'Profile Picture',
-      'Choose an option',
+      'תמונת פרופיל',
+      'בחר אפשרות',
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Take Photo', onPress: takePhoto },
-        { text: 'Choose from Library', onPress: pickImage },
-        ...(currentImageUrl ? [{ text: 'Delete Current', style: 'destructive' as const, onPress: deleteImage }] : []),
+        { text: 'ביטול', style: 'cancel' },
+        { text: 'צלם', onPress: takePhoto },
+        { text: 'בחר מהגלריה', onPress: pickImage },
+        ...(currentImageUrl ? [{ text: 'מחק נוכחית', style: 'destructive' as const, onPress: deleteImage }] : []),
       ]
     );
   };
@@ -182,7 +182,7 @@ const ImagePickerComponent: React.FC<ImagePickerProps> = ({
       </TouchableOpacity>
 
       {!disabled && (
-        <Text style={styles.helpText}>Tap to change photo</Text>
+        <Text style={styles.helpText}>לחץ לשינוי תמונה</Text>
       )}
     </View>
   );

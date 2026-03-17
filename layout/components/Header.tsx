@@ -26,7 +26,7 @@ export default function Header({ onMobileMenuClick }: HeaderProps) {
 
             {/* מקום ל- CustomDatePicker */}
             <TouchableOpacity onPress={() => {}} style={styles.dateButton}>
-                <Text style={styles.dateText}>Select Date</Text>
+                <Text style={styles.dateText}>בחר תאריך</Text>
             </TouchableOpacity>
         </View>
     );

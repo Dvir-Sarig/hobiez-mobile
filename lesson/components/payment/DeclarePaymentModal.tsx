@@ -33,24 +33,24 @@ type MethodEntry = {
 const PAYMENT_METHODS: MethodEntry[] = [
   {
     key: 'BIT',
-    label: 'Bit',
-    subtitle: 'Pay via Bit app',
+    label: 'ביט',
+    subtitle: 'תשלום דרך אפליקציית Bit',
     iconType: 'image-bit',
     iconBg: '#00353b',
     iconColor: '#39edf6',
   },
   {
     key: 'PAYBOX',
-    label: 'PayBox',
-    subtitle: 'Pay via PayBox app',
+    label: 'פייבוקס',
+    subtitle: 'תשלום דרך אפליקציית PayBox',
     iconType: 'image-paybox',
     iconBg: '#0ea5e9',
     iconColor: '#ffffff',
   },
   {
     key: 'CASH',
-    label: 'Cash',
-    subtitle: 'Physical cash payment',
+    label: 'מזומן',
+    subtitle: 'תשלום במזומן',
     iconType: 'material',
     icon: 'account-balance-wallet',
     iconBg: '#dcfce7',
@@ -58,8 +58,8 @@ const PAYMENT_METHODS: MethodEntry[] = [
   },
   {
     key: 'OTHER',
-    label: 'Other',
-    subtitle: 'Bank transfer or other',
+    label: 'אחר',
+    subtitle: 'העברה בנקאית או אחר',
     iconType: 'material',
     icon: 'swap-horiz',
     iconBg: '#f1f5f9',
@@ -127,8 +127,8 @@ const DeclarePaymentModal: React.FC<Props> = ({ isOpen, onClose, onDeclare }) =>
                 <MaterialIcons name="payment" size={22} color="#ffffff" />
               </View>
               <View style={styles.headerTextCol}>
-                <Text style={styles.headerTitle}>Declare Payment</Text>
-                <Text style={styles.headerSubtitle}>Select how you paid</Text>
+                <Text style={styles.headerTitle}>הצהרת תשלום</Text>
+                <Text style={styles.headerSubtitle}>בחר איך שילמת</Text>
               </View>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
@@ -137,7 +137,7 @@ const DeclarePaymentModal: React.FC<Props> = ({ isOpen, onClose, onDeclare }) =>
           </LinearGradient>
 
           <View style={styles.content}>
-            <Text style={styles.sectionLabel}>Payment Method</Text>
+            <Text style={styles.sectionLabel}>אמצעי תשלום</Text>
 
             {/* Modern list rows */}
             <View style={styles.methodList}>
@@ -180,10 +180,10 @@ const DeclarePaymentModal: React.FC<Props> = ({ isOpen, onClose, onDeclare }) =>
               })}
             </View>
 
-            <Text style={[styles.sectionLabel, { marginTop: 20 }]}>Note (optional)</Text>
+            <Text style={[styles.sectionLabel, { marginTop: 20 }]}>הערה (אופציונלי)</Text>
             <TextInput
               style={styles.noteInput}
-              placeholder="e.g. Paid via Bit"
+              placeholder="לדוגמה: שולם בביט"
               placeholderTextColor="#90a4ae"
               value={note}
               onChangeText={setNote}
@@ -193,7 +193,7 @@ const DeclarePaymentModal: React.FC<Props> = ({ isOpen, onClose, onDeclare }) =>
 
           <View style={styles.footerBar}>
             <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} disabled={isSubmitting}>
-              <Text style={[styles.cancelBtnText, isSubmitting && { opacity: 0.5 }]}>Cancel</Text>
+              <Text style={[styles.cancelBtnText, isSubmitting && { opacity: 0.5 }]}>ביטול</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.primaryBtn, (!selectedMethod || isSubmitting) && styles.primaryBtnDisabled]}
@@ -203,7 +203,7 @@ const DeclarePaymentModal: React.FC<Props> = ({ isOpen, onClose, onDeclare }) =>
               {isSubmitting ? (
                 <ActivityIndicator size="small" color="#ffffff" />
               ) : (
-                <Text style={styles.primaryBtnText}>Confirm Payment</Text>
+                <Text style={styles.primaryBtnText}>אשר תשלום</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -248,8 +248,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.4)',
   },
   headerTextCol: { flex: 1 },
-  headerTitle: { fontSize: 19, fontWeight: '800', color: '#ffffff', letterSpacing: 0.5 },
-  headerSubtitle: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.85)', marginTop: 2 },
+  headerTitle: { fontSize: 19, fontWeight: '800', color: '#ffffff', letterSpacing: 0.5, textAlign: 'left', writingDirection: 'rtl' },
+  headerSubtitle: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.85)', marginTop: 2, textAlign: 'left', writingDirection: 'rtl' },
   closeBtn: {
     width: 40,
     height: 40,
@@ -268,6 +268,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   methodList: {
     backgroundColor: '#f8fafc',
@@ -305,6 +307,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1e293b',
     letterSpacing: 0.2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   methodLabelSelected: { color: '#1976d2' },
   methodSubtitle: {
@@ -312,6 +316,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#94a3b8',
     marginTop: 1,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   radio: {
     width: 22,
@@ -363,7 +369,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'rgba(25,118,210,0.25)',
   },
-  cancelBtnText: { color: '#0d47a1', fontSize: 14, fontWeight: '700', letterSpacing: 0.4 },
+  cancelBtnText: { color: '#0d47a1', fontSize: 14, fontWeight: '700', letterSpacing: 0.4, writingDirection: 'rtl' },
   primaryBtn: {
     flex: 1.4,
     backgroundColor: '#1976d2',
@@ -377,7 +383,7 @@ const styles = StyleSheet.create({
     }),
   },
   primaryBtnDisabled: { backgroundColor: '#94a3b8' },
-  primaryBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
+  primaryBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '800', letterSpacing: 0.5, writingDirection: 'rtl' },
 });
 
 export default DeclarePaymentModal;

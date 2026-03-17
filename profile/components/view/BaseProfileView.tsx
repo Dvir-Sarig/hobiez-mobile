@@ -143,13 +143,13 @@ export default function BaseProfileView({
                 {onViewCalendarClick && (
                   <TouchableOpacity style={styles.actionButton} onPress={onViewCalendarClick}>
                     <MaterialIcons name="calendar-today" size={20} color="#fff" />
-                    <Text style={styles.actionButtonText}>Calendar</Text>
+                    <Text style={styles.actionButtonText}>לוח שנה</Text>
                   </TouchableOpacity>
                 )}
                 {onWhatsAppPress && (
                   <TouchableOpacity style={styles.actionButton} onPress={onWhatsAppPress}>
                     <MaterialCommunityIcons name="whatsapp" size={20} color="#fff" />
-                    <Text style={styles.actionButtonText}>WhatsApp</Text>
+                    <Text style={styles.actionButtonText}>וואטסאפ</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     height: 110,
     borderRadius: 55,
     backgroundColor: '#fff',
-    marginRight: 20,
+    marginEnd: 20,
     marginBottom: 12,
     borderWidth: 4,
     borderColor: 'rgba(255,255,255,0.35)',
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 20,
+    marginEnd: 20,
     marginBottom: 12,
     borderWidth: 4,
     borderColor: 'rgba(255,255,255,0.35)',
@@ -242,9 +242,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#fff',
     letterSpacing: 0.5,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   editIcon: {
-    marginLeft: 10,
+    marginStart: 10,
     backgroundColor: '#ffffff',
     padding: 8,
     borderRadius: 18,
@@ -259,6 +261,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     maxWidth: 380,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   rightSide: {
     width: '100%',
@@ -277,9 +281,11 @@ const styles = StyleSheet.create({
   },
   infoText: {
     color: 'rgba(255,255,255,0.85)',
-    marginLeft: 8,
+    marginStart: 8,
     fontSize: 15,
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   content: {
     paddingHorizontal: 18,
@@ -308,12 +314,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
-    marginRight: 10,
+    marginEnd: 10,
   },
   actionButtonText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
-    marginLeft: 8,
+    marginStart: 8,
+    writingDirection: 'rtl',
   },
 });

@@ -10,7 +10,7 @@ import { fetchLessonRegistrations, confirmPayment, rejectPayment } from '../../l
 import { RegistrationWithPayment } from '../../lesson/types/Registration';
 import { fetchClientGlobalInfo } from '../../profile/services/clientService';
 import { Lesson } from '../../lesson/types/Lesson';
-import { formatLessonToEvent } from '../shared/utils/calendar.utils';
+import { formatLessonToEvent, hebrewDayName, hebrewDateLabel, hebrewWeekRange } from '../shared/utils/calendar.utils';
 import ViewLessonModal from '../../lesson/components/view/ViewLessonModal';
 import EditLessonModal from '../../lesson/components/management/editing/EditLessonModal';
 import DeleteConfirmationModal from '../../lesson/components/management/deletion/DeleteConfirmationModal';
@@ -19,6 +19,7 @@ import { formatLessonTimeReadable } from '../../shared/services/formatService';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { CalendarLessonCard } from '../shared/components/CalendarLessonCard';
 import { CalendarEvent } from '../shared/types/calendar.types';
+import { getLessonTypeDisplayName } from '../../lesson/types/LessonType';
 import { RootStackParamList } from '../../types';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -151,7 +152,7 @@ const CoachCalendarView = () => {
           : event
       ))));
     } catch (error) {
-      Alert.alert('Error', (error as Error).message || 'An error occurred while editing.');
+      Alert.alert('שגיאה', (error as Error).message || 'אירעה שגיאה בעת עריכת השיעור.');
     } finally {
       setIsEditingLesson(false);
     }
@@ -166,7 +167,7 @@ const CoachCalendarView = () => {
       setShowDeleteConfirmationModal(false);
       setSelectedLesson(null);
     } catch (error) {
-      Alert.alert('Error', (error as Error).message || 'Failed to delete lesson');
+      Alert.alert('שגיאה', (error as Error).message || 'מחיקת השיעור נכשלה');
     } finally {
       setIsDeletingLesson(false);
     }
@@ -267,7 +268,7 @@ const CoachCalendarView = () => {
       onPress={() => handleOpenModal(lesson)}
     >
       <View style={styles.lessonHeader}>
-        <Text style={styles.lessonTitle}>{lesson.title}</Text>
+        <Text style={styles.lessonTitle}>{getLessonTypeDisplayName(lesson.title)}</Text>
         <Text style={styles.lessonTime}>
           {formatLessonTimeReadable(lesson.time)}
         </Text>
@@ -285,13 +286,13 @@ const CoachCalendarView = () => {
         
         <View style={styles.detailRow}>
           <Icon name="timer" size={16} color="#666" />
-          <Text style={styles.detailText}>{lesson.duration} minutes</Text>
+          <Text style={styles.detailText}>{lesson.duration} דק׳</Text>
         </View>
 
         <View style={styles.detailRow}>
           <Icon name="people" size={16} color="#666" />
           <Text style={styles.detailText}>
-            {lesson.registeredCount || 0}/{lesson.capacityLimit} registered
+            {lesson.registeredCount || 0}/{lesson.capacityLimit} רשומים
           </Text>
         </View>
       </View>
@@ -301,7 +302,7 @@ const CoachCalendarView = () => {
   const goPrevWeek = () => { const d=weekAnchor.subtract(1,'week'); setWeekAnchor(d); handleDateSelect(d.toDate()); };
   const goNextWeek = () => { const d=weekAnchor.add(1,'week'); setWeekAnchor(d); handleDateSelect(d.toDate()); };
   const goToday = () => { const d=dayjs(); setWeekAnchor(d); handleDateSelect(d.toDate()); };
-  const weekRangeLabel = useMemo(()=>{ const start = weekAnchor.startOf('week').add(1,'day'); const end = start.add(6,'day'); return `${start.format('MMM D')} – ${end.format(start.month()!==end.month()? 'MMM D':'D, YYYY')}`; },[weekAnchor]);
+  const weekRangeLabel = useMemo(()=> hebrewWeekRange(weekAnchor),[weekAnchor]);
 
   const renderDayLessonCard = (lesson: Lesson) => {
     const t = inferType(lesson.title);
@@ -320,17 +321,17 @@ const CoachCalendarView = () => {
     <LinearGradient colors={['#0d47a1','#1565c0','#1e88e5']} style={styles.gradientContainer}>
       <View style={styles.overlayLayer}>
         <View style={styles.headerPolished}> 
-          <TouchableOpacity onPress={() => navigation.navigate('CoachLessons' as never)} style={styles.headerIconBtn} accessibilityLabel="Back to My Lessons"> 
-            <Icon name="arrow-back" size={20} color="#ffffff" />
+          <TouchableOpacity onPress={() => navigation.navigate('CoachLessons' as never)} style={styles.headerIconBtn} accessibilityLabel="חזרה לשיעורים שלי"> 
+            <Icon name="arrow-forward" size={20} color="#ffffff" />
           </TouchableOpacity>
           <View style={{flex:1}}>
-            <Text style={styles.headerTitle}>My Schedule</Text>
+            <Text style={styles.headerTitle}>לוח השיעורים שלי</Text>
             <Text style={styles.headerSubtitle}>{weekRangeLabel}</Text>
           </View>
           <View style={styles.navControls}> 
-            <TouchableOpacity onPress={goPrevWeek} style={styles.navPill}><Icon name="chevron-left" size={20} color="#0d47a1" /></TouchableOpacity>
-            <TouchableOpacity onPress={goToday} style={[styles.navPill, styles.todayPill]}><Text style={styles.todayText}>Today</Text></TouchableOpacity>
-            <TouchableOpacity onPress={goNextWeek} style={styles.navPill}><Icon name="chevron-right" size={20} color="#0d47a1" /></TouchableOpacity>
+            <TouchableOpacity onPress={goPrevWeek} style={styles.navPill}><Icon name="chevron-right" size={20} color="#0d47a1" /></TouchableOpacity>
+            <TouchableOpacity onPress={goToday} style={[styles.navPill, styles.todayPill]}><Text style={styles.todayText}>היום</Text></TouchableOpacity>
+            <TouchableOpacity onPress={goNextWeek} style={styles.navPill}><Icon name="chevron-left" size={20} color="#0d47a1" /></TouchableOpacity>
           </View>
         </View>
 
@@ -340,7 +341,8 @@ const CoachCalendarView = () => {
             date={weekAnchor.toDate()}
             height={Dimensions.get('window').height * 0.42}
             mode="week"
-            weekStartsOn={1}
+            weekStartsOn={0}
+            locale="he"
             hourRowHeight={44}
             hideNowIndicator
             swipeEnabled
@@ -379,8 +381,8 @@ const CoachCalendarView = () => {
         <View style={styles.dayListCard}> 
           <View style={styles.dayListHeaderRow}> 
             <View>
-              <Text style={styles.dayHeading}>{selectedDate.format('dddd')}</Text>
-              <Text style={styles.daySubHeading}>{selectedDate.format('D MMM YYYY')}</Text>
+              <Text style={styles.dayHeading}>יום {hebrewDayName(selectedDate)}</Text>
+              <Text style={styles.daySubHeading}>{hebrewDateLabel(selectedDate)}</Text>
             </View>
             <View style={styles.countBadge}><Text style={styles.countBadgeText}>{selectedDateLessons.length}</Text></View>
           </View>
@@ -388,8 +390,8 @@ const CoachCalendarView = () => {
             {selectedDateLessons.length>0 ? selectedDateLessons.map(renderDayLessonCard) : (
               <View style={styles.emptyState}> 
                 <Icon name="event-busy" size={44} color="#ffffff" style={{opacity:0.55}} />
-                <Text style={styles.emptyTitle}>No lessons</Text>
-                <Text style={styles.emptySubtitle}>Create or select another day.</Text>
+                <Text style={styles.emptyTitle}>אין שיעורים</Text>
+                <Text style={styles.emptySubtitle}>צור שיעור או בחר יום אחר.</Text>
               </View>
             )}
           </ScrollView>
@@ -479,7 +481,7 @@ const CoachCalendarView = () => {
             const updated = await fetchSingleLesson(lessonId);
             setSelectedLesson(updated);
           }
-          Alert.alert('Client Removed', `${clientName} has been unregistered from the lesson.`);
+          Alert.alert('לקוח הוסר', `${clientName} בוטל מהשיעור.`);
         }}
       />
     </LinearGradient>
@@ -492,9 +494,9 @@ const styles = StyleSheet.create({
   gradientContainer:{ flex:1 },
   overlayLayer:{ flex:1, paddingTop:Platform.OS==='ios'? 54:36, paddingHorizontal:18 },
   headerPolished:{ flexDirection:'row', alignItems:'center', marginBottom:16 },
-  headerIconBtn:{ width:46, height:46, borderRadius:16, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.45)', marginRight:14 },
-  headerTitle:{ fontSize:22, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
-  headerSubtitle:{ fontSize:12, fontWeight:'600', color:'rgba(255,255,255,0.85)', marginTop:4 },
+  headerIconBtn:{ width:46, height:46, borderRadius:16, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.45)', marginEnd:14 },
+  headerTitle:{ fontSize:22, fontWeight:'800', color:'#ffffff', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
+  headerSubtitle:{ fontSize:12, fontWeight:'600', color:'rgba(255,255,255,0.85)', marginTop:4, textAlign:'left', writingDirection:'rtl' },
   navControls:{ flexDirection:'row', alignItems:'center', gap:8 },
   navPill:{ backgroundColor:'#ffffff', paddingHorizontal:8, paddingVertical:5, borderRadius:10, borderWidth:1, borderColor:'rgba(13,71,161,0.25)', shadowColor:'#000', shadowOpacity:0.10, shadowRadius:3, shadowOffset:{width:0,height:1}, minHeight:30, minWidth:34, alignItems:'center', justifyContent:'center' },
   todayPill:{ backgroundColor:'#e3f2fd' },
@@ -505,22 +507,22 @@ const styles = StyleSheet.create({
   eventAbbr:{ fontSize:11, fontWeight:'800', color:'#0d47a1' },
   dayListCard:{ flex:1, backgroundColor:'rgba(255,255,255,0.9)', borderRadius:30, padding:18, borderWidth:1, borderColor:'rgba(255,255,255,0.55)', shadowColor:'#000', shadowOpacity:0.15, shadowRadius:18, shadowOffset:{width:0,height:8} },
   dayListHeaderRow:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:14 },
-  dayHeading:{ fontSize:18, fontWeight:'800', color:'#0d47a1' },
-  daySubHeading:{ fontSize:12, fontWeight:'700', color:'#1976d2', marginTop:2 },
+  dayHeading:{ fontSize:18, fontWeight:'800', color:'#0d47a1', textAlign:'left', writingDirection:'rtl' },
+  daySubHeading:{ fontSize:12, fontWeight:'700', color:'#1976d2', marginTop:2, textAlign:'left', writingDirection:'rtl' },
   countBadge:{ backgroundColor:'#0d47a1', paddingHorizontal:12, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor:'#1565c0' },
   countBadgeText:{ fontSize:12, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
   dayLessonCard:{ flexDirection:'row', backgroundColor:'#ffffff', borderRadius:20, padding:14, marginBottom:14, borderWidth:1, borderColor:'rgba(13,71,161,0.1)', shadowColor:'#0d47a1', shadowOpacity:0.08, shadowRadius:10, shadowOffset:{width:0,height:4} },
-  typeBadge:{ width:46, height:46, borderRadius:16, borderWidth:1.5, alignItems:'center', justifyContent:'center', marginRight:12 },
+  typeBadge:{ width:46, height:46, borderRadius:16, borderWidth:1.5, alignItems:'center', justifyContent:'center', marginEnd:12 },
   typeBadgeText:{ fontSize:13, fontWeight:'800', letterSpacing:0.5 },
   dayLessonTitle:{ fontSize:14.5, fontWeight:'800', color:'#0d47a1', marginBottom:4 },
   dayLessonMeta:{ fontSize:11.5, fontWeight:'700', color:'#1976d2' },
   dayLessonLocation:{ fontSize:11, fontWeight:'600', color:'#374151', marginTop:4 },
   capacityBar:{ height:5, backgroundColor:'#e0f2fe', borderRadius:4, overflow:'hidden', marginTop:8 },
   capacityFill:{ height:5, backgroundColor:'#1976d2' },
-  inlineAction:{ marginLeft:10, width:40, alignItems:'center', justifyContent:'center' },
+  inlineAction:{ marginStart:10, width:40, alignItems:'center', justifyContent:'center' },
   emptyState:{ alignItems:'center', paddingVertical:32 },
-  emptyTitle:{ fontSize:16, fontWeight:'800', color:'#0d47a1', marginTop:12 },
-  emptySubtitle:{ fontSize:12.5, fontWeight:'600', color:'#1e3a8a', marginTop:4, textAlign:'center', paddingHorizontal:18 },
+  emptyTitle:{ fontSize:16, fontWeight:'800', color:'#0d47a1', marginTop:12, textAlign:'left', writingDirection:'rtl' },
+  emptySubtitle:{ fontSize:12.5, fontWeight:'600', color:'#1e3a8a', marginTop:4, textAlign:'center', paddingHorizontal:18, writingDirection:'rtl' },
   compactEventContainer:{ flexDirection:'row', alignItems:'center', paddingHorizontal:6, gap:4, borderRadius:8, borderWidth:1, minHeight:26 },
   compactStripe:{ position:'absolute', left:0, top:0, bottom:0, width:3, borderTopLeftRadius:6, borderBottomLeftRadius:6 },
   compactAbbr:{ fontSize:10, fontWeight:'800', letterSpacing:0.5 },

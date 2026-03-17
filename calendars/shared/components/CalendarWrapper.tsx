@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native
 import { Calendar } from 'react-native-big-calendar';
 import dayjs from 'dayjs';
 import { CalendarWrapperProps, CalendarEvent } from '../types/calendar.types';
+import { getLessonTypeDisplayName } from '../../../lesson/types/LessonType';
+import { hebrewDateLabel } from '../utils/calendar.utils';
 
 const CalendarWrapper: React.FC<CalendarWrapperProps> = ({ events, onSelectEvent }) => {
   const [selectedDateEvents, setSelectedDateEvents] = useState<CalendarEvent[]>([]);
@@ -21,6 +23,8 @@ const CalendarWrapper: React.FC<CalendarWrapperProps> = ({ events, onSelectEvent
         events={events}
         height={500}
         mode="month"
+        weekStartsOn={0}
+        locale="he"
         swipeEnabled
         showTime={false}
         onPressEvent={onSelectEvent}
@@ -31,7 +35,7 @@ const CalendarWrapper: React.FC<CalendarWrapperProps> = ({ events, onSelectEvent
       {selectedDateEvents.length > 0 && (
         <View style={styles.listContainer}>
           <Text style={styles.listTitle}>
-            Lessons on {dayjs(selectedDateEvents[0].start).format('MMMM D, YYYY')}
+            שיעורים בתאריך {hebrewDateLabel(dayjs(selectedDateEvents[0].start))}
           </Text>
 
           <FlatList
@@ -42,8 +46,8 @@ const CalendarWrapper: React.FC<CalendarWrapperProps> = ({ events, onSelectEvent
                 onPress={() => onSelectEvent(item)}
                 style={styles.listItem}
               >
-                <Text style={styles.itemTitle}>{item.title}</Text>
-                <Text style={styles.itemSubtitle}>Duration: {item.duration} min</Text>
+                <Text style={styles.itemTitle}>{getLessonTypeDisplayName(item.title)}</Text>
+                <Text style={styles.itemSubtitle}>משך: {item.duration} דק׳</Text>
               </TouchableOpacity>
             )}
             ItemSeparatorComponent={() => <View style={styles.divider} />}
@@ -76,7 +80,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-    paddingBottom: 4
+    paddingBottom: 4,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   listItem: {
     paddingVertical: 8,

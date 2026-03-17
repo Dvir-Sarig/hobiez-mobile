@@ -83,7 +83,7 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
     const validation = validateCoachProfile(formData);
     setErrors(validation.errors);
     if (!validation.valid) {
-      Alert.alert('Validation', firstError(validation.errors) || 'Please fix errors');
+      Alert.alert('אימות', firstError(validation.errors) || 'אנא תקן שגיאות');
       return;
     }
     setLoading(true);
@@ -92,7 +92,7 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
       await createCoachProfile(userInfo.id, formData);
       navigation.navigate('MainDrawer', { screen: 'Profile' });
     } catch (err) {
-      Alert.alert('Error', (err as Error).message || 'Failed to create profile');
+      Alert.alert('שגיאה', (err as Error).message || 'יצירת הפרופיל נכשלה');
     } finally {
       setLoading(false);
     }
@@ -109,15 +109,15 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
             <View style={styles.avatarWrapper}>
               <MaterialIcons name="fitness-center" size={40} color="#1976d2" />
             </View>
-            <Text style={styles.title}>Create Your Coach Profile</Text>
+            <Text style={styles.title}>צור את פרופיל המאמן שלך</Text>
             <Text style={styles.subtitle}>
-              Share your expertise and start inspiring others on their journey
+              שתף את המומחיות שלך והתחל להשרות אחרים בדרכם
             </Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Basic Info</Text>
-            <Text style={styles.label}>Profile Picture</Text>
+            <Text style={styles.sectionHeader}>מידע בסיסי</Text>
+            <Text style={styles.label}>תמונת פרופיל</Text>
             <ImagePickerComponent
               currentImageUrl={formData.genericProfile.profilePictureUrl}
               onImageChange={(imageUrl) => updateGeneric({ profilePictureUrl: imageUrl })}
@@ -125,18 +125,18 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
             />
 
             <View style={styles.readonlyGroup}>  
-              <Text style={styles.smallLabel}>Name</Text>
-              <View style={styles.readonlyPill}><Text style={styles.readonlyText}>{formData.genericProfile.name || 'Loading...'}</Text></View>
+              <Text style={styles.smallLabel}>שם</Text>
+              <View style={styles.readonlyPill}><Text style={styles.readonlyText}>{formData.genericProfile.name || 'טוען...'}</Text></View>
             </View>
             <View style={styles.readonlyGroup}>  
-              <Text style={styles.smallLabel}>Email</Text>
-              <View style={styles.readonlyPill}><Text style={styles.readonlyText}>{formData.genericProfile.email || 'Loading...'}</Text></View>
+              <Text style={styles.smallLabel}>אימייל</Text>
+              <View style={styles.readonlyPill}><Text style={styles.readonlyText}>{formData.genericProfile.email || 'טוען...'}</Text></View>
             </View>
 
-            <Text style={styles.label}>Phone Number</Text>
+            <Text style={styles.label}>מספר טלפון</Text>
             <TextInput
               style={[styles.input, errors['genericProfile.phoneNumber'] && styles.inputError]}
-              placeholder="e.g. +1234567890"
+              placeholder="לדוגמה +1234567890"
               placeholderTextColor="#90a4ae"
               keyboardType="phone-pad"
               value={formData.genericProfile.phoneNumber || ''}
@@ -144,12 +144,12 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
             />
             {errors['genericProfile.phoneNumber'] && <Text style={styles.errorText}>{errors['genericProfile.phoneNumber']}</Text>}
 
-            <Text style={styles.label}>About Me</Text>
+            <Text style={styles.label}>אודותיי</Text>
             <TextInput
               style={[styles.input, styles.textArea, errors['genericProfile.userDescription'] && styles.inputError]}
               multiline
               numberOfLines={4}
-              placeholder="Describe your coaching style and background..."
+              placeholder="תאר את סגנון האימון שלך והרקע..."
               placeholderTextColor="#90a4ae"
               value={formData.genericProfile.userDescription}
               onChangeText={(value) => updateGeneric({ userDescription: value })}
@@ -158,7 +158,7 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Location</Text>
+            <Text style={styles.sectionHeader}>מיקום</Text>
             <LocationField
               location={formData.genericProfile.location}
               onLocationSelect={(location) => updateGeneric({ location })}
@@ -167,7 +167,7 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Skills</Text>
+            <Text style={styles.sectionHeader}>כישורים</Text>
             <SkillSelector
               selectedSkills={formData.skills || []}
               onAdd={(skill) => updateField({ skills: [...(formData.skills || []), skill] })}
@@ -178,12 +178,12 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Experience</Text>
+            <Text style={styles.sectionHeader}>ניסיון</Text>
             <TextInput
               style={[styles.input, styles.textArea, errors['experience'] && styles.inputError]}
               multiline
               numberOfLines={4}
-              placeholder="Share relevant coaching experience..."
+              placeholder="שתף ניסיון אימון רלוונטי..."
               placeholderTextColor="#90a4ae"
               value={formData.experience}
               onChangeText={(value) => updateField({ experience: value })}
@@ -192,19 +192,19 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Education</Text>
+            <Text style={styles.sectionHeader}>השכלה</Text>
             <EducationEditor
               educationList={formData.education || []}
               onChange={(newList) => updateField({ education: newList })}
               hideTitle
             />
             {Object.keys(errors).some(k => k.startsWith('education.')) && (
-              <Text style={styles.errorText}>Please complete required education fields</Text>
+              <Text style={styles.errorText}>אנא השלם שדות השכלה נדרשים</Text>
             )}
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Languages</Text>
+            <Text style={styles.sectionHeader}>שפות</Text>
             <LanguageSelector
               selectedLanguages={formData.genericProfile.languages as SupportedLanguage[]}
               onAdd={(lang) => updateGeneric({ languages: [...formData.genericProfile.languages, lang] })}
@@ -220,11 +220,11 @@ export default function CreateCoachProfileScreen({ navigation }: { navigation: N
 
         <View style={styles.fabContainer}>
           <TouchableOpacity style={styles.primaryFab} disabled={loading} onPress={handleSubmit}>
-            <Text style={styles.fabText}>{loading ? 'Creating...' : 'Create Profile'}</Text>
+            <Text style={styles.fabText}>{loading ? 'יוצר...' : 'צור פרופיל'}</Text>
           </TouchableOpacity>
         </View>
 
-        <LoadingModal visible={loading} message="Creating your profile..." />
+        <LoadingModal visible={loading} message="יוצר את הפרופיל שלך..." />
       </KeyboardAvoidingView>
     </LinearGradient>
   );
@@ -235,20 +235,20 @@ const styles = StyleSheet.create({
   scrollContainer:{ padding:20, paddingBottom:0 },
   headerContainer: { alignItems:'flex-start', marginBottom:28, paddingTop:16 },
   avatarWrapper:{ backgroundColor:'#e3f2fd', padding:16, borderRadius:24, shadowColor:'#000', shadowOpacity:0.15, shadowRadius:6, shadowOffset:{width:0,height:2} },
-  title:{ fontSize:30, fontWeight:'700', color:'#fff', marginTop:16 },
-  subtitle:{ fontSize:14, color:'rgba(255,255,255,0.85)', marginTop:8, lineHeight:20 },
+  title:{ fontSize:30, fontWeight:'700', color:'#fff', marginTop:16, textAlign:'left', writingDirection:'rtl' },
+  subtitle:{ fontSize:14, color:'rgba(255,255,255,0.85)', marginTop:8, lineHeight:20, textAlign:'left', writingDirection:'rtl' },
   section:{ backgroundColor:'rgba(255,255,255,0.96)', borderRadius:20, padding:18, marginBottom:18, shadowColor:'#0d47a1', shadowOffset:{width:0,height:4}, shadowOpacity:0.12, shadowRadius:12, elevation:5, borderWidth:1, borderColor:'rgba(255,255,255,0.6)' },
-  sectionHeader:{ fontSize:13, fontWeight:'700', color:'#1976d2', letterSpacing:1, textTransform:'uppercase', marginBottom:10 },
-  label:{ fontSize:14, fontWeight:'600', color:'#1976d2', marginBottom:8, marginTop:4 },
-  smallLabel:{ fontSize:12, fontWeight:'600', color:'#546e7a', marginBottom:4, textTransform:'uppercase', letterSpacing:0.5 },
+  sectionHeader:{ fontSize:13, fontWeight:'700', color:'#1976d2', letterSpacing:1, textTransform:'uppercase', marginBottom:10, textAlign:'left', writingDirection:'rtl' },
+  label:{ fontSize:14, fontWeight:'600', color:'#1976d2', marginBottom:8, marginTop:4, textAlign:'left', writingDirection:'rtl' },
+  smallLabel:{ fontSize:12, fontWeight:'600', color:'#546e7a', marginBottom:4, textTransform:'uppercase', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
   input:{ backgroundColor:'#f1f5f9', borderRadius:14, paddingHorizontal:14, paddingVertical:12, fontSize:15, borderWidth:1.5, borderColor:'#e2e8f0', marginBottom:16, color:'#0f172a' },
   textArea:{ minHeight:120, textAlignVertical:'top' },
   inputError:{ borderColor:'#dc3545' },
-  errorText:{ color:'#dc3545', marginTop:-8, marginBottom:12, fontSize:12, fontWeight:'600' },
+  errorText:{ color:'#dc3545', marginTop:-8, marginBottom:12, fontSize:12, fontWeight:'600', textAlign:'left', writingDirection:'rtl' },
   readonlyPill:{ backgroundColor:'#e3f2fd', paddingVertical:10, paddingHorizontal:14, borderRadius:14, marginBottom:12 },
-  readonlyText:{ color:'#0d47a1', fontSize:15, fontWeight:'600' },
+  readonlyText:{ color:'#0d47a1', fontSize:15, fontWeight:'600', textAlign:'left', writingDirection:'rtl' },
   readonlyGroup:{ marginBottom:4 },
   primaryFab:{ backgroundColor:'#ffffff', paddingVertical:18, paddingHorizontal:28, borderRadius:18, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{width:0,height:4}, minWidth:'60%', alignItems:'center' },
-  fabText:{ color:'#1976d2', fontSize:16, fontWeight:'700' },
+  fabText:{ color:'#1976d2', fontSize:16, fontWeight:'700', writingDirection:'rtl' },
   fabContainer:{ position:'absolute', bottom:24, left:0, right:0, alignItems:'center' }
 });

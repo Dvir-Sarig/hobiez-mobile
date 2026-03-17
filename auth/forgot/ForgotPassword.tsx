@@ -20,28 +20,28 @@ const ForgotPassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
-    if (!email.trim()) { setError('Please enter your email'); return; }
+    if (!email.trim()) { setError('נא להזין את האימייל'); return; }
     setLoading(true); setError(''); setStatusMessage('');
     try {
       const res = await requestPasswordReset(email.trim());
-      setStatusMessage(res.message || 'If an account exists, a reset code was sent.');
+      setStatusMessage(res.message || 'אם קיים חשבון, נשלח קוד איפוס.');
   // Navigate to code verification step
   navigation.navigate('VerifyResetCode', { email: email.trim() });
     } catch (e: any) {
-      setError(e.message || 'Unable to request reset');
+      setError(e.message || 'לא ניתן לבקש איפוס');
     } finally { setLoading(false); }
   };
 
   return (
     <AuthLayout>
       <View style={styles.card}>
-        <Text style={styles.title}>Forgot Password</Text>
-  <Text style={styles.subtitle}>Enter the email associated with your account. We'll send a 6-digit code to that address.</Text>
+        <Text style={styles.title}>שכחת סיסמה</Text>
+  <Text style={styles.subtitle}>הזן את האימייל המשויך לחשבונך. נשלח קוד בן 6 ספרות לכתובת זו.</Text>
 
         <View style={styles.inputGroup}>
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="אימייל"
             placeholderTextColor="#94a3b8"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -55,11 +55,11 @@ const ForgotPassword: React.FC = () => {
         {statusMessage ? <Text style={styles.success}>{statusMessage}</Text> : null}
 
         <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={submit} disabled={loading}>
-          {loading ? <ActivityIndicator color={tokens.colors.textOnDark} /> : <Text style={styles.buttonText}>Request Reset</Text>}
+          {loading ? <ActivityIndicator color={tokens.colors.textOnDark} /> : <Text style={styles.buttonText}>שלח קוד איפוס</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondary} onPress={() => navigation.navigate('SignIn')}>
-          <Text style={styles.secondaryText}>Back to Sign In</Text>
+          <Text style={styles.secondaryText}>חזרה להתחברות</Text>
         </TouchableOpacity>
       </View>
     </AuthLayout>
@@ -68,17 +68,17 @@ const ForgotPassword: React.FC = () => {
 
 const styles = StyleSheet.create({
   card: { ...surfaces.glassCard, borderRadius: tokens.radius.xl, padding: tokens.space.xl, ...utils.shadowSoft },
-  title: { fontSize: 26, fontWeight: tokens.fontWeight.heavy as any, color: tokens.colors.textOnDark, marginBottom: tokens.space.sm },
-  subtitle: { fontSize: 14, lineHeight: 20, color: tokens.colors.textSubtle, marginBottom: tokens.space.lg },
+  title: { fontSize: 26, fontWeight: tokens.fontWeight.heavy as any, color: tokens.colors.textOnDark, marginBottom: tokens.space.sm, textAlign: 'left', writingDirection: 'rtl' },
+  subtitle: { fontSize: 14, lineHeight: 20, color: tokens.colors.textSubtle, marginBottom: tokens.space.lg, textAlign: 'left', writingDirection: 'rtl' },
   inputGroup: { backgroundColor: tokens.colors.input, borderRadius: tokens.radius.md, paddingHorizontal: tokens.space.md, marginBottom: tokens.space.sm, borderWidth: 1.5, borderColor: tokens.colors.inputBorder },
   input: { flex: 1, paddingVertical: 12, fontSize: 15, fontWeight: tokens.fontWeight.medium as any, color: tokens.colors.textDark },
   button: { backgroundColor: tokens.colors.primary, paddingVertical: tokens.space.lg, borderRadius: tokens.radius.pill, alignItems: 'center', marginTop: tokens.space.md },
   buttonDisabled: { opacity: 0.7 },
-  buttonText: { color: tokens.colors.textOnDark, fontSize: 16, fontWeight: tokens.fontWeight.bold as any },
+  buttonText: { color: tokens.colors.textOnDark, fontSize: 16, fontWeight: tokens.fontWeight.bold as any, textAlign: 'left', writingDirection: 'rtl' },
   secondary: { marginTop: tokens.space.md, alignItems: 'center' },
-  secondaryText: { color: tokens.colors.textOnDark, fontSize: 14, fontWeight: tokens.fontWeight.semibold as any, textDecorationLine: 'underline' },
-  error: { color: tokens.colors.error, marginTop: 8, fontSize: 13 },
-  success: { color: '#10b981', marginTop: 8, fontSize: 13 }
+  secondaryText: { color: tokens.colors.textOnDark, fontSize: 14, fontWeight: tokens.fontWeight.semibold as any, textDecorationLine: 'underline', textAlign: 'left', writingDirection: 'rtl' },
+  error: { color: tokens.colors.error, marginTop: 8, fontSize: 13, textAlign: 'left', writingDirection: 'rtl' },
+  success: { color: '#10b981', marginTop: 8, fontSize: 13, textAlign: 'left', writingDirection: 'rtl' }
 });
 
 export default ForgotPassword;

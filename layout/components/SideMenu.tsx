@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { DrawerContentScrollView, DrawerContentComponentProps } from '@react-navigation/drawer';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useAuth } from '../../auth/AuthContext';
 import { logout } from '../../auth/services/authService';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,59 +34,47 @@ export default function SideMenu(props: DrawerContentComponentProps) {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.fullContainer} edges={['bottom']}>
-      <DrawerContentScrollView {...props} contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.headerText}>Menu</Text>
-          </View>
-
-          <View style={styles.menuItems}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('Home')}>
-              <MaterialCommunityIcons name="home" size={20} color="#fff" style={styles.menuIcon} />
-              <Text style={styles.menuText}>Home</Text>
-            </TouchableOpacity>
-
-            {userType === 'client' ? (
-              <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('SearchLessons')}>
-                <MaterialCommunityIcons name="magnify" size={20} color="#fff" style={styles.menuIcon} />
-                <Text style={styles.menuText}>Search Lessons</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('CoachLessons')}>
-                <MaterialCommunityIcons name="clipboard-list-outline" size={20} color="#fff" style={styles.menuIcon} />
-                <Text style={styles.menuText}>My Lessons</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('Profile')}>
-              <MaterialCommunityIcons name="account-circle" size={20} color="#fff" style={styles.menuIcon} />
-              <Text style={styles.menuText}>Profile</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('Analytics')}>
-              <MaterialCommunityIcons name="chart-line" size={20} color="#fff" style={styles.menuIcon} />
-              <Text style={styles.menuText}>Analytics</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('About')}>
-              <MaterialCommunityIcons name="information-outline" size={20} color="#fff" style={styles.menuIcon} />
-              <Text style={styles.menuText}>About</Text>
-            </TouchableOpacity>
-          </View>
+  const MenuItem = ({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) => (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+      <View style={styles.menuItemContent}>
+        <Text style={styles.menuText}>{label}</Text>
+        <View style={styles.iconWrapper}>
+          <MaterialCommunityIcons name={icon as any} size={20} color="#fff" />
         </View>
-      </DrawerContentScrollView>
+      </View>
+    </TouchableOpacity>
+  );
 
-      {/* buttons in the footer */}
-      <View style={styles.signOutContainer}>
-        <TouchableOpacity style={styles.bottomItem} onPress={() => handleNavigation('Settings')}>
-          <MaterialCommunityIcons name="cog-outline" size={22} color="#fff" style={styles.menuIcon} />
-          <Text style={styles.bottomItemText}>Settings</Text>
+  return (
+    <SafeAreaView style={styles.fullContainer} edges={['top', 'bottom']}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer}>
+        <MenuItem icon="home" label="בית" onPress={() => handleNavigation('Home')} />
+        {userType === 'client' ? (
+          <MenuItem icon="magnify" label="חיפוש שיעורים" onPress={() => handleNavigation('SearchLessons')} />
+        ) : (
+          <MenuItem icon="clipboard-list-outline" label="השיעורים שלי" onPress={() => handleNavigation('CoachLessons')} />
+        )}
+        <MenuItem icon="account-circle" label="פרופיל" onPress={() => handleNavigation('Profile')} />
+        <MenuItem icon="chart-line" label="אנליטיקות" onPress={() => handleNavigation('Analytics')} />
+        <MenuItem icon="information-outline" label="אודות" onPress={() => handleNavigation('About')} />
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('Settings')}>
+          <View style={styles.menuItemContent}>
+            <Text style={styles.footerText}>הגדרות</Text>
+            <View style={styles.iconWrapper}>
+              <MaterialCommunityIcons name="cog-outline" size={22} color="#fff" />
+            </View>
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSignOut} style={styles.bottomItem}>
-          <MaterialCommunityIcons name="logout" size={22} color="#fff" style={styles.menuIcon} />
-          <Text style={[styles.bottomItemText, styles.signOutText]}>Sign Out</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={handleSignOut}>
+          <View style={styles.menuItemContent}>
+            <Text style={styles.footerText}>התנתקות</Text>
+            <View style={styles.iconWrapper}>
+              <MaterialCommunityIcons name="logout" size={22} color="#fff" />
+            </View>
+          </View>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -98,56 +86,54 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0d47a1',
   },
-  scrollContainer: {
-    flexGrow: 1,
-  },
-  container: {
-    padding: 16,
-  },
-  header: {
-    paddingVertical: 16,
-    marginBottom: 12,
-  },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  menuItems: {
+  scrollView: {
     flex: 1,
   },
+  scrollContainer: {
+    paddingTop: 12,
+  },
   menuItem: {
-    padding: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.2)',
-    flexDirection: 'row',
-    alignItems: 'center',
+    minHeight: 56,
   },
-  menuIcon: { marginRight: 12 },
-  menuText: {
-    fontSize: 16,
-    color: 'white',
+  menuItemContent: {
+    width: '100%',
+    position: 'relative',
+    justifyContent: 'center',
+    minHeight: 28,
   },
-  signOutContainer: {
-    padding: 16,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.2)',
-  },
-  signOutText: {
-    fontSize: 18,
-    color: 'white',
-    fontWeight: '700',
-  },
-  bottomItem: {
-    paddingVertical: 14,
+  iconWrapper: {
+    position: 'absolute',
+    right: 0,
+    width: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
+    flexShrink: 0,
   },
-  bottomItemText: {
+  menuText: {
+    width: '100%',
+    fontSize: 16,
+    color: 'white',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    paddingRight: 40,
+  },
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.2)',
+    paddingBottom: 16,
+  },
+  footerText: {
+    width: '100%',
     fontSize: 18,
     color: 'white',
     fontWeight: '700',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    paddingRight: 40,
   },
+
 });

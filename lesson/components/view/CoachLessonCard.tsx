@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
-import { getLessonBackground } from '../../types/LessonType';
+import { getLessonBackground, getLessonTypeDisplayName } from '../../types/LessonType';
 import { Lesson } from '../../types/Lesson';
 import { formatLessonTimeReadable } from '../../../shared/services/formatService';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -30,7 +30,7 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit }) => {
             key={lesson.id}
             style={styles.card}
             activeOpacity={0.85}
-            accessibilityLabel={`Open details for lesson ${lesson.title}`}
+            accessibilityLabel={`Open details for lesson ${getLessonTypeDisplayName(lesson.title)}`}
             onPress={() => onEdit(lesson)}
           >
             {/* Title bar with image background for lesson types */}
@@ -42,13 +42,13 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit }) => {
                 resizeMode="cover"
               >
                 <View style={styles.titleBarContent}>
-                  <Text numberOfLines={1} style={styles.titleBarTextBig}>{lesson.title}</Text>
+                  <Text numberOfLines={1} style={styles.titleBarTextBig}>{getLessonTypeDisplayName(lesson.title)}</Text>
                 </View>
               </ImageBackground>
             ) : (
               <View style={styles.titleBar}>
                 <View style={styles.titleBarContent}>
-                  <Text numberOfLines={1} style={styles.titleBarTextBig}>{lesson.title}</Text>
+                  <Text numberOfLines={1} style={styles.titleBarTextBig}>{getLessonTypeDisplayName(lesson.title)}</Text>
                 </View>
               </View>
             )}
@@ -73,7 +73,7 @@ const CoachLessonCards: React.FC<LessonCardsProps> = ({ lessons, onEdit }) => {
         );
       })}
       {sorted.length === 0 && (
-        <Text style={styles.emptyHint}>No lessons to display.</Text>
+        <Text style={styles.emptyHint}>אין שיעורים להצגה.</Text>
       )}
     </View>
   );
@@ -107,6 +107,8 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.18)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   cardContentRow: {
     flexDirection: 'row',
@@ -133,6 +135,8 @@ const styles = StyleSheet.create({
     color: '#1976d2',
     fontWeight: '700',
     letterSpacing: 0.2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   registerRow: {
     flexDirection: 'row',
@@ -154,6 +158,7 @@ const styles = StyleSheet.create({
   capacityText: {
     fontSize: 14,
     fontWeight: '700',
+    writingDirection: 'rtl',
   },
   progressTrack: {
     flex: 1,
@@ -161,18 +166,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(25,118,210,0.12)',
     borderRadius: 4,
     overflow: 'hidden',
-    marginLeft: 12,
-    marginRight: 12,
+    marginStart: 12,
   },
   progressFill:{ height:'100%', borderRadius:4 },
   pctText: {
     fontSize: 17,
     fontWeight: '700',
-    textAlign: 'right',
+    textAlign: 'left',
     color: '#1976d2',
     marginTop: 2,
+    writingDirection: 'rtl',
   },
-  emptyHint:{ textAlign:'center', color:'rgba(55,55,55,0.75)', fontSize:13, fontStyle:'italic', marginTop:16 }
+  emptyHint:{ textAlign:'center', color:'rgba(55,55,55,0.75)', fontSize:13, fontStyle:'italic', marginTop:16, writingDirection:'rtl' }
 });
 
 export default React.memo(CoachLessonCards);

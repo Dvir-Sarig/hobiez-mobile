@@ -10,16 +10,16 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Settings</Text>
+      <Text style={styles.title}>הגדרות</Text>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
+        <Text style={styles.sectionTitle}>חשבון</Text>
         <TouchableOpacity style={styles.item} onPress={() => setShowDeleteModal(true)}>
           <Ionicons name="trash" size={20} color="#dc3545" />
-          <Text style={styles.itemText}>Delete Account</Text>
+          <Text style={styles.itemText}>מחיקת חשבון</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.item} onPress={signOut}>
           <MaterialIcons name="logout" size={20} color="#1976d2" />
-          <Text style={styles.itemText}>Sign Out</Text>
+          <Text style={styles.itemText}>התנתקות</Text>
         </TouchableOpacity>
       </View>
 

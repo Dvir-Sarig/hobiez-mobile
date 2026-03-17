@@ -42,7 +42,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#1976d2',
-    textAlign: 'center',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
 });
 

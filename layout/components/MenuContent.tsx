@@ -19,16 +19,16 @@ export default function MenuContent({ userType, onItemClick }: MenuContentProps)
   const navigation = useNavigation<DrawerNavigationProp<Record<string, object | undefined>>>();
 
   const commonMenuItems: MenuItem[] = [
-    { text: 'Home', icon: <Ionicons name="home" size={22} color="white" />, route: 'Home' },
-    { text: 'Profile', icon: <Ionicons name="person" size={22} color="white" />, route: 'Profile' },
-    { text: 'Analytics', icon: <FontAwesome5 name="chart-line" size={20} color="white" />, route: 'Analytics' },
-    { text: 'About', icon: <Ionicons name="information-circle" size={22} color="white" />, route: 'About' },
+    { text: 'בית', icon: <Ionicons name="home" size={22} color="white" />, route: 'Home' },
+    { text: 'פרופיל', icon: <Ionicons name="person" size={22} color="white" />, route: 'Profile' },
+    { text: 'אנליטיקות', icon: <FontAwesome5 name="chart-line" size={20} color="white" />, route: 'Analytics' },
+    { text: 'אודות', icon: <Ionicons name="information-circle" size={22} color="white" />, route: 'About' },
   ];
   
   const roleSpecificItem: MenuItem =
     userType === 'coach'
-      ? { text: 'My Lessons', icon: <MaterialIcons name="fitness-center" size={22} color="white" />, route: 'CoachLessons' }
-      : { text: 'Search Lessons', icon: <Ionicons name="search" size={22} color="white" />, route: 'SearchLessons' };  
+      ? { text: 'השיעורים שלי', icon: <MaterialIcons name="fitness-center" size={22} color="white" />, route: 'CoachLessons' }
+      : { text: 'חיפוש שיעורים', icon: <Ionicons name="search" size={22} color="white" />, route: 'SearchLessons' };  
 
   const menuItems = [commonMenuItems[0], roleSpecificItem, ...commonMenuItems.slice(1)];
 

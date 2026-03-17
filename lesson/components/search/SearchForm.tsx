@@ -1,22 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Modal,
   Pressable,
-  Animated,
-  Easing,
 } from 'react-native';
-import { lessonTypes, getLessonIcon } from '../../types/LessonType';
+import { lessonTypes, getLessonIcon, getLessonTypeDisplayName } from '../../types/LessonType';
 import { MaterialIcons } from '@expo/vector-icons';
 import SearchLocationField from './SearchLocationField';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface SearchFormProps {
   searchQuery: {
@@ -29,16 +24,17 @@ interface SearchFormProps {
     day?: Date | null;
   };
   setSearchQuery: (query: SearchFormProps['searchQuery']) => void;
-  onSearch: (query: any) => void;
+  onSearch: (query?: SearchFormProps['searchQuery']) => void;
 }
 
 export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQuery, onSearch }) => {
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [lessonTypeModalVisible, setLessonTypeModalVisible] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [priceModalVisible, setPriceModalVisible] = useState(false);
+  const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-  const animatedAdvanced = useRef(new Animated.Value(0)).current; // 0 closed, 1 open
+  const [tempPrice, setTempPrice] = useState('');
+  const [tempParticipants, setTempParticipants] = useState('');
 
   const activeFilterCount = [
     searchQuery.lessonType,
@@ -47,272 +43,203 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQu
     searchQuery.day,
     searchQuery.location?.latitude && searchQuery.location?.longitude ? 'loc' : null,
   ].filter(Boolean).length;
-
-  useEffect(()=>{
-    Animated.timing(animatedAdvanced, {
-      toValue: showAdvanced ? 1 : 0,
-      duration: 320,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [showAdvanced]);
+  const hasCoachName = searchQuery.coachName.trim().length > 0;
+  const canSubmitSearch = hasCoachName || activeFilterCount > 0;
 
   const generateDates = () => {
+    const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
     const dates = [];
-    const today = new Date(currentMonth);
-    // Get the first day of the current month
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    // Get the last day of the current month
-    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    
-    // Add dates for the current month
     for (let i = 1; i <= lastDay.getDate(); i++) {
-      const date = new Date(today);
-      date.setDate(i);
-      dates.push(date);
+      dates.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i));
     }
     return dates;
   };
 
-  const getDayName = (date: Date) => {
-    return date.toLocaleDateString('en-US', { weekday: 'short' });
-  };
+  const getDayName = (date: Date) => date.toLocaleDateString('he-IL', { weekday: 'short' });
 
   const handleSearchClick = () => {
-    const requestBody: any = {
-      maxPrice: parseFloat(searchQuery.maxPrice) || undefined,
-      lessonType: searchQuery.lessonType || undefined,
-      maxParticipants: parseInt(searchQuery.maxParticipants) || undefined,
-      coachName: searchQuery.coachName || undefined,
-    };
-
-    if (searchQuery.location?.latitude && searchQuery.location?.longitude) {
-      requestBody.location = {
-        latitude: searchQuery.location.latitude,
-        longitude: searchQuery.location.longitude,
-        radiusKm: searchQuery.radiusKm,
-      };
-    }
-
-    if (searchQuery.day) {
-      const formattedDate = searchQuery.day.toISOString().split('T')[0];
-      requestBody.day = formattedDate;
-    }
-
-    onSearch(requestBody);
+    onSearch(searchQuery);
   };
 
   const formatDate = (date: Date | null | undefined) => {
-    if (!date) return 'Date';
-    return date.toLocaleDateString();
+    if (!date) return '';
+    return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
   };
 
-  const handlePrevMonth = () => {
+  const handlePrevMonth = () =>
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = () => {
+  const handleNextMonth = () =>
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-  };
 
   const clearAllFilters = () => {
     setSearchQuery({
       ...searchQuery,
-      maxPrice:'',
-      lessonType:'',
-      maxParticipants:'',
-      coachName:'',
-      location:null,
-      day:null,
+      maxPrice: '',
+      lessonType: '',
+      maxParticipants: '',
+      coachName: '',
+      location: null,
+      day: null,
     });
   };
 
-  // Advanced filters animation (opacity only to let height wrap content)
-  const advancedOpacity = animatedAdvanced.interpolate({ inputRange:[0,1], outputRange:[0,1] });
+  const clearCoachName = () => {
+    const nextQuery = { ...searchQuery, coachName: '' };
+    setSearchQuery(nextQuery);
+    onSearch(nextQuery);
+  };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.wrapper} keyboardShouldPersistTaps="handled">
-        <View style={styles.compactContainer}>
-          {/* Compact Row */}
-          <View style={styles.compactRow}> 
-            <TextInput
-              style={[styles.compactInput, focusedField==='coachName' && styles.compactInputFocused]}
-              placeholder="Coach"
-              placeholderTextColor="#78909c"
-              value={searchQuery.coachName}
-              onFocus={()=>setFocusedField('coachName')}
-              onBlur={()=>setFocusedField(null)}
-              onChangeText={(text) => setSearchQuery({ ...searchQuery, coachName: text })}
-              returnKeyType="search"
-              onSubmitEditing={handleSearchClick}
-            />
-            <Pressable style={styles.typeSelector} onPress={()=> setLessonTypeModalVisible(true)}>
-              <MaterialIcons name="apps" size={18} color="#1565c0" />
-              <Text style={[styles.typeSelectorText, !searchQuery.lessonType && styles.typeSelectorPlaceholder]} numberOfLines={1}>
-                {searchQuery.lessonType || 'Any'}
-              </Text>
-              <MaterialIcons name="expand-more" size={18} color="#1565c0" />
-            </Pressable>
-            <TouchableOpacity style={styles.searchBtn} onPress={handleSearchClick} activeOpacity={0.85}>
-              <MaterialIcons name="search" size={20} color="#fff" />
-            </TouchableOpacity>
-            <Pressable onPress={()=> setShowAdvanced(p=>!p)} style={styles.moreBtn} accessibilityLabel={showAdvanced? 'Hide advanced filters':'Show advanced filters'}>
-              <MaterialIcons name={showAdvanced? 'expand-less':'tune'} size={20} color="#1565c0" />
-              {activeFilterCount>0 && <View style={styles.countBubble}><Text style={styles.countBubbleText}>{activeFilterCount}</Text></View>}
-            </Pressable>
-          </View>
-
-          {/* (Chips moved to bottom) */}
-          {!showAdvanced && activeFilterCount>0 && (
-            <View style={styles.collapsedChipsBar}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.collapsedChipsRow}>
-                {!!searchQuery.lessonType && (
-                  <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, lessonType:''})}>
-                    <Text style={styles.compactChipText}>{searchQuery.lessonType}</Text>
-                    <MaterialIcons name="close" size={14} color="#0d47a1" />
-                  </Pressable>
-                )}
-                {!!searchQuery.maxPrice && (
-                  <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, maxPrice:''})}>
-                    <Text style={styles.compactChipText}>≤ ₪{searchQuery.maxPrice}</Text>
-                    <MaterialIcons name="close" size={14} color="#0d47a1" />
-                  </Pressable>
-                )}
-                {!!searchQuery.maxParticipants && (
-                  <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, maxParticipants:''})}>
-                    <Text style={styles.compactChipText}>Max {searchQuery.maxParticipants}</Text>
-                    <MaterialIcons name="close" size={14} color="#0d47a1" />
-                  </Pressable>
-                )}
-                {!!searchQuery.day && (
-                  <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, day:null})}>
-                    <Text style={styles.compactChipText}>{formatDate(searchQuery.day)}</Text>
-                    <MaterialIcons name="close" size={14} color="#0d47a1" />
-                  </Pressable>
-                )}
-                {!!searchQuery.location && searchQuery.location.latitude && (
-                  <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, location:null, radiusKm: null})}>
-                    <Text style={styles.compactChipText}>📍 {searchQuery.location.city || 'Location'}{typeof searchQuery.radiusKm==='number' ? ` • ${searchQuery.radiusKm}km` : ''}</Text>
-                    <MaterialIcons name="close" size={14} color="#0d47a1" />
-                  </Pressable>
-                )}
-              </ScrollView>
-              <Pressable onPress={clearAllFilters} style={styles.clearCollapsedBtn}>
-                <MaterialIcons name="delete-sweep" size={16} color="#1565c0" />
-              </Pressable>
-            </View>
-          )}
-
-          {/* Advanced Section */}
-          {showAdvanced && (
-            <Animated.View style={[styles.advancedAnimatedContainer,{ opacity:advancedOpacity }]}> 
-              <View style={styles.advancedBlockInner}> 
-                <View style={styles.advancedRowWrap}>
-                  <Pressable style={[styles.compactInput, styles.dateTrigger]} onPress={()=> setShowDatePicker(true)}>
-                    <MaterialIcons name="calendar-today" size={18} color="#1565c0" />
-                    <Text style={[styles.typeSelectorText, !searchQuery.day && styles.typeSelectorPlaceholder]}>
-                      {formatDate(searchQuery.day)}
-                    </Text>
-                  </Pressable>
-                  <TextInput
-                    style={[styles.compactInput, focusedField==='maxPrice' && styles.compactInputFocused]}
-                    placeholder="Max Price (₪)"
-                    placeholderTextColor="#78909c"
-                    keyboardType="numeric"
-                    value={searchQuery.maxPrice}
-                    onFocus={()=>setFocusedField('maxPrice')}
-                    onBlur={()=>setFocusedField(null)}
-                    onChangeText={(text) => setSearchQuery({ ...searchQuery, maxPrice: text })}
-                  />
-                  <TextInput
-                    style={[styles.compactInput, focusedField==='maxParticipants' && styles.compactInputFocused]}
-                    placeholder="Max People"
-                    placeholderTextColor="#78909c"
-                    keyboardType="numeric"
-                    value={searchQuery.maxParticipants}
-                    onFocus={()=>setFocusedField('maxParticipants')}
-                    onBlur={()=>setFocusedField(null)}
-                    onChangeText={(text) => setSearchQuery({ ...searchQuery, maxParticipants: text })}
-                  />
-                </View>
-                <View style={styles.locationWrapperCompact}> 
-                  <SearchLocationField
-                    location={searchQuery.location || { city: '', country: '', address: null, latitude: null, longitude: null }}
-                    onLocationSelect={(loc) => setSearchQuery({ ...searchQuery, location: loc })}
-                    radiusKm={searchQuery.radiusKm}
-                    onRadiusChange={(r) => setSearchQuery({ ...searchQuery, radiusKm: r })}
-                  />
-                </View>
-                <View style={styles.bottomChipsWrap}> 
-                  {activeFilterCount===0 && (
-                    <Text style={styles.noFiltersText}>No filters selected</Text>
-                  )}
-                  <View style={styles.chipsRowCompact}>
-                    {!!searchQuery.lessonType && (
-                      <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, lessonType:''})}>
-                        <Text style={styles.compactChipText}>{searchQuery.lessonType}</Text>
-                        <MaterialIcons name="close" size={14} color="#0d47a1" />
-                      </Pressable>
-                    )}
-                    {!!searchQuery.maxPrice && (
-                      <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, maxPrice:''})}>
-                        <Text style={styles.compactChipText}>≤ ₪{searchQuery.maxPrice}</Text>
-                        <MaterialIcons name="close" size={14} color="#0d47a1" />
-                      </Pressable>
-                    )}
-                    {!!searchQuery.maxParticipants && (
-                      <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, maxParticipants:''})}>
-                        <Text style={styles.compactChipText}>Max {searchQuery.maxParticipants}</Text>
-                        <MaterialIcons name="close" size={14} color="#0d47a1" />
-                      </Pressable>
-                    )}
-                    {!!searchQuery.day && (
-                      <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, day:null})}>
-                        <Text style={styles.compactChipText}>{formatDate(searchQuery.day)}</Text>
-                        <MaterialIcons name="close" size={14} color="#0d47a1" />
-                      </Pressable>
-                    )}
-                    {!!searchQuery.location && searchQuery.location.latitude && (
-                      <Pressable style={styles.compactChip} onPress={()=>setSearchQuery({...searchQuery, location:null, radiusKm:null})}>
-                        <Text style={styles.compactChipText}>📍 {searchQuery.location.city || 'Location'}{typeof searchQuery.radiusKm==='number' ? ` • ${searchQuery.radiusKm}km` : ''}</Text>
-                        <MaterialIcons name="close" size={14} color="#0d47a1" />
-                      </Pressable>
-                    )}
-                    {activeFilterCount>0 && (
-                      <Pressable onPress={clearAllFilters} style={[styles.clearInlineBtn, styles.clearInlineBtnRight]}>
-                        <MaterialIcons name="delete-sweep" size={14} color="#1565c0" />
-                        <Text style={styles.clearInlineText}>Clear All</Text>
-                      </Pressable>
-                    )}
-                  </View>
-                </View>
-              </View>
-            </Animated.View>
-          )}
+    <View style={styles.container}>
+      {/* ── Search Bar ── */}
+      <View style={styles.searchBar}>
+        <View style={styles.searchIconWrap}>
+          <MaterialIcons name="search" size={20} color="#90a4ae" />
         </View>
-
-        {/* Lesson Type Modal */}
-        <Modal
-          transparent
-            visible={lessonTypeModalVisible}
-          animationType="fade"
-          onRequestClose={() => setLessonTypeModalVisible(false)}
+        <TextInput
+          style={styles.searchInput}
+          placeholder="חפש מאמן..."
+          placeholderTextColor="#90a4ae"
+          value={searchQuery.coachName}
+          onChangeText={(text) => setSearchQuery({ ...searchQuery, coachName: text })}
+          returnKeyType="search"
+          onSubmitEditing={handleSearchClick}
+        />
+        {hasCoachName ? (
+          <TouchableOpacity style={styles.inlineClearBtn} onPress={clearCoachName} activeOpacity={0.8}>
+            <MaterialIcons name="close" size={18} color="#607d8b" />
+          </TouchableOpacity>
+        ) : null}
+        <TouchableOpacity
+          style={[styles.searchSubmitBtn, !canSubmitSearch && styles.searchSubmitBtnDisabled]}
+          onPress={handleSearchClick}
+          disabled={!canSubmitSearch}
+          activeOpacity={0.85}
         >
-          <Pressable style={styles.modalOverlay} onPress={() => setLessonTypeModalVisible(false)}>
-            <View style={styles.modalContentGlass}>
-              <Text style={styles.modalTitle}>Lesson Type</Text>
+          <MaterialIcons name="search" size={16} color="#ffffff" />
+          <Text style={styles.searchSubmitText}>חפש</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Filter Pills ── */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.pillsRow}
+      >
+        {/* Lesson type */}
+        <Pressable
+          style={[styles.pill, !!searchQuery.lessonType && styles.pillActive]}
+          onPress={() => setLessonTypeModalVisible(true)}
+        >
+          <MaterialIcons name="apps" size={15} color={searchQuery.lessonType ? '#0d47a1' : '#546e7a'} />
+          <Text style={[styles.pillText, !!searchQuery.lessonType && styles.pillTextActive]} numberOfLines={1}>
+            {searchQuery.lessonType ? getLessonTypeDisplayName(searchQuery.lessonType) : 'סוג שיעור'}
+          </Text>
+          {searchQuery.lessonType ? (
+            <Pressable onPress={() => setSearchQuery({ ...searchQuery, lessonType: '' })} hitSlop={8}>
+              <MaterialIcons name="close" size={14} color="#0d47a1" />
+            </Pressable>
+          ) : (
+            <MaterialIcons name="keyboard-arrow-down" size={16} color="#546e7a" />
+          )}
+        </Pressable>
+
+        {/* Date */}
+        <Pressable
+          style={[styles.pill, !!searchQuery.day && styles.pillActive]}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <MaterialIcons name="event" size={15} color={searchQuery.day ? '#0d47a1' : '#546e7a'} />
+          <Text style={[styles.pillText, !!searchQuery.day && styles.pillTextActive]} numberOfLines={1}>
+            {searchQuery.day ? formatDate(searchQuery.day) : 'תאריך'}
+          </Text>
+          {searchQuery.day ? (
+            <Pressable onPress={() => setSearchQuery({ ...searchQuery, day: null })} hitSlop={8}>
+              <MaterialIcons name="close" size={14} color="#0d47a1" />
+            </Pressable>
+          ) : (
+            <MaterialIcons name="keyboard-arrow-down" size={16} color="#546e7a" />
+          )}
+        </Pressable>
+
+        {/* Price */}
+        <Pressable
+          style={[styles.pill, !!searchQuery.maxPrice && styles.pillActive]}
+          onPress={() => { setTempPrice(searchQuery.maxPrice); setPriceModalVisible(true); }}
+        >
+          <Text style={{ fontSize: 14, fontWeight: '700', color: searchQuery.maxPrice ? '#0d47a1' : '#546e7a' }}>₪</Text>
+          <Text style={[styles.pillText, !!searchQuery.maxPrice && styles.pillTextActive]} numberOfLines={1}>
+            {searchQuery.maxPrice ? `עד ${searchQuery.maxPrice}` : 'מחיר'}
+          </Text>
+          {searchQuery.maxPrice ? (
+            <Pressable onPress={() => setSearchQuery({ ...searchQuery, maxPrice: '' })} hitSlop={8}>
+              <MaterialIcons name="close" size={14} color="#0d47a1" />
+            </Pressable>
+          ) : (
+            <MaterialIcons name="keyboard-arrow-down" size={16} color="#546e7a" />
+          )}
+        </Pressable>
+
+        {/* Participants */}
+        <Pressable
+          style={[styles.pill, !!searchQuery.maxParticipants && styles.pillActive]}
+          onPress={() => { setTempParticipants(searchQuery.maxParticipants); setParticipantsModalVisible(true); }}
+        >
+          <MaterialIcons name="group" size={15} color={searchQuery.maxParticipants ? '#0d47a1' : '#546e7a'} />
+          <Text style={[styles.pillText, !!searchQuery.maxParticipants && styles.pillTextActive]} numberOfLines={1}>
+            {searchQuery.maxParticipants ? `עד ${searchQuery.maxParticipants}` : 'משתתפים'}
+          </Text>
+          {searchQuery.maxParticipants ? (
+            <Pressable onPress={() => setSearchQuery({ ...searchQuery, maxParticipants: '' })} hitSlop={8}>
+              <MaterialIcons name="close" size={14} color="#0d47a1" />
+            </Pressable>
+          ) : (
+            <MaterialIcons name="keyboard-arrow-down" size={16} color="#546e7a" />
+          )}
+        </Pressable>
+      </ScrollView>
+
+      {/* ── Location ── */}
+      <SearchLocationField
+        location={searchQuery.location || { city: '', country: '', address: null, latitude: null, longitude: null }}
+        onLocationSelect={(loc) => setSearchQuery({ ...searchQuery, location: loc })}
+        onLocationClear={() => setSearchQuery({ ...searchQuery, location: null, radiusKm: null })}
+        radiusKm={searchQuery.radiusKm}
+        onRadiusChange={(r) => setSearchQuery({ ...searchQuery, radiusKm: r })}
+      />
+
+      {/* ── Active Filters Bar ── */}
+      {activeFilterCount > 0 && (
+        <View style={styles.activeBar}>
+          <View style={styles.activeBarStart}>
+            <View style={styles.activeBadge}>
+              <Text style={styles.activeBadgeText}>{activeFilterCount}</Text>
+            </View>
+            <Text style={styles.activeBarLabel}>מסננים פעילים</Text>
+          </View>
+          <Pressable onPress={clearAllFilters} style={styles.clearAllBtn}>
+            <MaterialIcons name="delete-sweep" size={15} color="#c62828" />
+            <Text style={styles.clearAllText}>נקה הכל</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* ═══ Lesson Type Modal ═══ */}
+      <Modal transparent visible={lessonTypeModalVisible} animationType="fade" onRequestClose={() => setLessonTypeModalVisible(false)}>
+        <Pressable style={styles.overlay} onPress={() => setLessonTypeModalVisible(false)}>
+          <Pressable style={styles.modalCard}>
+            <Text style={styles.modalTitle}>סוג שיעור</Text>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
               <TouchableOpacity
-                style={[styles.modalItem, styles.clearOption]}
-                onPress={() => {
-                  setSearchQuery({ ...searchQuery, lessonType: '' });
-                  setLessonTypeModalVisible(false);
-                }}
+                style={[styles.modalOption, !searchQuery.lessonType && styles.modalOptionSelected]}
+                onPress={() => { setSearchQuery({ ...searchQuery, lessonType: '' }); setLessonTypeModalVisible(false); }}
               >
-                <View style={styles.modalItemContent}>
+                <View style={styles.modalOptionRow}>
                   <MaterialIcons name="filter-list" size={22} color="#607d8b" />
-                  <Text style={[styles.modalItemText, styles.clearOptionText]}>Any Lesson</Text>
+                  <Text style={[styles.modalOptionText, !searchQuery.lessonType && styles.modalOptionTextSelected]}>כל השיעורים</Text>
                 </View>
+                {!searchQuery.lessonType && <MaterialIcons name="check" size={18} color="#1565c0" />}
               </TouchableOpacity>
               {lessonTypes.map((type) => {
                 const { IconComponent, iconName } = getLessonIcon(type);
@@ -320,174 +247,266 @@ export const SearchForm: React.FC<SearchFormProps> = ({ searchQuery, setSearchQu
                 return (
                   <TouchableOpacity
                     key={type}
-                    style={[styles.modalItem, selected && styles.selectedItem]}
-                    onPress={() => {
-                      setSearchQuery({ ...searchQuery, lessonType: type });
-                      setLessonTypeModalVisible(false);
-                    }}
+                    style={[styles.modalOption, selected && styles.modalOptionSelected]}
+                    onPress={() => { setSearchQuery({ ...searchQuery, lessonType: type }); setLessonTypeModalVisible(false); }}
                   >
-                    <View style={styles.modalItemContent}>
-                      <IconComponent name={iconName} size={22} color={selected? '#0d47a1':'#1976d2'} />
-                      <Text style={[styles.modalItemText, selected && styles.selectedItemText]}>{type}</Text>
-                      {selected && <MaterialIcons name="check-circle" size={18} color="#0d47a1" style={{marginLeft:'auto'}} />}
+                    <View style={styles.modalOptionRow}>
+                      <IconComponent name={iconName} size={22} color={selected ? '#0d47a1' : '#546e7a'} />
+                      <Text style={[styles.modalOptionText, selected && styles.modalOptionTextSelected]}>{getLessonTypeDisplayName(type)}</Text>
                     </View>
+                    {selected && <MaterialIcons name="check" size={18} color="#1565c0" />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ═══ Date Picker Modal ═══ */}
+      <Modal transparent animationType="fade" visible={showDatePicker} onRequestClose={() => setShowDatePicker(false)}>
+        <Pressable style={styles.overlay} onPress={() => setShowDatePicker(false)}>
+          <Pressable style={styles.dateCard}>
+            <View style={styles.monthNav}>
+              <TouchableOpacity onPress={handleNextMonth} style={styles.monthBtn}>
+                <MaterialIcons name="chevron-right" size={24} color="#1565c0" />
+              </TouchableOpacity>
+              <Text style={styles.monthLabel}>
+                {currentMonth.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })}
+              </Text>
+              <TouchableOpacity onPress={handlePrevMonth} style={styles.monthBtn}>
+                <MaterialIcons name="chevron-left" size={24} color="#1565c0" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.weekRow}>
+              {['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'].map((d) => (
+                <Text key={d} style={styles.weekDayText}>{d}</Text>
+              ))}
+            </View>
+            <View style={styles.datesGrid}>
+              {generateDates().map((date) => {
+                const sel = date.getDate() === searchQuery.day?.getDate() && date.getMonth() === searchQuery.day?.getMonth();
+                const isToday = date.toDateString() === new Date().toDateString();
+                return (
+                  <TouchableOpacity
+                    key={date.toISOString()}
+                    style={[styles.dateCell, sel && styles.dateCellSelected, isToday && !sel && styles.dateCellToday]}
+                    onPress={() => { setSearchQuery({ ...searchQuery, day: date }); setShowDatePicker(false); }}
+                  >
+                    <Text style={[styles.dateCellNum, sel && styles.dateCellNumSelected]}>{date.getDate()}</Text>
+                    <Text style={[styles.dateCellDay, sel && { color: '#fff' }]}>{getDayName(date)}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
+            <TouchableOpacity style={styles.clearDateBtn} onPress={() => { setSearchQuery({ ...searchQuery, day: null }); setShowDatePicker(false); }}>
+              <Text style={styles.clearDateText}>נקה תאריך</Text>
+            </TouchableOpacity>
           </Pressable>
-        </Modal>
+        </Pressable>
+      </Modal>
 
-        {/* Date Picker Modal */}
-        <Modal
-          transparent
-          animationType="fade"
-          visible={showDatePicker}
-          onRequestClose={() => setShowDatePicker(false)}
-        >
-          <Pressable style={styles.modalOverlay} onPress={() => setShowDatePicker(false)}>
-            <View style={styles.dateModalContainerGlass}>
-              <View style={styles.monthNavigation}>
-                <TouchableOpacity onPress={handlePrevMonth} style={styles.monthButton}>
-                  <MaterialIcons name="chevron-left" size={26} color="#1976d2" />
-                </TouchableOpacity>
-                <Text style={styles.monthTitle}>
-                  {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </Text>
-                <TouchableOpacity onPress={handleNextMonth} style={styles.monthButton}>
-                  <MaterialIcons name="chevron-right" size={26} color="#1976d2" />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.calendarContainer}>
-                <View style={styles.weekDaysContainer}>
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                    <Text key={day} style={styles.weekDayText}>{day}</Text>
-                  ))}
-                </View>
-                <View style={styles.datesContainer}>
-                  {generateDates().map((date) => {
-                    const selected = date.getDate() === searchQuery.day?.getDate() && date.getMonth() === searchQuery.day?.getMonth();
-                    return (
-                      <TouchableOpacity
-                        key={date.toISOString()}
-                        style={[styles.dateItem, selected && styles.selectedDateItem]}
-                        onPress={() => {
-                          setSearchQuery({ ...searchQuery, day: date });
-                          setShowDatePicker(false);
-                        }}
-                      >
-                        <Text style={[styles.dateItemText, selected && styles.selectedDateText]}>{date.getDate()}</Text>
-                        <Text style={styles.dayNameText}>{getDayName(date)}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
+      {/* ═══ Price Modal ═══ */}
+      <Modal transparent visible={priceModalVisible} animationType="fade" onRequestClose={() => setPriceModalVisible(false)}>
+        <Pressable style={styles.overlay} onPress={() => setPriceModalVisible(false)}>
+          <Pressable style={styles.miniCard}>
+            <Text style={styles.miniTitle}>מחיר מקסימלי</Text>
+            <View style={styles.miniInputRow}>
+              <Text style={styles.currencyIcon}>₪</Text>
+              <TextInput
+                style={styles.miniInput}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#b0bec5"
+                value={tempPrice}
+                onChangeText={setTempPrice}
+                autoFocus
+              />
+            </View>
+            <View style={styles.miniActions}>
+              <TouchableOpacity style={styles.miniCancelBtn} onPress={() => setPriceModalVisible(false)}>
+                <Text style={styles.miniCancelText}>ביטול</Text>
+              </TouchableOpacity>
               <TouchableOpacity
-                style={styles.clearDateButton}
-                onPress={() => {
-                  setSearchQuery({ ...searchQuery, day: null });
-                  setShowDatePicker(false);
-                }}
+                style={styles.miniApplyBtn}
+                onPress={() => { setSearchQuery({ ...searchQuery, maxPrice: tempPrice }); setPriceModalVisible(false); }}
               >
-                <Text style={styles.clearDateText}>Clear Date</Text>
+                <Text style={styles.miniApplyText}>אישור</Text>
               </TouchableOpacity>
             </View>
           </Pressable>
-        </Modal>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </Pressable>
+      </Modal>
+
+      {/* ═══ Participants Modal ═══ */}
+      <Modal transparent visible={participantsModalVisible} animationType="fade" onRequestClose={() => setParticipantsModalVisible(false)}>
+        <Pressable style={styles.overlay} onPress={() => setParticipantsModalVisible(false)}>
+          <Pressable style={styles.miniCard}>
+            <Text style={styles.miniTitle}>מקסימום משתתפים</Text>
+            <View style={styles.miniInputRow}>
+              <MaterialIcons name="group" size={20} color="#0d47a1" />
+              <TextInput
+                style={styles.miniInput}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#b0bec5"
+                value={tempParticipants}
+                onChangeText={setTempParticipants}
+                autoFocus
+              />
+            </View>
+            <View style={styles.miniActions}>
+              <TouchableOpacity style={styles.miniCancelBtn} onPress={() => setParticipantsModalVisible(false)}>
+                <Text style={styles.miniCancelText}>ביטול</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.miniApplyBtn}
+                onPress={() => { setSearchQuery({ ...searchQuery, maxParticipants: tempParticipants }); setParticipantsModalVisible(false); }}
+              >
+                <Text style={styles.miniApplyText}>אישור</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
   );
 };
 
+/* ────────────────────────── Styles ────────────────────────── */
 const styles = StyleSheet.create({
-  wrapper:{ paddingHorizontal:0 },
-  compactContainer:{ backgroundColor:'rgba(255,255,255,0.08)', borderRadius:22, padding:12, borderWidth:1, borderColor:'rgba(255,255,255,0.18)' },
-  compactRow:{ flexDirection:'row', alignItems:'stretch', gap:8 },
-  compactInput:{ flex:1, backgroundColor:'#ffffff', borderRadius:14, paddingHorizontal:14, paddingVertical:10, borderWidth:1, borderColor:'#d5dde5', fontSize:14, color:'#0f172a', fontWeight:'500', height:46 },
-  compactInputFocused:{ borderColor:'#1565c0', shadowColor:'#1565c0', shadowOpacity:0.18, shadowRadius:5, shadowOffset:{width:0,height:2} },
-  typeSelector:{ flexDirection:'row', alignItems:'center', backgroundColor:'#ffffff', borderRadius:14, paddingHorizontal:12, paddingVertical:10, borderWidth:1, borderColor:'#d5dde5', maxWidth:104, flexShrink:1, gap:6, height:46 },
-  typeSelectorText:{ fontSize:13.5, fontWeight:'600', color:'#0f172a', flexShrink:1 },
-  typeSelectorPlaceholder:{ color:'#78909c', fontWeight:'500' },
-  searchBtn:{ backgroundColor:'#1565c0', borderRadius:14, paddingHorizontal:14, paddingVertical:10, alignItems:'center', justifyContent:'center', height:46, minWidth:46 },
-  moreBtn:{ backgroundColor:'#ffffff', borderRadius:14, paddingHorizontal:12, paddingVertical:10, flexDirection:'row', alignItems:'center', position:'relative', height:46 },
-  countBubble:{ position:'absolute', top:-6, right:-6, backgroundColor:'#1565c0', borderRadius:10, paddingHorizontal:5, paddingVertical:2 },
-  countBubbleText:{ color:'#ffffff', fontSize:10, fontWeight:'700' },
-  chipsRowCompact:{ flexDirection:'row', flexWrap:'wrap', gap:6, marginTop:10 },
-  compactChip:{ flexDirection:'row', alignItems:'center', backgroundColor:'#e3f2fd', paddingHorizontal:10, paddingVertical:6, borderRadius:14, gap:4, borderWidth:1, borderColor:'#bbdefb' },
-  compactChipText:{ color:'#0d47a1', fontSize:11.5, fontWeight:'700' },
-  collapsedChipsBar:{ marginTop:10, flexDirection:'row', alignItems:'center', gap:8 },
-  collapsedChipsRow:{ flexDirection:'row', alignItems:'center', gap:6, paddingRight:4 },
-  clearCollapsedBtn:{ backgroundColor:'#ffffff', borderRadius:14, padding:8, borderWidth:1, borderColor:'#d5dde5', alignItems:'center', justifyContent:'center' },
-  bottomChipsWrap:{ marginTop:16, borderTopWidth:1, borderTopColor:'#e2e8f0', paddingTop:12 },
-  clearInlineBtn:{ flexDirection:'row', alignItems:'center', backgroundColor:'#ffffff', paddingHorizontal:8, paddingVertical:4, borderRadius:12, gap:2, borderWidth:1, borderColor:'#e0e6eb' },
-  clearInlineBtnRight:{ marginLeft:'auto' },
-  clearInlineText:{ fontSize:11, fontWeight:'700', color:'#1565c0' },
-  noFiltersText:{ fontSize:11, color:'#607d8b', fontWeight:'600' },
-  advancedRowWrap:{ flexDirection:'row', gap:8, marginTop:12, flexWrap:'wrap' },
-  dateTrigger:{ flexDirection:'row', alignItems:'center', gap:6, backgroundColor:'#ffffff', borderRadius:14, paddingHorizontal:12, paddingVertical:10, borderWidth:1, borderColor:'#d5dde5', flex:1, height:46 },
-  locationWrapperCompact:{ marginTop:12 },
-  title:{ fontSize:18, fontWeight:'800', color:'#0d47a1', letterSpacing:0.5 },
-  // Newly added header / badge styles
-  cardHeaderRow:{ display:'none' },
-  headerLeft:{ flexDirection:'row', alignItems:'center', gap:8 },
-  badgeCount:{ backgroundColor:'rgba(255,255,255,0.20)', paddingHorizontal:8, paddingVertical:4, borderRadius:12 },
-  badgeCountText:{ color:'#ffffff', fontSize:11, fontWeight:'800' },
-  clearAllFiltersBtn:{ flexDirection:'row', alignItems:'center', backgroundColor:'rgba(255,255,255,0.12)', paddingHorizontal:10, paddingVertical:6, borderRadius:14, gap:4, borderWidth:1, borderColor:'rgba(255,255,255,0.25)' },
-  clearAllFiltersText:{ color:'#ffffff', fontWeight:'700', fontSize:12 },
-  quickTypeRow:{ paddingVertical:4, paddingRight:6, gap:8 },
-  typePill:{ backgroundColor:'rgba(255,255,255,0.14)', paddingHorizontal:14, paddingVertical:8, borderRadius:18, borderWidth:1, borderColor:'rgba(255,255,255,0.22)' },
-  typePillActive:{ backgroundColor:'#ffffff', borderColor:'#ffffff' },
-  typePillText:{ color:'#ffffff', fontWeight:'700', fontSize:12, letterSpacing:0.4 },
-  typePillTextActive:{ color:'#0d47a1' },
-  input:{},
-  dateInput:{},
-  inputFocused:{ borderColor:'#ffffff', backgroundColor:'rgba(255,255,255,0.25)' },
-  pickerInput:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between' },
-  placeholderText:{ color:'rgba(255,255,255,0.55)' },
-  inlineRow:{ flexDirection:'row', gap:10 },
-  locationWrapper:{ marginTop:-6, marginBottom:10 },
-  pickerText:{ color:'#ffffff', fontWeight:'600' },
-  datePickerContainer:{ flexDirection:'row', alignItems:'center', gap:8 },
-  chipsRow:{},
-  chip:{ flexDirection:'row', alignItems:'center', backgroundColor:'rgba(255,255,255,0.18)', paddingHorizontal:10, paddingVertical:6, borderRadius:16, gap:4, shadowColor:'#000', shadowOpacity:0.10, shadowRadius:4, shadowOffset:{width:0,height:2}, borderWidth:1, borderColor:'rgba(255,255,255,0.28)' },
-  chipText:{ color:'#ffffff', fontWeight:'600', fontSize:12 },
-  advancedAnimatedContainer:{ overflow:'visible', width:'100%', marginTop:2, zIndex:80 },
-  advancedBlockInner:{ backgroundColor:'transparent', padding:0, borderRadius:0, borderWidth:0, borderColor:'transparent', flex:1 },
-  advancedInlineRow:{ flexDirection:'row', gap:10, marginBottom:2 },
-  inputHalf:{ flex:1, marginBottom:12 },
-  clearAllBtn:{ flexDirection:'row', alignItems:'center', gap:6, alignSelf:'flex-start', backgroundColor:'rgba(255,255,255,0.16)', paddingHorizontal:12, paddingVertical:8, borderRadius:16, marginTop:2, borderWidth:1, borderColor:'rgba(255,255,255,0.28)' },
-  clearAllText:{ color:'#ffffff', fontWeight:'700', fontSize:12 },
-  advancedToggleBtn:{ flexDirection:'row', alignItems:'center', justifyContent:'center', marginTop:2, marginBottom:6, paddingVertical:8, borderRadius:18, backgroundColor:'rgba(255,255,255,0.14)', shadowColor:'#000', shadowOpacity:0.12, shadowRadius:5, shadowOffset:{width:0,height:3}, gap:6, borderWidth:1, borderColor:'rgba(255,255,255,0.25)' },
-  advancedToggleText:{ color:'#ffffff', fontWeight:'800', fontSize:13, letterSpacing:0.5 },
-  searchButtonGradient:{ borderRadius:24, padding:2, marginTop:2, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{width:0,height:4} },
-  searchButtonInner:{ backgroundColor:'transparent', borderRadius:20, paddingVertical:12, flexDirection:'row', justifyContent:'center', alignItems:'center', gap:8 },
-  searchButtonText:{ color:'#ffffff', fontWeight:'800', fontSize:15, letterSpacing:0.5 },
-  modalOverlay:{ flex:1, backgroundColor:'rgba(0,0,0,0.55)', justifyContent:'center', alignItems:'center', padding:24 },
-  modalContentGlass:{ backgroundColor:'rgba(255,255,255,0.95)', borderRadius:28, padding:20, width:'90%', maxHeight:'75%', borderWidth:1, borderColor:'rgba(255,255,255,0.55)', shadowColor:'#000', shadowOpacity:0.25, shadowRadius:16, shadowOffset:{width:0,height:8} },
-  modalTitle:{ fontSize:18, fontWeight:'800', marginBottom:14, color:'#0d47a1' },
-  modalItem:{ paddingVertical:14, paddingHorizontal:12, borderRadius:16, marginBottom:8, backgroundColor:'rgba(255,255,255,0.85)', borderWidth:1, borderColor:'rgba(13,71,161,0.12)' },
-  selectedItem:{ backgroundColor:'#bbdefb', borderColor:'#1976d2' },
-  modalItemContent:{ flexDirection:'row', alignItems:'center', gap:12 },
-  modalItemText:{ fontSize:15, fontWeight:'600', color:'#0d47a1' },
-  selectedItemText:{ color:'#0d47a1' },
-  clearOption:{ backgroundColor:'rgba(255,255,255,0.9)' },
-  clearOptionText:{ color:'#607d8b', fontWeight:'600' },
-  dateModalContainerGlass:{ backgroundColor:'rgba(255,255,255,0.96)', borderRadius:28, padding:20, width:'92%', maxWidth:420, borderWidth:1, borderColor:'rgba(255,255,255,0.55)', shadowColor:'#000', shadowOpacity:0.25, shadowRadius:18, shadowOffset:{width:0,height:10} },
-  calendarContainer:{ marginTop:4 },
-  weekDaysContainer:{ flexDirection:'row', justifyContent:'space-around', marginBottom:6 },
-  weekDayText:{ width:40, textAlign:'center', fontSize:11, color:'#0d47a1', fontWeight:'700' },
-  datesContainer:{ flexDirection:'row', flexWrap:'wrap', justifyContent:'flex-start' },
-  dateItem:{ width:40, height:52, justifyContent:'center', alignItems:'center', margin:3, borderRadius:14, backgroundColor:'rgba(255,255,255,0.7)', borderWidth:1, borderColor:'rgba(13,71,161,0.15)' },
-  selectedDateItem:{ backgroundColor:'#1976d2', borderColor:'#1976d2' },
-  dateItemText:{ fontSize:16, color:'#0d47a1', fontWeight:'700' },
-  selectedDateText:{ color:'#ffffff' },
-  dayNameText:{ fontSize:10, color:'#1565c0', marginTop:2, fontWeight:'600' },
-  clearDateButton:{ marginTop:14, paddingVertical:12, backgroundColor:'#e3f2fd', borderRadius:18, alignItems:'center' },
-  clearDateText:{ color:'#1976d2', fontSize:14, fontWeight:'700', letterSpacing:0.3 },
-  monthNavigation:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:10 },
-  monthButton:{ padding:6, borderRadius:14, backgroundColor:'#e3f2fd' },
-  monthTitle:{ fontSize:16, fontWeight:'800', color:'#0d47a1' },
+  /* Container */
+  container: { gap: 12 },
+
+  /* Search bar */
+  searchBar: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff',
+    borderRadius: 16, paddingHorizontal: 14, height: 50, gap: 10,
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)',
+  },
+  searchIconWrap: { alignItems: 'center', justifyContent: 'center' },
+  searchInput: { flex: 1, fontSize: 15, color: '#0f172a', fontWeight: '500', paddingVertical: 0 },
+  inlineClearBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f1f5f9',
+  },
+  searchSubmitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: '#1565c0',
+    shadowColor: '#1565c0',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  searchSubmitBtnDisabled: {
+    backgroundColor: '#b0bec5',
+    shadowOpacity: 0,
+  },
+  searchSubmitText: {
+    color: '#ffffff',
+    fontSize: 12.5,
+    fontWeight: '800',
+    writingDirection: 'rtl',
+  },
+
+  /* Filter pills */
+  pillsRow: { flexDirection: 'row', gap: 8, paddingVertical: 2, paddingHorizontal: 2 },
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 14, height: 38,
+    borderWidth: 1, borderColor: '#dfe4ea',
+  },
+  pillActive: { backgroundColor: '#e3f2fd', borderColor: '#90caf9' },
+  pillText: { fontSize: 13, fontWeight: '600', color: '#546e7a', writingDirection: 'rtl' },
+  pillTextActive: { color: '#0d47a1' },
+
+  /* Active filters bar */
+  activeBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+  },
+  activeBarStart: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  activeBadge: {
+    backgroundColor: '#1565c0', borderRadius: 10, width: 22, height: 22,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  activeBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  activeBarLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 12.5, fontWeight: '600', writingDirection: 'rtl' },
+  clearAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12 },
+  clearAllText: { color: '#ffcdd2', fontSize: 12, fontWeight: '700', writingDirection: 'rtl' },
+
+  /* ── Overlay (shared) ── */
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+
+  /* ── Lesson Type Modal ── */
+  modalCard: {
+    backgroundColor: '#fff', borderRadius: 24, padding: 20, width: '92%', maxWidth: 400,
+    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 20, shadowOffset: { width: 0, height: 10 },
+  },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: '#0d47a1', marginBottom: 16, textAlign: 'left', writingDirection: 'rtl' },
+  modalOption: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 14, paddingHorizontal: 14, borderRadius: 14, marginBottom: 6,
+    backgroundColor: '#f8fafc',
+  },
+  modalOptionSelected: { backgroundColor: '#e3f2fd' },
+  modalOptionRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  modalOptionText: { fontSize: 15, fontWeight: '600', color: '#37474f', writingDirection: 'rtl' },
+  modalOptionTextSelected: { color: '#0d47a1', fontWeight: '700' },
+
+  /* ── Date Modal ── */
+  dateCard: {
+    backgroundColor: '#fff', borderRadius: 24, padding: 20, width: '92%', maxWidth: 420,
+    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 20, shadowOffset: { width: 0, height: 10 },
+  },
+  monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  monthBtn: { padding: 6, borderRadius: 12, backgroundColor: '#f0f7ff' },
+  monthLabel: { fontSize: 16, fontWeight: '800', color: '#0d47a1', textAlign: 'left', writingDirection: 'rtl' },
+  weekRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8 },
+  weekDayText: { width: 40, textAlign: 'center', fontSize: 11, color: '#90a4ae', fontWeight: '700' },
+  datesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
+  dateCell: {
+    width: 40, height: 52, justifyContent: 'center', alignItems: 'center', margin: 3,
+    borderRadius: 14, backgroundColor: '#f8fafc',
+  },
+  dateCellSelected: { backgroundColor: '#1565c0' },
+  dateCellToday: { borderWidth: 2, borderColor: '#90caf9' },
+  dateCellNum: { fontSize: 16, color: '#0f172a', fontWeight: '700' },
+  dateCellNumSelected: { color: '#fff' },
+  dateCellDay: { fontSize: 9.5, color: '#90a4ae', marginTop: 1, fontWeight: '600' },
+  clearDateBtn: { marginTop: 14, paddingVertical: 12, backgroundColor: '#f0f7ff', borderRadius: 14, alignItems: 'center' },
+  clearDateText: { color: '#1565c0', fontSize: 14, fontWeight: '700' },
+
+  /* ── Mini Modals (price / participants) ── */
+  miniCard: {
+    backgroundColor: '#fff', borderRadius: 24, padding: 24, width: '80%', maxWidth: 320,
+    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 20, shadowOffset: { width: 0, height: 10 },
+    alignItems: 'center',
+  },
+  miniTitle: { fontSize: 16, fontWeight: '800', color: '#0d47a1', marginBottom: 4, alignSelf: 'stretch', textAlign: 'left', writingDirection: 'rtl' },
+  miniInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, width: '100%' },
+  currencyIcon: { fontSize: 20, fontWeight: '800', color: '#0d47a1' },
+  miniInput: {
+    flex: 1, fontSize: 22, fontWeight: '700', color: '#0f172a', textAlign: 'center',
+    borderBottomWidth: 2, borderBottomColor: '#e0e6ee', paddingVertical: 8,
+  },
+  miniActions: { flexDirection: 'row', gap: 12, marginTop: 24, width: '100%' },
+  miniCancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 14, backgroundColor: '#f0f4f8', alignItems: 'center' },
+  miniCancelText: { fontSize: 14, fontWeight: '700', color: '#546e7a', writingDirection: 'rtl' },
+  miniApplyBtn: { flex: 1, paddingVertical: 12, borderRadius: 14, backgroundColor: '#1565c0', alignItems: 'center' },
+  miniApplyText: { fontSize: 14, fontWeight: '700', color: '#fff', writingDirection: 'rtl' },
 });
 
 export default SearchForm;

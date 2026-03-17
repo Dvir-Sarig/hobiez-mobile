@@ -4,7 +4,7 @@ import SecureStorage from '../../auth/services/SecureStorage';
 
 const getAuthHeaders = async () => {
     const token = await SecureStorage.getToken();
-    if (!token) throw new Error('No authentication token found');
+    if (!token) throw new Error('לא נמצא אסימון אימות');
     return {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -16,7 +16,7 @@ export const fetchLessons = async (): Promise<Lesson[]> => {
     const response = await fetch(`${API_BASE_URL}/available-lessons`, {
         headers,
     });
-    if (!response.ok) throw new Error('Failed to fetch lessons');
+    if (!response.ok) throw new Error('שליפת השיעורים נכשלה');
     return await response.json();
 };
 
@@ -68,7 +68,7 @@ export const fetchClientRegisteredLessons = async (
     const response = await fetch(`${API_BASE_URL}/client-lessons/${clientId}`, {
         headers,
     });
-    if (!response.ok) throw new Error('Failed to fetch registered lessons');
+    if (!response.ok) throw new Error('שליפת השיעורים הרשומים נכשלה');
     return await response.json();
 };
 
@@ -81,7 +81,7 @@ export const searchLessons = async (
         headers,
         body: JSON.stringify(searchRequest),
     });
-    if (!response.ok) throw new Error('Failed to search lessons');
+    if (!response.ok) throw new Error('חיפוש השיעורים נכשל');
     return await response.json();
 };
 
@@ -92,7 +92,7 @@ export const fetchLessonRegistrationCount = async (
     const response = await fetch(`${API_BASE_URL}/get-registers-number/${lessonId}`, {
         headers,
     });
-    if (!response.ok) throw new Error(`Failed to fetch registration count for lesson ${lessonId}`);
+    if (!response.ok) throw new Error(`שליפת מספר הנרשמים לשיעור ${lessonId} נכשלה`);
     return await response.json();
 };
 
@@ -103,7 +103,7 @@ export const fetchRegisteredClients = async (
     const response = await fetch(`${API_BASE_URL}/get-registered-clients/${lessonId}`, {
         headers,
     });
-    if (!response.ok) throw new Error(`Failed to fetch registered clients for lesson ${lessonId}`);
+    if (!response.ok) throw new Error(`שליפת הלקוחות הרשומים לשיעור ${lessonId} נכשלה`);
     return await response.json();
 };
 
@@ -114,7 +114,7 @@ export const fetchCoachLessons = async (
     const response = await fetch(`${API_BASE_URL}/coach-lessons/${coachId}`, {
         headers,
     });
-    if (!response.ok) throw new Error('Failed to fetch lessons');
+    if (!response.ok) throw new Error('שליפת השיעורים נכשלה');
 
     const lessons = await response.json();
     return await Promise.all(
@@ -157,7 +157,7 @@ export const editLesson = async (
         body: JSON.stringify({ ...editData, location: editData.location }),
     });
     const message = await response.text();
-    if (!response.ok) throw new Error(`Failed to edit lesson: ${message}`);
+    if (!response.ok) throw new Error(`עריכת השיעור נכשלה: ${message}`);
     return message;
 };
 

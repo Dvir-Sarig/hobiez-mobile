@@ -19,7 +19,7 @@ export const fetchUserInfo = async (userId: string, role: UserRole) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to fetch ${role} info: ${errorText}`);
+            throw new Error(`שליפת פרטי ${role} נכשלה: ${errorText}`);
         }
 
         return await response.json();

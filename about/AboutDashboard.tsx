@@ -18,43 +18,43 @@ export default function AboutDashboard() {
 
   const sections = [
     {
-      title: 'What is Hobinet?',
+      title: 'מה זה Hobinet?',
       icon: 'emoji-objects',
       content: (
-        <Text style={styles.bodyText}> <Text style={{ fontWeight:'800' }}>Hobinet</Text> connects people through hobbies & structured lessons — helping clients explore and coaches grow.</Text>
+        <Text style={styles.bodyText}> <Text style={{ fontWeight:'800' }}>Hobinet</Text> מחבר אנשים דרך תחביבים ושיעורים מובנים — עוזר ללקוחות לגלות ולמאמנים לצמוח.</Text>
       )
     },
     {
-      title: 'What you can do today',
+      title: 'מה אפשר לעשות היום',
       icon: 'check-circle-outline',
       content: (
         <View style={styles.bulletBlock}> 
-          <View style={styles.bulletRow}> <MaterialIcons name='chevron-right' size={16} color='#0d47a1' /> <Text style={styles.bulletText}>Discover coaches & register for lessons fast.</Text></View>
-          <View style={styles.bulletRow}> <MaterialIcons name='chevron-right' size={16} color='#0d47a1' /> <Text style={styles.bulletText}>Create, edit & manage coaching sessions (coaches).</Text></View>
-          <View style={styles.bulletRow}> <MaterialIcons name='chevron-right' size={16} color='#0d47a1' /> <Text style={styles.bulletText}>View schedules & upcoming registrations.</Text></View>
-          <View style={styles.bulletRow}> <MaterialIcons name='chevron-right' size={16} color='#0d47a1' /> <Text style={styles.bulletText}>Track participation & attendee counts.</Text></View>
+          <View style={styles.bulletRow}> <MaterialIcons name='chevron-right' size={16} color='#0d47a1' /> <Text style={styles.bulletText}>גלה מאמנים והירשם לשיעורים במהירות.</Text></View>
+          <View style={styles.bulletRow}> <MaterialIcons name='chevron-right' size={16} color='#0d47a1' /> <Text style={styles.bulletText}>צור, ערוך ונהל שיעורי אימון (מאמנים).</Text></View>
+          <View style={styles.bulletRow}> <MaterialIcons name='chevron-right' size={16} color='#0d47a1' /> <Text style={styles.bulletText}>צפה בלוחות זמנים והרשמות קרובות.</Text></View>
+          <View style={styles.bulletRow}> <MaterialIcons name='chevron-right' size={16} color='#0d47a1' /> <Text style={styles.bulletText}>עקוב אחרי השתתפות ומספר משתתפים.</Text></View>
         </View>
       )
     },
     {
-      title: 'Coming Soon',
+      title: 'בקרוב',
       icon: 'rocket-launch',
       content: (
         <View style={styles.bulletBlock}> 
-          <View style={styles.bulletRow}> <MaterialIcons name='circle' size={10} color='#1976d2' /> <Text style={styles.bulletText}>Social networking & following.</Text></View>
-          <View style={styles.bulletRow}> <MaterialIcons name='circle' size={10} color='#1976d2' /> <Text style={styles.bulletText}>Community feed & sharing.</Text></View>
-          <View style={styles.bulletRow}> <MaterialIcons name='circle' size={10} color='#1976d2' /> <Text style={styles.bulletText}>Public reviews & recommendations.</Text></View>
-          <View style={styles.bulletRow}> <MaterialIcons name='circle' size={10} color='#1976d2' /> <Text style={styles.bulletText}>Announcements & promotional posts.</Text></View>
-          <View style={styles.bulletRow}> <MaterialIcons name='circle' size={10} color='#1976d2' /> <Text style={styles.bulletText}>Analytics for personal & coaching growth.</Text></View>
+          <View style={styles.bulletRow}> <MaterialIcons name='circle' size={10} color='#1976d2' /> <Text style={styles.bulletText}>רשת חברתית ומעקב.</Text></View>
+          <View style={styles.bulletRow}> <MaterialIcons name='circle' size={10} color='#1976d2' /> <Text style={styles.bulletText}>פיד קהילתי ושיתוף.</Text></View>
+          <View style={styles.bulletRow}> <MaterialIcons name='circle' size={10} color='#1976d2' /> <Text style={styles.bulletText}>ביקורות פומביות והמלצות.</Text></View>
+          <View style={styles.bulletRow}> <MaterialIcons name='circle' size={10} color='#1976d2' /> <Text style={styles.bulletText}>הכרזות ופוסטים פרסומיים.</Text></View>
+          <View style={styles.bulletRow}> <MaterialIcons name='circle' size={10} color='#1976d2' /> <Text style={styles.bulletText}>אנליטיקות לצמיחה אישית ולאימון.</Text></View>
         </View>
       )
     },
     {
-      title: 'Contact Us',
+      title: 'צרו קשר',
       icon: 'support-agent',
       content: (
         <View> 
-          <Text style={[styles.bodyText,{ marginBottom:14 }]}>Have feedback or found a bug? Reach out anytime.</Text>
+          <Text style={[styles.bodyText,{ marginBottom:14 }]}>יש לכם משוב או מצאתם באג? פנו אלינו בכל עת.</Text>
           <Text style={styles.linkText} onPress={() => Linking.openURL('mailto:dvirsarig1@gmail.com')}>📧 dvirsarig1@gmail.com</Text>
           <Text style={styles.linkText} onPress={() => Linking.openURL('tel:+972526660845')}>📞 052-6660845</Text>
         </View>
@@ -70,8 +70,8 @@ export default function AboutDashboard() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.heroWrap}> 
           <View style={styles.heroIconBadge}><MaterialIcons name='info-outline' size={22} color='#ffffff' /></View>
-          <Text style={[styles.heroTitle, isMobile && styles.heroTitleMobile]}>About Hobinet</Text>
-          <Text style={styles.heroSubtitle}>A growing platform for hobby learning, coaching & community.</Text>
+          <Text style={[styles.heroTitle, isMobile && styles.heroTitleMobile]}>אודות Hobinet</Text>
+          <Text style={styles.heroSubtitle}>פלטפורמה צומחת ללמידת תחביבים, אימון וקהילה.</Text>
         </View>
         {sections.map((s,i)=> (
           <View key={i} style={styles.sectionCard}> 
@@ -82,7 +82,7 @@ export default function AboutDashboard() {
             {renderSectionContent(s.content)}
           </View>
         ))}
-        <Text style={styles.footerNote}>Thank you for being an early adopter.</Text>
+        <Text style={styles.footerNote}>תודה שאתם מהמאמצים הראשונים.</Text>
         <View style={{height:50}} />
       </ScrollView>
     </LinearGradient>
@@ -94,18 +94,18 @@ const styles = StyleSheet.create({
   scrollContent:{ paddingTop:Platform.OS==='ios'? 56:40, paddingBottom:60 },
   heroWrap:{ paddingHorizontal:22, marginBottom:8 },
   heroIconBadge:{ width:52, height:52, borderRadius:18, backgroundColor:'rgba(255,255,255,0.18)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.35)', marginBottom:14 },
-  heroTitle:{ fontSize:32, fontWeight:'800', color:'#ffffff', letterSpacing:0.5, marginBottom:10 },
+  heroTitle:{ fontSize:32, fontWeight:'800', color:'#ffffff', letterSpacing:0.5, marginBottom:10, textAlign:'left', writingDirection:'rtl' },
   heroTitleMobile:{ fontSize:26 },
-  heroSubtitle:{ fontSize:14, fontWeight:'600', color:'rgba(255,255,255,0.82)', lineHeight:20, marginBottom:14 },
+  heroSubtitle:{ fontSize:14, fontWeight:'600', color:'rgba(255,255,255,0.82)', lineHeight:20, marginBottom:14, textAlign:'left', writingDirection:'rtl' },
   sectionCard:{ marginTop:30, marginHorizontal:18, backgroundColor:'rgba(255,255,255,0.16)', borderRadius:26, padding:22, borderWidth:1, borderColor:'rgba(255,255,255,0.30)', shadowColor:'#000', shadowOpacity:0.20, shadowRadius:14, shadowOffset:{width:0,height:6} },
   sectionHeaderRow:{ flexDirection:'row', alignItems:'center', gap:10, marginBottom:12 },
-  sectionTitle:{ fontSize:17, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
-  bodyText:{ fontSize:13.5, fontWeight:'600', color:'rgba(255,255,255,0.90)', lineHeight:20 },
+  sectionTitle:{ fontSize:17, fontWeight:'800', color:'#ffffff', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
+  bodyText:{ fontSize:13.5, fontWeight:'600', color:'rgba(255,255,255,0.90)', lineHeight:20, textAlign:'left', writingDirection:'rtl' },
   bulletBlock:{ gap:10 },
   bulletRow:{ flexDirection:'row', alignItems:'flex-start', gap:8 },
-  bulletText:{ flex:1, fontSize:13.5, fontWeight:'600', color:'rgba(255,255,255,0.92)', lineHeight:20 },
-  linkText:{ fontSize:14, fontWeight:'700', color:'#ffffff', marginBottom:8 },
-  footerNote:{ marginTop:36, textAlign:'center', fontSize:12, fontWeight:'700', color:'rgba(255,255,255,0.75)', letterSpacing:0.4 },
+  bulletText:{ flex:1, fontSize:13.5, fontWeight:'600', color:'rgba(255,255,255,0.92)', lineHeight:20, textAlign:'left', writingDirection:'rtl' },
+  linkText:{ fontSize:14, fontWeight:'700', color:'#ffffff', marginBottom:8, textAlign:'left', writingDirection:'rtl' },
+  footerNote:{ marginTop:36, textAlign:'left', fontSize:12, fontWeight:'700', color:'rgba(255,255,255,0.75)', letterSpacing:0.4, writingDirection:'rtl' },
   decorBubbleOne:{ position:'absolute', top:-70, left:-50, width:200, height:200, borderRadius:100, backgroundColor:'rgba(255,255,255,0.07)' },
   decorBubbleTwo:{ position:'absolute', top:260, right:-60, width:240, height:240, borderRadius:120, backgroundColor:'rgba(255,255,255,0.05)' },
   decorBubbleThree:{ position:'absolute', bottom:-90, left:-40, width:180, height:180, borderRadius:90, backgroundColor:'rgba(255,255,255,0.06)' },

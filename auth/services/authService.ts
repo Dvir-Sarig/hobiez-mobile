@@ -28,19 +28,19 @@ export const signIn = async (
             data = await response.json();
         } catch (parseError) {
             if (response.status === 401) {
-                throw new Error('Invalid email or password');
+                throw new Error('אימייל או סיסמה שגויים');
             }
-            throw new Error('Login failed. Please try again');
+            throw new Error('ההתחברות נכשלה. נסה שנית');
         }
 
         if (!response.ok) {
             if (response.status === 401) {
-                throw new Error('Invalid email or password');
+                throw new Error('אימייל או סיסמה שגויים');
             }
             if (response.status === 400) {
-                throw new Error(data.message || 'Please check your input');
+                throw new Error(data.message || 'אנא בדוק את הנתונים שהזנת');
             }
-            throw new Error(data.message || 'Login failed. Please try again');
+            throw new Error(data.message || 'ההתחברות נכשלה. נסה שנית');
         }
 
         
@@ -87,19 +87,19 @@ export const signInWithGoogle = async (
             data = await response.json();
         } catch (parseError) {
             if (response.status === 401) {
-                throw new Error('Google sign-in failed');
+                throw new Error('ההתחברות עם Google נכשלה');
             }
-            throw new Error('Google sign-in failed. Please try again');
+            throw new Error('ההתחברות עם Google נכשלה. נסה שנית');
         }
 
         if (!response.ok) {
             if (response.status === 401) {
-                throw new Error('Google sign-in failed');
+                throw new Error('ההתחברות עם Google נכשלה');
             }
             if (response.status === 400) {
-                throw new Error(data.message || 'Please check your input');
+                throw new Error(data.message || 'אנא בדוק את הנתונים שהזנת');
             }
-            throw new Error(data.message || 'Google sign-in failed. Please try again');
+            throw new Error(data.message || 'ההתחברות עם Google נכשלה. נסה שנית');
         }
 
         return data;
@@ -134,47 +134,47 @@ export const signUp = async (
             } catch (parseError) {
                 // Check if the text contains information about duplicate email
                 if (text.includes('duplicate key value') || text.includes('already exists')) {
-                    throw new Error('Email already exists');
+                    throw new Error('אימייל זה כבר קיים במערכת');
                 }
                 // Log the raw response for debugging
                 console.error('Signup parse error. Raw response:', text);
-                throw new Error('Signup failed. Please try again');
+                throw new Error('ההרשמה נכשלה. נסה שנית');
             }
         } catch (textError) {
             // If we can't get the response text, check the status code
             if (response.status === 409) {
-                throw new Error('Email already exists');
+                throw new Error('אימייל זה כבר קיים במערכת');
             }
-            throw new Error('Signup failed. Please try again');
+            throw new Error('ההרשמה נכשלה. נסה שנית');
         }
 
         if (!response.ok) {
             // Handle specific error cases
             if (response.status === 409) {
-                throw new Error('Email already exists');
+                throw new Error('אימייל זה כבר קיים במערכת');
             }
             if (response.status === 400) {
-                throw new Error(data.message || 'Please check your input');
+                throw new Error(data.message || 'אנא בדוק את הנתונים שהזנת');
             }
             // Log the error response for debugging
             console.error('Signup error response:', {
                 status: response.status,
                 data: data
             });
-            throw new Error(data.message || `Failed to create ${role}`);
+            throw new Error(data.message || `יצירת חשבון ${role} נכשלה`);
         }
 
         return data;
     } catch (error) {
         // Handle network errors
         if (error instanceof TypeError && error.message.includes('Network request failed')) {
-            throw new Error('Network error. Please check your connection');
+            throw new Error('שגיאת רשת. בדוק את החיבור לאינטרנט');
         }
 
         // Only log unexpected errors, not expected validation errors
         if (!(error instanceof Error && 
-            (error.message === 'Email already exists' || 
-             error.message === 'Please check your input'))) {
+            (error.message === 'אימייל זה כבר קיים במערכת' || 
+             error.message === 'אנא בדוק את הנתונים שהזנת'))) {
             console.error('Signup error:', {
                 error,
                 message: error instanceof Error ? error.message : 'Unknown error',
@@ -184,11 +184,11 @@ export const signUp = async (
 
         // Always return a user-friendly error message
         if (error instanceof Error && 
-            (error.message === 'Email already exists' || 
-             error.message === 'Please check your input')) {
+            (error.message === 'אימייל זה כבר קיים במערכת' || 
+             error.message === 'אנא בדוק את הנתונים שהזנת')) {
             throw error;
         }
-        throw new Error('Signup failed. Please try again');
+        throw new Error('ההרשמה נכשלה. נסה שנית');
     }
 };
 

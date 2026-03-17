@@ -109,7 +109,7 @@ export default function CoachDashboardScreen() {
       setLessons(lessonsWithCounts);
     } catch (error) {
       console.error('Error fetching lessons:', error);
-      Alert.alert('Error', 'Failed to fetch lessons. Please try again.');
+      Alert.alert('שגיאה', 'נכשל לטעון שיעורים. נסה שוב.');
     } finally {
       setLoading(false);
     }
@@ -148,7 +148,7 @@ export default function CoachDashboardScreen() {
     if (!userId) return;
   
     if (!newLesson.time || isNaN(new Date(newLesson.time).getTime())) {
-      Alert.alert("Error", "Invalid date/time selected for the lesson.");
+      Alert.alert("שגיאה", "תאריך/שעה לא תקינים לשיעור.");
       return;
     }
   
@@ -172,7 +172,7 @@ export default function CoachDashboardScreen() {
       dispatchModal({ type:'CLOSE' });
       await fetchLessonsData();
     } catch (error) {
-      Alert.alert('Error', (error as Error).message || 'Failed to create lesson');
+      Alert.alert('שגיאה', (error as Error).message || 'יצירת השיעור נכשלה');
     } finally {
       setIsCreatingLesson(false);
     }
@@ -210,7 +210,7 @@ export default function CoachDashboardScreen() {
       // After editing, reopen view modal automatically
       dispatchModal({ type:'OPEN_VIEW', lesson: { ...updatedLesson, registeredCount: (lessons.find(l=> l.id===updatedLesson.id)?.registeredCount) || updatedLesson.registeredCount } as Lesson });
     } catch (error) {
-      Alert.alert('Error', (error as Error).message || 'Failed to edit lesson');
+      Alert.alert('שגיאה', (error as Error).message || 'עריכת השיעור נכשלה');
     } finally {
       setIsEditingLesson(false);
     }
@@ -222,7 +222,7 @@ export default function CoachDashboardScreen() {
       await deleteLesson(lessonId);
       await fetchLessonsData();
     } catch (error) {
-      Alert.alert('Error', (error as Error).message || 'Failed to delete lesson');
+      Alert.alert('שגיאה', (error as Error).message || 'מחיקת השיעור נכשלה');
     } finally {
       setIsDeletingLesson(false);
       dispatchModal({ type:'CLOSE' });
@@ -303,11 +303,11 @@ export default function CoachDashboardScreen() {
   };
 
   const getDayName = (date: Date) => {
-    return date.toLocaleDateString('en-US', { weekday: 'short' });
+    return date.toLocaleDateString('he-IL', { weekday: 'short' });
   };
 
   const getMonthName = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return date.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
   };
 
   const handlePrevMonth = () => {
@@ -344,7 +344,7 @@ export default function CoachDashboardScreen() {
               maxFontSizeMultiplier={1.1}
               numberOfLines={1}
               minimumFontScale={0.9}
-            >Calendar</Text>
+            >לוח שנה</Text>
           </View>
         </Pressable>
       </View>
@@ -422,7 +422,7 @@ export default function CoachDashboardScreen() {
         <ScrollView contentContainerStyle={styles.scrollInner} showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl tintColor="#ffffff" refreshing={refreshing} onRefresh={handleRefresh} />}
         >
-          <SectionHeader title="My Lessons" />
+          <SectionHeader title="השיעורים שלי" />
 
           {/* Old top buttons replaced by floating action bar */}
           <View style={styles.buttonContainerHidden} />
@@ -434,12 +434,12 @@ export default function CoachDashboardScreen() {
           ) : filteredLessons.length === 0 ? (
             <View style={styles.emptyStateCard}>
               <Icon name="school" size={44} color="#1976d2" style={styles.emptyStateIcon} />
-              <Text style={styles.emptyStateTitle}>No Lessons Found</Text>
+              <Text style={styles.emptyStateTitle}>לא נמצאו שיעורים</Text>
               <Text style={styles.emptyStateText}>
-                {selectedDay ? 'No lessons scheduled for this day.' : 'Create your first lesson to start coaching clients.'}
+                {selectedDay ? 'אין שיעורים מתוכננים ליום זה.' : 'צור את השיעור הראשון שלך כדי להתחיל לאמן.'}
               </Text>
               <TouchableOpacity style={styles.emptyCtaButton} onPress={()=>dispatchModal({ type:'OPEN_CREATE' })}>
-                <Text style={styles.emptyCtaText}>Create Lesson</Text>
+                <Text style={styles.emptyCtaText}>צור שיעור</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -456,11 +456,11 @@ export default function CoachDashboardScreen() {
         <View style={styles.fabBar}> 
           <TouchableOpacity style={styles.secondaryFab} onPress={()=>setShowDatePicker(true)} activeOpacity={0.85}>
             <Icon name="calendar-today" size={22} color="#1976d2" />
-            <Text style={styles.secondaryFabText}>{selectedDay ? selectedDay.toLocaleDateString() : 'Filter Date'}</Text>
+            <Text style={styles.secondaryFabText}>{selectedDay ? selectedDay.toLocaleDateString('he-IL') : 'סנן לפי תאריך'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.primaryFab} onPress={()=>dispatchModal({ type:'OPEN_CREATE' })} activeOpacity={0.9}>
             <Icon name="add" size={22} color="#1976d2" />
-            <Text style={styles.primaryFabText}>New Lesson</Text>
+            <Text style={styles.primaryFabText}>שיעור חדש</Text>
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -475,19 +475,19 @@ export default function CoachDashboardScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContentEnhanced}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Date</Text>
+              <Text style={styles.modalTitle}>בחר תאריך</Text>
               <TouchableOpacity onPress={() => setShowDatePicker(false)}>
                 <Text style={styles.closeButton}>✕</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.monthNavigation}> 
-              <TouchableOpacity onPress={handlePrevMonth} style={styles.monthNavButtonNew}><Text style={styles.monthNavButtonTextNew}>←</Text></TouchableOpacity>
+              <TouchableOpacity onPress={handlePrevMonth} style={styles.monthNavButtonNew}><Text style={styles.monthNavButtonTextNew}>→</Text></TouchableOpacity>
               <Text style={styles.monthTitleNew}>{getMonthName(currentMonth)}</Text>
-              <TouchableOpacity onPress={handleNextMonth} style={styles.monthNavButtonNew}><Text style={styles.monthNavButtonTextNew}>→</Text></TouchableOpacity>
+              <TouchableOpacity onPress={handleNextMonth} style={styles.monthNavButtonNew}><Text style={styles.monthNavButtonTextNew}>←</Text></TouchableOpacity>
             </View>
 
-            <View style={styles.weekDaysContainer}>{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i)=>(<Text key={i} style={styles.weekDayText}>{d}</Text>))}</View>
+            <View style={styles.weekDaysContainer}>{['א','ב','ג','ד','ה','ו','ש'].map((d,i)=>(<Text key={i} style={styles.weekDayText}>{d}</Text>))}</View>
             <View style={styles.calendarGrid}>
               {generateDates().map((date, index) => (
                 date ? (
@@ -518,7 +518,7 @@ export default function CoachDashboardScreen() {
                 activeOpacity={0.85}
               >
                 <Icon name="close" size={16} color="#ffffff" style={{marginRight:6}} />
-                <Text style={styles.clearButtonTextNew}>Clear Date Filter</Text>
+                <Text style={styles.clearButtonTextNew}>נקה סינון תאריך</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -560,7 +560,7 @@ export default function CoachDashboardScreen() {
       {viewLessonLoading && (
         <View style={styles.inlineLoadingOverlay}>
           <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={styles.inlineLoadingText}>Loading latest lesson...</Text>
+          <Text style={styles.inlineLoadingText}>טוען שיעור אחרון...</Text>
         </View>
       )}
       <RegisteredClientsModal
@@ -593,7 +593,7 @@ export default function CoachDashboardScreen() {
           setLessonRegistrations(prev => prev.filter(r => r.clientId !== clientId));
           // Update lesson's registeredCount in lessons list
           setLessons(prev => prev.map(l => l.id === lessonId ? { ...l, registeredCount: Math.max(0, (l.registeredCount ?? 1) - 1) } : l));
-          Alert.alert('Client Removed', `${clientName} has been unregistered from the lesson.`);
+          Alert.alert('לקוח הוסר', `${clientName} בוטל מהשיעור.`);
         }}
       />
       <DeleteConfirmationModal
@@ -630,34 +630,34 @@ const styles = StyleSheet.create({
   lessonsWrapper:{ paddingHorizontal:4, paddingTop:4 },
   sectionHeaderCard:{ backgroundColor:'rgba(255,255,255,0.15)', paddingVertical:14, paddingHorizontal:18, borderBottomLeftRadius:24, borderBottomRightRadius:24, shadowColor:'#000', shadowOffset:{width:0,height:3}, shadowOpacity:0.13, shadowRadius:8, elevation:5, borderWidth:1, borderColor:'rgba(255,255,255,0.25)', marginBottom:8, marginTop:0 },
   headerContent:{ flexDirection:'row', alignItems:'center' },
-  sectionHeaderText:{ flex:1, fontSize:26, fontWeight:'800', color:'#fff', letterSpacing:0.5, marginRight:14 },
+  sectionHeaderText:{ flex:1, fontSize:26, fontWeight:'800', color:'#fff', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
   calendarButton:{ flexShrink:0, backgroundColor:'rgba(255,255,255,0.32)', paddingHorizontal:12, paddingVertical:8, borderRadius:16, borderWidth:1, borderColor:'rgba(255,255,255,0.55)', shadowColor:'#000', shadowOpacity:0.12, shadowRadius:5, shadowOffset:{width:0,height:3}, maxWidth:140 },
   calendarButtonPressed:{ backgroundColor:'rgba(255,255,255,0.55)' },
   calendarButtonContent:{ flexDirection:'row', alignItems:'center', justifyContent:'center' },
-  calendarIcon:{ fontSize:16, marginRight:4 },
-  calendarButtonText:{ color:'#ffffff', fontWeight:'700', fontSize:12.5, letterSpacing:0.5 },
+  calendarIcon:{ fontSize:16, marginEnd:4 },
+  calendarButtonText:{ color:'#ffffff', fontWeight:'700', fontSize:12.5, letterSpacing:0.5, writingDirection:'rtl' },
   buttonContainerHidden:{ display:'none' },
   loadingContainer:{ flex:1, justifyContent:'center', alignItems:'center', paddingTop:100 },
   emptyStateCard:{ margin:18, backgroundColor:'rgba(255,255,255,0.95)', borderRadius:26, padding:26, alignItems:'center', shadowColor:'#0d47a1', shadowOpacity:0.12, shadowRadius:16, shadowOffset:{width:0,height:6}, borderWidth:1, borderColor:'rgba(255,255,255,0.6)' },
   emptyStateIcon:{ marginBottom:14 },
-  emptyStateTitle:{ fontSize:24, fontWeight:'800', color:'#0d47a1', marginBottom:10 },
-  emptyStateText:{ fontSize:14, color:'#455a64', textAlign:'center', lineHeight:20 },
+  emptyStateTitle:{ fontSize:24, fontWeight:'800', color:'#0d47a1', marginBottom:10, textAlign:'left', writingDirection:'rtl' },
+  emptyStateText:{ fontSize:14, color:'#455a64', textAlign:'center', lineHeight:20, writingDirection:'rtl' },
   emptyCtaButton:{ marginTop:18, backgroundColor:'#1976d2', paddingVertical:14, paddingHorizontal:24, borderRadius:18, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:8, shadowOffset:{ width:0, height:4 } },
-  emptyCtaText:{ color:'#fff', fontWeight:'700', fontSize:15, letterSpacing:0.5 },
+  emptyCtaText:{ color:'#fff', fontWeight:'700', fontSize:15, letterSpacing:0.5, writingDirection:'rtl' },
   fabBar:{ position:'absolute', bottom:24, left:0, right:0, flexDirection:'row', justifyContent:'center', gap:16, paddingHorizontal:24 },
   primaryFab:{ flex:1, backgroundColor:'#ffffff', paddingVertical:18, borderRadius:20, alignItems:'center', flexDirection:'row', justifyContent:'center', shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{ width:0, height:4 } },
-  primaryFabText:{ color:'#1976d2', fontSize:15, fontWeight:'700', marginLeft:8 },
+  primaryFabText:{ color:'#1976d2', fontSize:15, fontWeight:'700', marginStart:8, writingDirection:'rtl' },
   secondaryFab:{ flex:1, backgroundColor:'rgba(255,255,255,0.35)', paddingVertical:18, borderRadius:20, alignItems:'center', flexDirection:'row', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.55)', shadowColor:'#000', shadowOpacity:0.15, shadowRadius:8, shadowOffset:{width:0,height:3} },
-  secondaryFabText:{ color:'#fff', fontSize:15, fontWeight:'700', marginLeft:8 },
+  secondaryFabText:{ color:'#fff', fontSize:15, fontWeight:'700', marginStart:8, writingDirection:'rtl' },
   modalOverlay:{ flex:1, backgroundColor:'rgba(0,0,0,0.55)', justifyContent:'center', alignItems:'center', padding:24 },
   modalContentEnhanced:{ backgroundColor:'rgba(255,255,255,0.97)', borderRadius:28, padding:22, width:'90%', maxHeight:'80%', shadowColor:'#000', shadowOpacity:0.3, shadowRadius:18, shadowOffset:{ width:0, height:10 }, borderWidth:1, borderColor:'rgba(255,255,255,0.6)' },
   modalHeader:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:20, paddingBottom:12, borderBottomWidth:1, borderBottomColor:'rgba(13,71,161,0.15)' },
-  modalTitle:{ fontSize:22, fontWeight:'800', color:'#0d47a1' },
+  modalTitle:{ fontSize:22, fontWeight:'800', color:'#0d47a1', textAlign:'left', writingDirection:'rtl' },
   closeButton:{ fontSize:26, color:'#607d8b', padding:4 },
   monthNavigation:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:16 },
   monthNavButtonNew:{ padding:10, borderRadius:14, backgroundColor:'#e3f2fd' },
   monthNavButtonTextNew:{ fontSize:18, color:'#1976d2', fontWeight:'700' },
-  monthTitleNew:{ fontSize:18, fontWeight:'700', color:'#0d47a1' },
+  monthTitleNew:{ fontSize:18, fontWeight:'700', color:'#0d47a1', textAlign:'left', writingDirection:'rtl' },
   weekDaysContainer:{ flexDirection:'row', justifyContent:'space-around', marginBottom:8, paddingHorizontal:4 },
   weekDayText:{ width:'13%', textAlign:'center', fontSize:12, fontWeight:'700', color:'#0d47a1' },
   calendarGrid:{ flexDirection:'row', flexWrap:'wrap', gap:8, justifyContent:'center', paddingHorizontal:4 },
@@ -669,8 +669,8 @@ const styles = StyleSheet.create({
   selectedDateTextNew:{ color:'#fff' },
   todayDateTextNew:{ color:'#1976d2', fontWeight:'700' },
   clearButtonNew:{ marginTop:14, paddingVertical:12, paddingHorizontal:18, borderRadius:18, backgroundColor:'#1976d2', alignItems:'center', justifyContent:'center', flexDirection:'row', shadowColor:'#000', shadowOpacity:0.2, shadowRadius:6, shadowOffset:{ width:0, height:3 }, borderWidth:1, borderColor:'rgba(255,255,255,0.35)' },
-  clearButtonTextNew:{ color:'#ffffff', fontWeight:'700', letterSpacing:0.4, fontSize:13 },
+  clearButtonTextNew:{ color:'#ffffff', fontWeight:'700', letterSpacing:0.4, fontSize:13, writingDirection:'rtl' },
   emptyDateItem:{ width:'13%', aspectRatio:1, marginBottom:6 },
   inlineLoadingOverlay:{ position:'absolute', top:0, left:0, right:0, bottom:0, backgroundColor:'rgba(0,0,0,0.45)', justifyContent:'center', alignItems:'center', zIndex:50 },
-  inlineLoadingText:{ marginTop:16, color:'#ffffff', fontSize:14, fontWeight:'600', letterSpacing:0.4 },
+  inlineLoadingText:{ marginTop:16, color:'#ffffff', fontSize:14, fontWeight:'600', letterSpacing:0.4, writingDirection:'rtl' },
 });

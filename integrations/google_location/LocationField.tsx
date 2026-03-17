@@ -25,7 +25,7 @@ interface LocationFieldProps {
 const LocationField: React.FC<LocationFieldProps> = ({
   location,
   onLocationSelect,
-  label = 'Location',
+  label = 'מיקום',
   hideLabel = false,
 }) => {
   const [searchText, setSearchText] = useState('');
@@ -141,7 +141,7 @@ const LocationField: React.FC<LocationFieldProps> = ({
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Search for location"
+          placeholder="חפש מיקום"
           value={searchText}
           onChangeText={setSearchText}
         />
@@ -181,7 +181,9 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: 'bold',
     marginBottom: 5,
-    marginLeft: 2,
+    marginStart: 2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -196,9 +198,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 16,
     backgroundColor: '#fff',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   loader: {
-    marginLeft: 10,
+    marginStart: 10,
   },
   predictionsList: {
     position: 'absolute',
@@ -244,6 +248,8 @@ const styles = StyleSheet.create({
   modalBackdrop:{ ...StyleSheet.absoluteFillObject, backgroundColor:'transparent' },
   predictionText: {
     fontSize: 14,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   locationBadge: {
     marginVertical: 8,
@@ -261,9 +267,11 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 14,
-    marginLeft: 6,
+    marginStart: 6,
     color: '#0d47a1',
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
 });
 

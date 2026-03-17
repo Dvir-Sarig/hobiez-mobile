@@ -28,7 +28,7 @@ export const uploadProfileImage = async (file: any, token: string): Promise<Uplo
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || 'Failed to upload image');
+      throw new Error(errorText || 'העלאת התמונה נכשלה');
     }
 
     const result = await response.json();
@@ -50,7 +50,7 @@ export const deleteProfileImage = async (imageUrl: string, token: string): Promi
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || 'Failed to delete image');
+    throw new Error(errorText || 'מחיקת התמונה נכשלה');
   }
 };
 

@@ -16,7 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Location } from '../../../../profile/types/profile';
 import LocationField from '../../../../integrations/google_location/LocationField';
-import { LessonType, lessonTypes, getLessonIcon } from '../../../types/LessonType';
+import { LessonType, lessonTypes, getLessonIcon, getLessonTypeDisplayName } from '../../../types/LessonType';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface CoachLessonModalProps {
@@ -145,11 +145,11 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
             style={[styles.typeChip, active && styles.typeChipActive]}
             onPress={()=> setNewLesson(prev=>({...prev,title:type}))}
             activeOpacity={0.85}
-            accessibilityLabel={`Select lesson type ${type}`}
+            accessibilityLabel={`Select lesson type ${getLessonTypeDisplayName(type)}`}
             accessibilityState={{ selected: active }}
           >
             <IconComponent name={iconName} size={16} color={active? '#fff':'#1976d2'} />
-            <Text style={[styles.typeChipText, active && styles.typeChipTextActive]} numberOfLines={1}>{type}</Text>
+            <Text style={[styles.typeChipText, active && styles.typeChipTextActive]} numberOfLines={1}>{getLessonTypeDisplayName(type)}</Text>
           </TouchableOpacity>
         ); 
       })}
@@ -164,8 +164,8 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
         <View style={styles.glassCard}>
           {/* Header */}
           <LinearGradient colors={['#0d47a1','#1976d2']} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerGradient}> 
-            <Text style={styles.modalTitleNew}>Create Lesson</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeGradientBtn} accessibilityLabel="Close create lesson modal">
+            <Text style={styles.modalTitleNew}>צור שיעור</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeGradientBtn} accessibilityLabel="סגור יצירת שיעור">
               <Icon name="close" size={22} color="#ffffff" />
             </TouchableOpacity>
           </LinearGradient>
@@ -174,18 +174,18 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
             <ScrollView style={{flex:1}} contentContainerStyle={styles.scrollContentNew} showsVerticalScrollIndicator={false}>
               {/* Lesson Type */}
               <View style={[styles.sectionBlock, styles.sectionCard]}> 
-                <Text style={styles.sectionLabel}>Lesson Type</Text>
+                <Text style={styles.sectionLabel}>סוג שיעור</Text>
                 {renderLessonTypeChips()}
-                {!newLesson.title && (<Text style={styles.helperWarning}>Select a lesson type to enable creation.</Text>)}
+                {!newLesson.title && (<Text style={styles.helperWarning}>בחר סוג שיעור כדי לאפשר יצירה.</Text>)}
               </View>
               {/* Description */}
               <View style={[styles.sectionBlock, styles.sectionCard]}> 
-                <Text style={styles.sectionLabel}>Description</Text>
+                <Text style={styles.sectionLabel}>תיאור</Text>
                 <View style={styles.textAreaWrapper}> 
                   <TextInput
                     style={styles.textArea}
                     multiline
-                    placeholder="Describe your lesson..."
+                    placeholder="תאר את השיעור שלך..."
                     placeholderTextColor="#5d7489"
                     value={newLesson.description}
                     onChangeText={text=> setNewLesson(prev=>({...prev, description:text}))}
@@ -194,7 +194,7 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
               </View>
               {/* Date & Time */}
               <View style={[styles.sectionBlock, styles.sectionCard]}> 
-                <Text style={styles.sectionLabel}>Date & Time</Text>
+                <Text style={styles.sectionLabel}>תאריך ושעה</Text>
                 <TouchableOpacity style={styles.inlinePickerBtn} onPress={()=> setShowDatePicker(true)} activeOpacity={0.85}>
                   <Icon name="calendar-today" size={18} color="#1976d2" style={{marginRight:10}} />
                   <Text style={styles.inlinePickerText}>{date.toLocaleString()}</Text>
@@ -216,16 +216,16 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
                   onLocationSelect={(location: Location)=> {
                     setNewLesson(prev=> ({...prev, location:{ city:location.city, country:location.country, address:location.address, latitude:location.latitude, longitude:location.longitude }}));
                   }}
-                  label="Location"
+                  label="מיקום"
                 />
               </View>
               {/* NEW Compact Metrics (Duration, Capacity, Price) */}
               <View style={[styles.sectionBlock, styles.sectionCard]}> 
-                <Text style={styles.sectionLabel}>Details</Text>
+                <Text style={styles.sectionLabel}>פרטים</Text>
                 <View style={styles.metricsRow}>
                   {/* Duration */}
                   <View style={styles.metricBlock}>
-                    <Text style={styles.metricLabel}>Duration</Text>
+                    <Text style={styles.metricLabel}>משך</Text>
                     <View style={styles.metricInputRow}>
                       <Icon name="timer" size={16} color="#1976d2" style={styles.metricIcon} />
                       <TextInput
@@ -233,14 +233,14 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
                         keyboardType="numeric"
                         value={newLesson.duration ? newLesson.duration.toString() : ''}
                         onChangeText={v=> handleNumberChange('duration', v)}
-                        placeholder="min"
+                        placeholder="דקות"
                         placeholderTextColor="#7a8ea2"
                       />
                     </View>
                   </View>
                   {/* Capacity */}
                   <View style={styles.metricBlock}>
-                    <Text style={styles.metricLabel}>Capacity</Text>
+                    <Text style={styles.metricLabel}>תפוסה</Text>
                     <View style={styles.metricInputRow}>
                       <Icon name="people" size={16} color="#1976d2" style={styles.metricIcon} />
                       <TextInput
@@ -255,7 +255,7 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
                   </View>
                   {/* Price */}
                   <View style={styles.metricBlock}>
-                    <Text style={styles.metricLabel}>Price</Text>
+                    <Text style={styles.metricLabel}>מחיר</Text>
                     <View style={styles.metricInputRow}>
                       <Text style={styles.metricCurrencyIcon}>₪</Text>
                       <TextInput
@@ -275,11 +275,11 @@ const CoachLessonModal: React.FC<CoachLessonModalProps> = ({
           </KeyboardAvoidingView>
           {/* Footer Action Bar */}
           <View style={styles.footerBar}> 
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} accessibilityLabel="Cancel lesson creation" activeOpacity={0.85}>
-              <Text style={styles.cancelText}>Cancel</Text>
+            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} accessibilityLabel="ביטול יצירת שיעור" activeOpacity={0.85}>
+              <Text style={styles.cancelText}>ביטול</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.primaryBtn, disabledSubmit && styles.primaryBtnDisabled]} disabled={disabledSubmit} onPress={onSubmit} accessibilityLabel="Submit new lesson" activeOpacity={0.9}>
-              {isSubmitting ? <ActivityIndicator size="small" color="#ffffff" /> : <Text style={styles.primaryBtnText}>{newLesson.title? 'Create Lesson':'Select Type'}</Text>}
+            <TouchableOpacity style={[styles.primaryBtn, disabledSubmit && styles.primaryBtnDisabled]} disabled={disabledSubmit} onPress={onSubmit} accessibilityLabel="שלח שיעור חדש" activeOpacity={0.9}>
+              {isSubmitting ? <ActivityIndicator size="small" color="#ffffff" /> : <Text style={styles.primaryBtnText}>{newLesson.title? 'צור שיעור':'בחר סוג'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -293,42 +293,42 @@ const styles = StyleSheet.create({
   overlayPolished:{ flex:1, backgroundColor:'rgba(0,0,0,0.55)', justifyContent:'center', padding:20 },
   glassCard:{ borderRadius:30, overflow:'hidden', backgroundColor:'rgba(255,255,255,0.94)', borderWidth:1, borderColor:'rgba(255,255,255,0.75)', maxHeight:'92%', shadowColor:'#000', shadowOpacity:0.20, shadowRadius:18, shadowOffset:{width:0,height:8}, flex:1 },
   headerGradient:{ paddingVertical:18, paddingHorizontal:24, flexDirection:'row', alignItems:'center', justifyContent:'space-between' },
-  modalTitleNew:{ fontSize:20, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
+  modalTitleNew:{ fontSize:20, fontWeight:'800', color:'#ffffff', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
   closeGradientBtn:{ width:42, height:42, borderRadius:16, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.4)' },
   scrollContentNew:{ padding:22, paddingBottom:40 },
   sectionBlock:{ marginBottom:22 },
   sectionCard:{ backgroundColor:'#ffffff', borderRadius:22, padding:18, shadowColor:'#0d47a1', shadowOpacity:0.06, shadowRadius:10, shadowOffset:{width:0,height:4}, borderWidth:1, borderColor:'rgba(13,71,161,0.08)' },
-  sectionLabel:{ fontSize:12.5, fontWeight:'800', letterSpacing:0.8, color:'#0d47a1', textTransform:'uppercase', marginBottom:12 },
+  sectionLabel:{ fontSize:12.5, fontWeight:'800', letterSpacing:0.8, color:'#0d47a1', textTransform:'uppercase', marginBottom:12, textAlign:'left', writingDirection:'rtl' },
   // NEW horizontal scroll styles
   typeChipScroll:{ marginHorizontal:-4 },
   typeChipRow:{ flexDirection:'row', alignItems:'center', paddingHorizontal:4, gap:8 },
   chipWrap:{ flexDirection:'row', flexWrap:'wrap', gap:8 },
   typeChip:{ flexDirection:'row', alignItems:'center', paddingVertical:8, paddingHorizontal:12, backgroundColor:'#f1f6fa', borderRadius:16, borderWidth:1, borderColor:'rgba(25,118,210,0.20)', gap:6 },
   typeChipActive:{ backgroundColor:'#1976d2', borderColor:'#1976d2', shadowColor:'#000', shadowOpacity:0.18, shadowRadius:5, shadowOffset:{width:0,height:3} },
-  typeChipText:{ fontSize:12.5, fontWeight:'700', color:'#1976d2' },
+  typeChipText:{ fontSize:12.5, fontWeight:'700', color:'#1976d2', writingDirection:'rtl' },
   typeChipTextActive:{ color:'#ffffff' },
-  helperWarning:{ marginTop:8, fontSize:11, fontWeight:'600', color:'#d32f2f' },
+  helperWarning:{ marginTop:8, fontSize:11, fontWeight:'600', color:'#d32f2f', writingDirection:'rtl' },
   textAreaWrapper:{ borderWidth:1, borderColor:'rgba(25,118,210,0.18)', borderRadius:16, backgroundColor:'#f3f7fb', padding:14 },
   textArea:{ minHeight:90, fontSize:14, color:'#0f172a', fontWeight:'500' },
   inlinePickerBtn:{ flexDirection:'row', alignItems:'center', paddingVertical:12, paddingHorizontal:16, backgroundColor:'#f3f7fb', borderRadius:14, borderWidth:1, borderColor:'rgba(25,118,210,0.18)', shadowColor:'transparent' },
-  inlinePickerText:{ fontSize:14, fontWeight:'600', color:'#0d47a1', flex:1 },
+  inlinePickerText:{ fontSize:14, fontWeight:'600', color:'#0d47a1', flex:1, textAlign:'left', writingDirection:'rtl' },
   inlineInputRow:{ flexDirection:'row', alignItems:'center', backgroundColor:'#f3f7fb', borderRadius:14, borderWidth:1, borderColor:'rgba(25,118,210,0.18)', paddingVertical:10, paddingHorizontal:14, marginBottom:12 },
-  inlineIcon:{ marginRight:10 },
-  inlineNumberInput:{ flex:1, fontSize:14, fontWeight:'600', color:'#0d47a1' },
+  inlineIcon:{ marginEnd:10 },
+  inlineNumberInput:{ flex:1, fontSize:14, fontWeight:'600', color:'#0d47a1', textAlign:'left', writingDirection:'rtl' },
   // Removed quick preset chip styles.
   metricsRow:{ flexDirection:'row', alignItems:'flex-start', justifyContent:'space-between', gap:12 },
   metricBlock:{ flex:1 },
-  metricLabel:{ fontSize:11, fontWeight:'800', letterSpacing:0.6, color:'#0d47a1', textTransform:'uppercase', marginBottom:6 },
+  metricLabel:{ fontSize:11, fontWeight:'800', letterSpacing:0.6, color:'#0d47a1', textTransform:'uppercase', marginBottom:6, textAlign:'left', writingDirection:'rtl' },
   metricInputRow:{ flexDirection:'row', alignItems:'center', backgroundColor:'#f3f7fb', borderRadius:14, borderWidth:1, borderColor:'rgba(25,118,210,0.18)', paddingVertical:8, paddingHorizontal:10 },
-  metricIcon:{ marginRight:6 },
-  metricCurrencyIcon:{ marginRight:6, fontSize:16, fontWeight:'800', color:'#1976d2', lineHeight:16 },
+  metricIcon:{ marginEnd:6 },
+  metricCurrencyIcon:{ marginEnd:6, fontSize:16, fontWeight:'800', color:'#1976d2', lineHeight:16 },
   metricNumberInput:{ flex:1, fontSize:13, fontWeight:'700', color:'#0d47a1', paddingVertical:2 },
   footerBar:{ position:'absolute', left:0, right:0, bottom:0, flexDirection:'row', gap:14, padding:20, backgroundColor:'rgba(255,255,255,0.9)', borderTopWidth:1, borderTopColor:'rgba(25,118,210,0.15)', shadowColor:'#000', shadowOpacity:0.18, shadowRadius:14, shadowOffset:{width:0,height:4} },
   cancelBtn:{ flex:1, backgroundColor:'rgba(255,255,255,0.55)', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:16, borderWidth:1.5, borderColor:'rgba(25,118,210,0.25)' },
-  cancelText:{ fontSize:15, fontWeight:'700', color:'#0d47a1' },
+  cancelText:{ fontSize:15, fontWeight:'700', color:'#0d47a1', writingDirection:'rtl' },
   primaryBtn:{ flex:1.4, backgroundColor:'#1976d2', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:16, shadowColor:'#000', shadowOpacity:0.25, shadowRadius:10, shadowOffset:{width:0,height:4} },
   primaryBtnDisabled:{ backgroundColor:'#90a4ae' },
-  primaryBtnText:{ color:'#ffffff', fontSize:15, fontWeight:'800', letterSpacing:0.5 },
+  primaryBtnText:{ color:'#ffffff', fontSize:15, fontWeight:'800', letterSpacing:0.5, writingDirection:'rtl' },
 });
 
 export default CoachLessonModal;

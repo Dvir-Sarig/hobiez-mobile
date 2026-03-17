@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { getLessonTypeDisplayName } from '../lesson/types/LessonType';
 import dayjs from 'dayjs';
 import { useAuth } from '../auth/AuthContext';
 import { Lesson } from '../lesson/types/Lesson';
@@ -163,12 +164,12 @@ export default function CoachAnalyticsDashboard() {
               const info = await fetchClientGlobalInfo(clientId);
               clientNameMap[clientId] = info.name;
             } catch {
-              clientNameMap[clientId] = `Client ${clientId}`;
+              clientNameMap[clientId] = `לקוח ${clientId}`;
             }
           })
         );
         data.paymentAnalytics?.revenueByMethod.forEach(m =>
-          m.entries.forEach(e => { e.clientName = clientNameMap[e.clientId] ?? `Client ${e.clientId}`; })
+          m.entries.forEach(e => { e.clientName = clientNameMap[e.clientId] ?? `לקוח ${e.clientId}`; })
         );
 
         setAnalyticsData(data);
@@ -243,25 +244,25 @@ export default function CoachAnalyticsDashboard() {
             <View style={styles.headerIconBadge}>
               <MaterialIcons name="analytics" size={24} color="#fff" />
             </View>
-            <Text style={styles.headerTitle}>Analytics</Text>
+            <Text style={styles.headerTitle}>אנליטיקות</Text>
           </View>
-          <Text style={styles.headerSubtitle}>Your coaching performance at a glance</Text>
+          <Text style={styles.headerSubtitle}>ביצועי האימון שלך במבט אחד</Text>
         </View>
 
         {/* Month Navigation */}
         <View style={styles.monthNav}>
-          <TouchableOpacity onPress={handlePrevMonth} style={styles.monthNavBtn}>
-            <MaterialIcons name="chevron-left" size={24} color="#fff" />
-          </TouchableOpacity>
-          <View style={styles.monthDisplay}>
-            <Text style={styles.monthText}>{currentMonth.format('MMMM YYYY')}</Text>
-          </View>
           <TouchableOpacity
             onPress={handleNextMonth}
             disabled={currentMonth.isAfter(dayjs())}
             style={[styles.monthNavBtn, currentMonth.isAfter(dayjs()) && styles.monthNavBtnDisabled]}
           >
             <MaterialIcons name="chevron-right" size={24} color={currentMonth.isAfter(dayjs()) ? '#ffffff66' : '#fff'} />
+          </TouchableOpacity>
+          <View style={styles.monthDisplay}>
+            <Text style={styles.monthText}>{currentMonth.format('MMMM YYYY')}</Text>
+          </View>
+          <TouchableOpacity onPress={handlePrevMonth} style={styles.monthNavBtn}>
+            <MaterialIcons name="chevron-left" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
 
@@ -275,36 +276,36 @@ export default function CoachAnalyticsDashboard() {
             <View style={styles.metricsGrid}>
               <MetricCard
                 icon="calendar-today"
-                label="Total Lessons"
+                label="סה״כ שיעורים"
                 value={analyticsData.totalLessons.toString()}
                 bgGradient={['#1565c0', '#1e88e5']}
                 iconColor="#42a5f5"
               />
               <MetricCard
                 icon="people"
-                label="Registration Rate"
+                label="שיעור רישום"
                 value={`${analyticsData.registrationRate}%`}
-                subtext={`${analyticsData.registeredCount} registrations`}
+                subtext={`${analyticsData.registeredCount} רישומים`}
                 bgGradient={['#0d47a1', '#1565c0']}
                 iconColor="#64b5f6"
               />
               <MetricCard
                 icon="attach-money"
-                label="Confirmed Revenue"
+                label="הכנסה מאושרת"
                 value={formatShekel(analyticsData.totalRevenue)}
                 subtext={
                   analyticsData.paymentAnalytics
-                    ? `${analyticsData.paymentAnalytics.paymentConfirmedCount} confirmed payment${analyticsData.paymentAnalytics.paymentConfirmedCount !== 1 ? 's' : ''}`
-                    : `${analyticsData.registeredCount} registrations (estimate)`
+                    ? `${analyticsData.paymentAnalytics.paymentConfirmedCount} תשלומ${analyticsData.paymentAnalytics.paymentConfirmedCount !== 1 ? 'ים' : ''} מאושרים`
+                    : `${analyticsData.registeredCount} רישומים (הערכה)`
                 }
                 bgGradient={['#1565c0', '#42a5f5']}
                 iconColor="#4fc3f7"
               />
               <MetricCard
                 icon="schedule"
-                label="Most Popular"
-                value={topHours.length > 0 ? formatHour(topHours[0].hour) : 'N/A'}
-                subtext={topHours.length > 0 ? `${topHours[0].registrations} registrations` : 'No data'}
+                label="הכי פופולרי"
+                value={topHours.length > 0 ? formatHour(topHours[0].hour) : 'אין'}
+                subtext={topHours.length > 0 ? `${topHours[0].registrations} רישומים` : 'אין נתונים'}
                 bgGradient={['#0d47a1', '#42a5f5']}
                 iconColor="#81d4fa"
               />
@@ -315,23 +316,23 @@ export default function CoachAnalyticsDashboard() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <MaterialIcons name="account-balance-wallet" size={20} color="#1e88e5" />
-                  <Text style={styles.sectionTitle}>Payment Insights</Text>
+                  <Text style={styles.sectionTitle}>תובנות תשלום</Text>
                 </View>
-                <Text style={styles.sectionSubtitle}>Revenue from confirmed payments &amp; method breakdown</Text>
+                <Text style={styles.sectionSubtitle}>הכנסה מתשלומים מאושרים ופילוח לפי אמצעי תשלום</Text>
 
                 {/* Confirmed Revenue + Collection Rate */}
                 <View style={styles.metricsRow}>
                   <View style={[styles.metricBox, styles.confirmedBox]}>
-                    <Text style={styles.metricBoxLabel}>Confirmed Revenue</Text>
+                    <Text style={styles.metricBoxLabel}>הכנסה מאושרת</Text>
                     <Text style={[styles.metricBoxValue, { color: '#15803d' }]}>
                       {formatShekel(analyticsData.paymentAnalytics.confirmedRevenue)}
                     </Text>
                     <Text style={styles.metricBoxSubtext}>
-                      {analyticsData.paymentAnalytics.paymentConfirmedCount} payment{analyticsData.paymentAnalytics.paymentConfirmedCount !== 1 ? 's' : ''}
+                      {analyticsData.paymentAnalytics.paymentConfirmedCount} תשלומ{analyticsData.paymentAnalytics.paymentConfirmedCount !== 1 ? 'ים' : ''}
                     </Text>
                   </View>
                   <View style={styles.metricBox}>
-                    <Text style={styles.metricBoxLabel}>Collection Rate</Text>
+                    <Text style={styles.metricBoxLabel}>שיעור גבייה</Text>
                     <Text style={[styles.metricBoxValue, {
                       color: analyticsData.paymentAnalytics.collectionRate >= 80 ? '#15803d'
                         : analyticsData.paymentAnalytics.collectionRate >= 50 ? '#b45309' : '#dc2626',
@@ -353,10 +354,10 @@ export default function CoachAnalyticsDashboard() {
                     <MaterialIcons name="hourglass-top" size={16} color="#b45309" />
                     <View style={styles.pendingBannerBody}>
                       <Text style={styles.pendingBannerTitle}>
-                        {formatShekel(analyticsData.paymentAnalytics.pendingRevenue)} Pending
+                        {formatShekel(analyticsData.paymentAnalytics.pendingRevenue)} בהמתנה
                       </Text>
                       <Text style={styles.pendingBannerSub}>
-                        {analyticsData.paymentAnalytics.paymentPendingCount} payment{analyticsData.paymentAnalytics.paymentPendingCount !== 1 ? 's' : ''} awaiting your approval
+                        {analyticsData.paymentAnalytics.paymentPendingCount} תשלומ{analyticsData.paymentAnalytics.paymentPendingCount !== 1 ? 'ים' : ''} ממתינים לאישורך
                       </Text>
                     </View>
                   </View>
@@ -365,10 +366,10 @@ export default function CoachAnalyticsDashboard() {
                 {/* Payment Status Chips */}
                 <View style={styles.statusDistribution}>
                   {([
-                    { label: 'Confirmed', count: analyticsData.paymentAnalytics.paymentConfirmedCount, color: '#16a34a' },
-                    { label: 'Pending', count: analyticsData.paymentAnalytics.paymentPendingCount, color: '#d97706' },
-                    { label: 'Not Set', count: analyticsData.paymentAnalytics.paymentNotSetCount, color: '#94a3b8' },
-                    { label: 'Rejected', count: analyticsData.paymentAnalytics.paymentRejectedCount, color: '#dc2626' },
+                    { label: 'מאושר', count: analyticsData.paymentAnalytics.paymentConfirmedCount, color: '#16a34a' },
+                    { label: 'בהמתנה', count: analyticsData.paymentAnalytics.paymentPendingCount, color: '#d97706' },
+                    { label: 'לא מוגדר', count: analyticsData.paymentAnalytics.paymentNotSetCount, color: '#94a3b8' },
+                    { label: 'נדחה', count: analyticsData.paymentAnalytics.paymentRejectedCount, color: '#dc2626' },
                   ] as const).filter(s => s.count > 0).map(status => (
                     <View key={status.label} style={styles.statusItem}>
                       <View style={[styles.statusDot, { backgroundColor: status.color }]} />
@@ -381,7 +382,7 @@ export default function CoachAnalyticsDashboard() {
                 {/* Revenue by Method — tappable rows */}
                 {analyticsData.paymentAnalytics.revenueByMethod.length > 0 && (
                   <>
-                    <Text style={styles.methodsTitle}>Revenue by Method</Text>
+                    <Text style={styles.methodsTitle}>הכנסה לפי אמצעי תשלום</Text>
                     <View style={styles.methodList}>
                       {analyticsData.paymentAnalytics.revenueByMethod.map(item => (
                         <TouchableOpacity
@@ -405,13 +406,13 @@ export default function CoachAnalyticsDashboard() {
                           </View>
                           <View style={styles.methodInfo}>
                             <Text style={styles.methodName}>{METHOD_LABELS[item.method] ?? item.method}</Text>
-                            <Text style={styles.methodCount}>{item.count} payment{item.count !== 1 ? 's' : ''}</Text>
+                            <Text style={styles.methodCount}>{item.count} תשלומ{item.count !== 1 ? 'ים' : ''}</Text>
                           </View>
                           <View style={styles.methodAmounts}>
                             <Text style={styles.methodRevenue}>{formatShekel(item.revenue)}</Text>
                             <Text style={styles.methodPct}>{item.percentage}%</Text>
                           </View>
-                          <MaterialIcons name="chevron-right" size={18} color="#94a3b8" style={{ marginLeft: 4 }} />
+                          <MaterialIcons name="chevron-left" size={18} color="#94a3b8" style={{ marginStart: 4 }} />
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -424,13 +425,13 @@ export default function CoachAnalyticsDashboard() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialIcons name="pie-chart" size={20} color="#4fc3f7" />
-                <Text style={styles.sectionTitle}>Revenue Breakdown</Text>
+                <Text style={styles.sectionTitle}>פירוט הכנסה</Text>
               </View>
               <View style={styles.breakdownCard}>
                 <View style={styles.breakdownRow}>
                   <View style={styles.breakdownLabel}>
                     <View style={styles.breakdownDot} />
-                    <Text style={styles.breakdownText}>Total Registrations</Text>
+                    <Text style={styles.breakdownText}>סה״כ רישומים</Text>
                   </View>
                   <Text style={styles.breakdownValue}>{analyticsData.registeredCount}</Text>
                 </View>
@@ -442,8 +443,8 @@ export default function CoachAnalyticsDashboard() {
                       <View style={styles.breakdownLabel}>
                         <View style={[styles.breakdownDot, { backgroundColor: '#94a3b8' }]} />
                         <View>
-                          <Text style={styles.breakdownText}>Total Money from Registrations</Text>
-                          <Text style={styles.breakdownNote}>potential if all pay</Text>
+                          <Text style={styles.breakdownText}>סה״כ כסף מרישומים</Text>
+                          <Text style={styles.breakdownNote}>פוטנציאל אם כולם משלמים</Text>
                         </View>
                       </View>
                       <Text style={styles.breakdownValue}>
@@ -460,8 +461,8 @@ export default function CoachAnalyticsDashboard() {
                       <View style={styles.breakdownLabel}>
                         <View style={[styles.breakdownDot, { backgroundColor: '#42a5f5' }]} />
                         <View>
-                          <Text style={styles.breakdownText}>Confirmed Revenue</Text>
-                          <Text style={styles.breakdownNote}>approved payments only</Text>
+                          <Text style={styles.breakdownText}>הכנסה מאושרת</Text>
+                          <Text style={styles.breakdownNote}>תשלומים מאושרים בלבד</Text>
                         </View>
                       </View>
                       <Text style={[styles.breakdownValue, styles.revenueHighlight]}>
@@ -473,9 +474,9 @@ export default function CoachAnalyticsDashboard() {
                       <View style={styles.breakdownLabel}>
                         <View style={[styles.breakdownDot, { backgroundColor: '#81d4fa' }]} />
                         <View>
-                          <Text style={styles.breakdownText}>Avg. per Confirmed Payment</Text>
+                          <Text style={styles.breakdownText}>ממוצע לתשלום מאושר</Text>
                           <Text style={styles.breakdownNote}>
-                            {analyticsData.paymentAnalytics.paymentConfirmedCount} confirmed payment{analyticsData.paymentAnalytics.paymentConfirmedCount !== 1 ? 's' : ''}
+                            {analyticsData.paymentAnalytics.paymentConfirmedCount} תשלומ{analyticsData.paymentAnalytics.paymentConfirmedCount !== 1 ? 'ים' : ''} מאושרים
                           </Text>
                         </View>
                       </View>
@@ -494,7 +495,7 @@ export default function CoachAnalyticsDashboard() {
                     <View style={styles.breakdownRow}>
                       <View style={styles.breakdownLabel}>
                         <View style={[styles.breakdownDot, { backgroundColor: '#42a5f5' }]} />
-                        <Text style={styles.breakdownText}>Total Revenue (estimate)</Text>
+                        <Text style={styles.breakdownText}>סה״כ הכנסה (הערכה)</Text>
                       </View>
                       <Text style={[styles.breakdownValue, styles.revenueHighlight]}>
                         {formatShekel(analyticsData.totalRevenue)}
@@ -504,7 +505,7 @@ export default function CoachAnalyticsDashboard() {
                     <View style={styles.breakdownRow}>
                       <View style={styles.breakdownLabel}>
                         <View style={[styles.breakdownDot, { backgroundColor: '#81d4fa' }]} />
-                        <Text style={styles.breakdownText}>Avg. per Registration</Text>
+                        <Text style={styles.breakdownText}>ממוצע לרישום</Text>
                       </View>
                       <Text style={styles.breakdownValue}>
                         {formatShekel(
@@ -522,13 +523,13 @@ export default function CoachAnalyticsDashboard() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialIcons name="trending-up" size={20} color="#66bb6a" />
-                <Text style={styles.sectionTitle}>Capacity Insights</Text>
+                <Text style={styles.sectionTitle}>תובנות תפוסה</Text>
               </View>
-              <Text style={styles.sectionSubtitle}>How full your lessons are (registrations vs total capacity)</Text>
+              <Text style={styles.sectionSubtitle}>עד כמה השיעורים שלך מלאים (רישומים לעומת תפוסה כוללת)</Text>
 
               <View style={styles.metricsRow}>
                 <View style={styles.metricBox}>
-                  <Text style={styles.metricBoxLabel}>Avg. Occupancy</Text>
+                  <Text style={styles.metricBoxLabel}>תפוסה ממוצעת</Text>
                   <Text style={styles.metricBoxValue}>{analyticsData.occupancyMetrics.averageOccupancy}%</Text>
                   <View style={styles.occupancyBar}>
                     <View
@@ -544,9 +545,9 @@ export default function CoachAnalyticsDashboard() {
                 </View>
 
                 <View style={styles.metricBox}>
-                  <Text style={styles.metricBoxLabel}>Avg. Class Size</Text>
+                  <Text style={styles.metricBoxLabel}>גודל כיתה ממוצע</Text>
                   <Text style={styles.metricBoxValue}>{analyticsData.occupancyMetrics.averageClassSize}</Text>
-                  <Text style={styles.metricBoxSubtext}>students per lesson</Text>
+                  <Text style={styles.metricBoxSubtext}>תלמידים לשיעור</Text>
                 </View>
               </View>
 
@@ -556,11 +557,11 @@ export default function CoachAnalyticsDashboard() {
                     <MaterialIcons name="arrow-upward" size={16} color="#66bb6a" />
                   </View>
                   <View style={styles.detailContent}>
-                    <Text style={styles.detailLabel}>Best Occupancy Hour</Text>
+                    <Text style={styles.detailLabel}>שעת תפוסה גבוהה ביותר</Text>
                     <Text style={styles.detailValue} numberOfLines={1}>
                       {analyticsData.occupancyMetrics.mostFilledHour !== null
                         ? `${formatHour(analyticsData.occupancyMetrics.mostFilledHour)} • ${analyticsData.occupancyMetrics.mostFilledHourOccupancy}%`
-                        : 'N/A'}
+                        : 'אין'}
                     </Text>
                   </View>
                 </View>
@@ -572,11 +573,11 @@ export default function CoachAnalyticsDashboard() {
                     <MaterialIcons name="arrow-downward" size={16} color="#ff7043" />
                   </View>
                   <View style={styles.detailContent}>
-                    <Text style={styles.detailLabel}>Lowest Occupancy Hour</Text>
+                    <Text style={styles.detailLabel}>שעת תפוסה נמוכה ביותר</Text>
                     <Text style={styles.detailValue} numberOfLines={1}>
                       {analyticsData.occupancyMetrics.leastFilledHour !== null
                         ? `${formatHour(analyticsData.occupancyMetrics.leastFilledHour)} • ${analyticsData.occupancyMetrics.leastFilledHourOccupancy}%`
-                        : 'Need 2+ different hours'}
+                        : 'נדרשות 2+ שעות שונות'}
                     </Text>
                   </View>
                 </View>
@@ -588,15 +589,15 @@ export default function CoachAnalyticsDashboard() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <MaterialIcons name="school" size={20} color="#1e88e5" />
-                  <Text style={styles.sectionTitle}>Lesson Performance</Text>
+                  <Text style={styles.sectionTitle}>ביצועי שיעורים</Text>
                 </View>
-                <Text style={styles.sectionSubtitle}>Revenue & demand by lesson type</Text>
+                <Text style={styles.sectionSubtitle}>הכנסה וביקוש לפי סוג שיעור</Text>
 
                 <View style={styles.typeList}>
                   {analyticsData.lessonTypeMetrics.map((metric, index) => (
                     <View key={metric.type} style={styles.typeItemCard}>
                       <View style={styles.typeItemHeader}>
-                        <Text style={styles.typeItemName}>{metric.type}</Text>
+                        <Text style={styles.typeItemName}>{getLessonTypeDisplayName(metric.type)}</Text>
                         <View style={[styles.typeItemBadge, { backgroundColor: getTypeColor(index) }]}>
                           <Text style={styles.typeItemRevenue}>{formatShekel(metric.revenue)}</Text>
                         </View>
@@ -604,17 +605,17 @@ export default function CoachAnalyticsDashboard() {
 
                       <View style={styles.typeItemStats}>
                         <View style={styles.typeStat}>
-                          <Text style={styles.typeStatLabel}>Registrations</Text>
+                          <Text style={styles.typeStatLabel}>רישומים</Text>
                           <Text style={styles.typeStatValue}>{metric.registrations}</Text>
                         </View>
                         <View style={styles.typeStatDivider} />
                         <View style={styles.typeStat}>
-                          <Text style={styles.typeStatLabel}>Lessons</Text>
+                          <Text style={styles.typeStatLabel}>שיעורים</Text>
                           <Text style={styles.typeStatValue}>{metric.lessonCount}</Text>
                         </View>
                         <View style={styles.typeStatDivider} />
                         <View style={styles.typeStat}>
-                          <Text style={styles.typeStatLabel}>Occupancy</Text>
+                          <Text style={styles.typeStatLabel}>תפוסה</Text>
                           <Text style={styles.typeStatValue}>{metric.occupancyRate}%</Text>
                         </View>
                       </View>
@@ -641,9 +642,9 @@ export default function CoachAnalyticsDashboard() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <MaterialIcons name="calendar-today" size={20} color="#ec407a" />
-                  <Text style={styles.sectionTitle}>Weekly Trend</Text>
+                  <Text style={styles.sectionTitle}>מגמה שבועית</Text>
                 </View>
-                <Text style={styles.sectionSubtitle}>Performance across weeks</Text>
+                <Text style={styles.sectionSubtitle}>ביצועים לאורך השבועות</Text>
 
                 <View style={styles.weeklyList}>
                   {analyticsData.weeklyPerformance.map((week) => (
@@ -658,12 +659,12 @@ export default function CoachAnalyticsDashboard() {
                       <View style={styles.weeklyStats}>
                         <View style={styles.weeklyStat}>
                           <MaterialIcons name="calendar-month" size={14} color="#1e88e5" />
-                          <Text style={styles.weeklyStatText}>{week.lessons} lessons</Text>
+                          <Text style={styles.weeklyStatText}>{week.lessons} שיעורים</Text>
                         </View>
                         <View style={styles.weeklyStatDivider} />
                         <View style={styles.weeklyStat}>
                           <MaterialIcons name="people" size={14} color="#42a5f5" />
-                          <Text style={styles.weeklyStatText}>{week.registrations} registrations</Text>
+                          <Text style={styles.weeklyStatText}>{week.registrations} רישומים</Text>
                         </View>
                       </View>
 
@@ -687,9 +688,9 @@ export default function CoachAnalyticsDashboard() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="fire" size={20} color="#ff6b6b" />
-                <Text style={styles.sectionTitle}>Hot Hours</Text>
+                <Text style={styles.sectionTitle}>שעות חמות</Text>
               </View>
-              <Text style={styles.sectionSubtitle}>Your most popular lesson times</Text>
+              <Text style={styles.sectionSubtitle}>זמני השיעורים הפופולריים ביותר שלך</Text>
 
               {topHours.length > 0 ? (
                 <View style={styles.hoursContainer}>
@@ -704,11 +705,11 @@ export default function CoachAnalyticsDashboard() {
                       <View style={styles.hourStats}>
                         <View style={styles.hourStat}>
                           <MaterialCommunityIcons name="account-multiple" size={16} color="#64b5f6" />
-                          <Text style={styles.hourStatText}>{hour.registrations} registrations</Text>
+                          <Text style={styles.hourStatText}>{hour.registrations} רישומים</Text>
                         </View>
                         <View style={styles.hourStat}>
                           <MaterialCommunityIcons name="calendar-month" size={16} color="#81d4fa" />
-                          <Text style={styles.hourStatText}>{hour.lessonCount} lesson{hour.lessonCount !== 1 ? 's' : ''}</Text>
+                          <Text style={styles.hourStatText}>{hour.lessonCount} {hour.lessonCount !== 1 ? 'שיעורים' : 'שיעור'}</Text>
                         </View>
                       </View>
                       <View style={styles.progressBar}>
@@ -728,7 +729,7 @@ export default function CoachAnalyticsDashboard() {
               ) : (
                 <View style={styles.emptyHoursPlaceholder}>
                   <MaterialCommunityIcons name="clock-outline" size={40} color="#cbd5e1" />
-                  <Text style={styles.emptyHoursText}>No lessons scheduled yet</Text>
+                  <Text style={styles.emptyHoursText}>עדיין אין שיעורים מתוכננים</Text>
                 </View>
               )}
             </View>
@@ -736,7 +737,7 @@ export default function CoachAnalyticsDashboard() {
         ) : (
           <View style={styles.emptyState}>
             <MaterialIcons name="info" size={48} color="#ffffff88" />
-            <Text style={styles.emptyStateText}>No lessons scheduled for this month</Text>
+            <Text style={styles.emptyStateText}>אין שיעורים מתוכננים לחודש זה</Text>
           </View>
         )}
 
@@ -772,7 +773,7 @@ export default function CoachAnalyticsDashboard() {
                     {METHOD_LABELS[selectedMethod?.method ?? ''] ?? selectedMethod?.method}
                   </Text>
                   <Text style={styles.modalSubtitle}>
-                    {selectedMethod?.count} payment{selectedMethod?.count !== 1 ? 's' : ''} · {formatShekel(selectedMethod?.revenue ?? 0)}
+                    {selectedMethod?.count} תשלומ{selectedMethod?.count !== 1 ? 'ים' : ''} · {formatShekel(selectedMethod?.revenue ?? 0)}
                   </Text>
                 </View>
               </View>
@@ -826,10 +827,10 @@ const getTypeColor = (index: number): string => {
 };
 
 const METHOD_LABELS: Record<string, string> = {
-  BIT: 'Bit',
-  PAYBOX: 'PayBox',
-  CASH: 'Cash',
-  OTHER: 'Other',
+  BIT: 'ביט',
+  PAYBOX: 'פייבוקס',
+  CASH: 'מזומן',
+  OTHER: 'אחר',
 };
 
 const getMethodColor = (method: string): string => {
@@ -858,6 +859,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
+    gap: 12,
   },
   headerIconBadge: {
     width: 48,
@@ -866,17 +868,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   headerTitle: {
+    flex: 1,
     fontSize: 28,
     fontWeight: '700',
     color: '#fff',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   headerSubtitle: {
+    width: '100%',
     fontSize: 14,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 8,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   monthNav: {
     flexDirection: 'row',
@@ -908,6 +915,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   metricsGrid: {
     paddingHorizontal: 16,
@@ -927,6 +936,7 @@ const styles = StyleSheet.create({
   metricCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 16,
   },
   metricIconBox: {
     width: 56,
@@ -934,7 +944,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
   },
   metricTextBox: {
     flex: 1,
@@ -946,16 +955,22 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   metricValue: {
     fontSize: 24,
     fontWeight: '700',
     color: '#fff',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   metricSubtext: {
     fontSize: 11,
     color: 'rgba(255,255,255,0.6)',
     marginTop: 2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   section: {
     marginHorizontal: 16,
@@ -973,17 +988,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+    gap: 8,
   },
   sectionTitle: {
+    flex: 1,
     fontSize: 16,
     fontWeight: '700',
     color: '#0d47a1',
-    marginLeft: 8,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   sectionSubtitle: {
+    width: '100%',
     fontSize: 13,
     color: '#7a8a99',
     marginBottom: 16,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   hoursContainer: {
     gap: 12,
@@ -1005,6 +1026,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#0d47a1',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   rankBadge: {
     paddingHorizontal: 10,
@@ -1030,6 +1053,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#475569',
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   progressBar: {
     height: 6,
@@ -1068,16 +1093,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#475569',
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   breakdownNote: {
     fontSize: 10,
     color: '#94a3b8',
     marginTop: 1,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   breakdownValue: {
     fontSize: 14,
     fontWeight: '700',
     color: '#0d47a1',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   breakdownDivider: {
     height: 1,
@@ -1093,6 +1124,8 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 12,
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   revenueHighlight: {
     color: '#42a5f5',
@@ -1113,6 +1146,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     marginTop: 16,
     textAlign: 'center',
+    writingDirection: 'rtl',
   },
   metricsRow: {
     flexDirection: 'row',
@@ -1132,17 +1166,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#7a8a99',
     marginBottom: 8,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   metricBoxValue: {
     fontSize: 20,
     fontWeight: '700',
     color: '#0d47a1',
     marginBottom: 6,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   metricBoxSubtext: {
     fontSize: 11,
     color: '#94a3b8',
     marginTop: 4,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   occupancyBar: {
     height: 6,
@@ -1182,6 +1222,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#7a8a99',
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   detailValue: {
     fontSize: 14,
@@ -1189,6 +1231,8 @@ const styles = StyleSheet.create({
     color: '#0d47a1',
     marginTop: 2,
     flexShrink: 1,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   detailDivider: {
     width: 1,
@@ -1214,6 +1258,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#0d47a1',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   typeItemBadge: {
     paddingHorizontal: 10,
@@ -1239,12 +1285,16 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#7a8a99',
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   typeStatValue: {
     fontSize: 14,
     fontWeight: '700',
     color: '#1e293b',
     marginTop: 2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   typeStatDivider: {
     width: 1,
@@ -1271,6 +1321,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#0d47a1',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   weeklyRevenueBadge: {
     backgroundColor: '#1e88e5',
@@ -1299,6 +1351,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#475569',
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   weeklyStatDivider: {
     width: 1,
@@ -1338,11 +1392,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#b45309',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   pendingBannerSub: {
     fontSize: 12,
     color: '#92400e',
     marginTop: 2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   statusDistribution: {
     flexDirection: 'row',
@@ -1370,11 +1428,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#1e293b',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   statusLabel: {
     fontSize: 11,
     color: '#64748b',
     fontWeight: '500',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   methodsTitle: {
     fontSize: 12,
@@ -1383,6 +1445,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: 10,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   methodList: {
     gap: 8,
@@ -1416,11 +1480,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#1e293b',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   methodCount: {
     fontSize: 11,
     color: '#94a3b8',
     marginTop: 1,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   methodAmounts: {
     alignItems: 'flex-end',
@@ -1429,11 +1497,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#0d47a1',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   methodPct: {
     fontSize: 11,
     color: '#94a3b8',
     marginTop: 1,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   modalOverlay: {
     flex: 1,
@@ -1469,11 +1541,15 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: '#0d47a1',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   modalSubtitle: {
     fontSize: 12,
     color: '#64748b',
     marginTop: 2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   modalCloseBtn: {
     width: 32,
@@ -1522,13 +1598,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1d4ed8',
     marginBottom: 1,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   modalEntryLesson: {
     fontSize: 12,
     fontWeight: '500',
     color: '#475569',
     flexShrink: 1,
-    marginRight: 6,
+    marginStart: 6,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   modalEntryRow: {
     flexDirection: 'row',
@@ -1540,12 +1620,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#94a3b8',
     flexShrink: 0,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   modalEntryAmount: {
     fontSize: 14,
     fontWeight: '700',
     color: '#15803d',
-    marginLeft: 8,
+    marginStart: 8,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   modalEntrySep: {
     height: 1,

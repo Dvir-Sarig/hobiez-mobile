@@ -5,7 +5,7 @@ import { profileCacheService } from '../services/profileCacheService';
 
 const getAuthHeaders = async () => {
     const token = await SecureStorage.getToken();
-    if (!token) throw new Error('No authentication token found');
+    if (!token) throw new Error('לא נמצא אסימון אימות');
     return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
@@ -27,13 +27,13 @@ export const createCoachProfile = async (
 
   if (!response.ok) {
     const errorData = await response.text();
-    if (errorData.includes('Unique index or primary key violation')) {
+    if (errorData.includes('כבר קיים פרופיל עם פרטים אלו')) {
       if (errorData.includes('EMAIL')) {
-        throw new Error('A profile with this email already exists. Please use a different email address.');
+        throw new Error('כבר קיים פרופיל עם אימייל זה. אנא השתמש בכתובת אחרת.');
       }
-      throw new Error('A profile already exists for this user.');
+      throw new Error('כבר קיים פרופיל למשתמש זה.');
     }
-    throw new Error(errorData || 'Failed to create profile');
+    throw new Error(errorData || 'יצירת הפרופיל נכשלה');
   }
 };
 
@@ -76,7 +76,7 @@ export const fetchPublicCoachProfile = async (
   try {
     // Validate UUID format
     if (!isValidUUID(coachId)) {
-      throw new Error('Invalid coach ID format');
+      throw new Error('פורמט מזהה מאמן שגוי');
     }
 
     const response = await fetch(`${API_BASE_URL}/public/coach-profile/${coachId}`);
@@ -108,7 +108,7 @@ export const updateCoachProfile = async (
 
   if (!response.ok) {
     const errorData = await response.text();
-    throw new Error(errorData || 'Failed to update profile');
+    throw new Error(errorData || 'עדכון הפרופיל נכשל');
   }
 
   // Update cache with new profile data
@@ -130,13 +130,13 @@ export const createClientProfile = async (
 
   if (!response.ok) {
     const errorData = await response.text();
-    if (errorData.includes('Unique index or primary key violation')) {
+    if (errorData.includes('כבר קיים פרופיל עם פרטים אלו')) {
       if (errorData.includes('EMAIL')) {
-        throw new Error('A profile with this email already exists. Please use a different email address.');
+        throw new Error('כבר קיים פרופיל עם אימייל זה. אנא השתמש בכתובת אחרת.');
       }
-      throw new Error('A profile already exists for this user.');
+      throw new Error('כבר קיים פרופיל למשתמש זה.');
     }
-    throw new Error(errorData || 'Failed to create profile');
+    throw new Error(errorData || 'יצירת הפרופיל נכשלה');
   }
 };
 
@@ -186,7 +186,7 @@ export const updateClientProfile = async (
 
   if (!response.ok) {
     const errorData = await response.text();
-    throw new Error(errorData || 'Failed to update profile');
+    throw new Error(errorData || 'עדכון הפרופיל נכשל');
   }
 
   // Update cache with new profile data

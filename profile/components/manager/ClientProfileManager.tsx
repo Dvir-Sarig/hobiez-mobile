@@ -58,11 +58,13 @@ const styles = StyleSheet.create({
     color: '#1976d2',
     fontSize: 16,
     fontWeight: '600',
+    writingDirection: 'rtl',
   },
   cancelText: {
     color: '#000',
     fontWeight: 'bold',
     fontSize: 16,
+    writingDirection: 'rtl',
   },
   error: {
     color: 'red',
@@ -101,12 +103,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   welcomeSubtext: {
     fontSize: 16,
     color: '#fff',
-    textAlign: 'center',
+    textAlign: 'left',
+    writingDirection: 'rtl',
     marginBottom: 24,
     lineHeight: 24,
   },
@@ -129,7 +133,8 @@ const styles = StyleSheet.create({
     color: '#dc3545',
     fontSize: 16,
     fontWeight: '600',
-    marginLeft: 8,
+    marginStart: 8,
+    writingDirection: 'rtl',
   },
 });
 
@@ -149,7 +154,7 @@ export default function ClientProfileDashboardScreen() {
   const fetchProfile = async () => {
     try {
       if (!userId) {
-        throw new Error('Missing user ID');
+        throw new Error('חסר מזהה משתמש');
       }
 
       const profileData = await fetchClientProfile(userId);
@@ -180,7 +185,7 @@ export default function ClientProfileDashboardScreen() {
     try {
       setSaving(true);
       if (!userId || !editData) {
-        throw new Error('Missing user ID or profile data');
+        throw new Error('חסר מזהה משתמש או נתוני פרופיל');
       }
 
       await updateClientProfile(userId, editData);
@@ -191,10 +196,10 @@ export default function ClientProfileDashboardScreen() {
         setProfile(updatedProfile);
         setEditMode(false);
       } else {
-        throw new Error('Failed to fetch updated profile');
+        throw new Error('שליפת הפרופיל המעודכן נכשלה');
       }
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('שגיאה', err.message);
     } finally {
       setSaving(false);
     }
@@ -213,15 +218,15 @@ export default function ClientProfileDashboardScreen() {
       <View style={styles.welcomeContainer}>
         <View style={styles.welcomeCard}>
           <View style={styles.cardBackground}>
-            <Text style={styles.welcomeText}>Welcome!</Text>
+            <Text style={styles.welcomeText}>ברוכים הבאים!</Text>
             <Text style={styles.welcomeSubtext}>
-              You haven't created your profile yet. Set up your details to start discovering new training opportunities and connect with coaches.
+              עדיין לא יצרת את הפרופיל שלך. הגדר את הפרטים שלך כדי להתחיל לגלות הזדמנויות אימון חדשות ולהתחבר למאמנים.
             </Text>
             <TouchableOpacity
               style={styles.button}
               onPress={() => navigation.navigate('CreateClientProfile')}
             >
-              <Text style={styles.buttonText}>Create Your Profile</Text>
+              <Text style={styles.buttonText}>צור את הפרופיל שלך</Text>
             </TouchableOpacity>
           </View>
         </View>

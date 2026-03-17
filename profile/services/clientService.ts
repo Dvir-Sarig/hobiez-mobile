@@ -11,7 +11,7 @@ export const fetchClientGlobalInfo = async (clientId: string): Promise<ClientGlo
     const response = await fetch(`${API_BASE_URL}/public/client-global-info/${clientId}`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch client global info for client with ID ${clientId}`);
+      throw new Error(`שליפת פרטי לקוח ${clientId} נכשלה`);
     }
 
     const data: ClientGlobalInfo = await response.json();

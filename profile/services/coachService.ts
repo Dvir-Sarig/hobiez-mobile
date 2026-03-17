@@ -10,7 +10,7 @@ export interface CoachGlobalInfo {
 
 const getAuthHeaders = async () => {
     const token = await SecureStorage.getToken();
-    if (!token) throw new Error('No authentication token found');
+    if (!token) throw new Error('לא נמצא אסימון אימות');
     return {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -20,14 +20,14 @@ const getAuthHeaders = async () => {
 export const fetchCoachGlobalInfo = async (coachId: string): Promise<CoachGlobalInfo> => {
     // Validate UUID format
     if (!isValidUUID(coachId)) {
-        throw new Error('Invalid coach ID format');
+        throw new Error('פורמט מזהה מאמן שגוי');
     }
 
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/coach-global-info/${coachId}`, {
         headers: headers,
     });
-    if (!response.ok) throw new Error(`Failed to fetch coach global info for coach with ID ${coachId}`);
+    if (!response.ok) throw new Error(`שליפת פרטי מאמן ${coachId} נכשלה`);
     return await response.json();
 };
 

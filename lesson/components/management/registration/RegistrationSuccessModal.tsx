@@ -35,7 +35,7 @@ const RegistrationSuccessModal: React.FC<Props> = ({ isOpen, lesson, onClose, on
             <View style={styles.successIconWrap}>
               <MaterialIcons name="check-circle" size={44} color="#ffffff" />
             </View>
-            <Text style={styles.headerTitle}>You're Registered!</Text>
+            <Text style={styles.headerTitle}>נרשמת בהצלחה!</Text>
             <Text style={styles.headerSubtitle} numberOfLines={1}>{lesson.title}</Text>
             <Text style={styles.headerTime}>{formatLessonTimeReadable(lesson.time)}</Text>
           </LinearGradient>
@@ -45,7 +45,7 @@ const RegistrationSuccessModal: React.FC<Props> = ({ isOpen, lesson, onClose, on
             <View style={styles.chipRow}>
               <View style={styles.chip}>
                 <MaterialIcons name="timer" size={14} color="#1976d2" />
-                <Text style={styles.chipText}>{lesson.duration} min</Text>
+                <Text style={styles.chipText}>{lesson.duration} דק׳</Text>
               </View>
               {lesson.price > 0 && (
                 <View style={styles.chip}>
@@ -61,24 +61,24 @@ const RegistrationSuccessModal: React.FC<Props> = ({ isOpen, lesson, onClose, on
                 <View style={styles.infoIconWrap}>
                   <MaterialIcons name="info" size={18} color="#1976d2" />
                 </View>
-                <Text style={styles.infoTitle}>What happens next?</Text>
+                <Text style={styles.infoTitle}>מה קורה הלאה?</Text>
               </View>
               <View style={styles.stepList}>
                 <View style={styles.step}>
                   <View style={styles.stepDot}><Text style={styles.stepDotText}>1</Text></View>
-                  <Text style={styles.stepText}>Declare your payment method so the coach knows how you'll pay.</Text>
+                  <Text style={styles.stepText}>הצהר את אמצעי התשלום שלך כדי שהמאמן ידע איך תשלם.</Text>
                 </View>
                 <View style={styles.stepDivider} />
                 <View style={styles.step}>
                   <View style={styles.stepDot}><Text style={styles.stepDotText}>2</Text></View>
-                  <Text style={styles.stepText}>The coach will confirm your payment to secure your spot.</Text>
+                  <Text style={styles.stepText}>המאמן יאשר את התשלום שלך כדי לאבטח את המקום שלך.</Text>
                 </View>
                 <View style={styles.stepDivider} />
                 <View style={styles.step}>
                   <View style={[styles.stepDot, { backgroundColor: '#b45309' }]}><MaterialIcons name="warning" size={11} color="#fff" /></View>
                   <Text style={styles.stepText}>
-                    Your spot is <Text style={styles.boldText}>not guaranteed</Text> until payment is confirmed by the coach.{' '}
-                    Make sure to declare your payment at least <Text style={styles.boldText}>6 hours before</Text> the lesson starts.
+                    המקום שלך <Text style={styles.boldText}>לא מובטח</Text> עד שהתשלום מאושר ע״י המאמן.{' '}
+                    ודא שאתה מצהיר תשלום לפחות <Text style={styles.boldText}>6 שעות לפני</Text> תחילת השיעור.
                   </Text>
                 </View>
               </View>
@@ -89,7 +89,7 @@ const RegistrationSuccessModal: React.FC<Props> = ({ isOpen, lesson, onClose, on
               <View style={styles.urgentBanner}>
                 <MaterialIcons name="hourglass-top" size={16} color="#b45309" />
                 <Text style={styles.urgentText}>
-                  Lesson is in {hoursUntil}h — declare your payment now to secure your spot!
+                  השיעור בעוד {hoursUntil} שעות — הצהר תשלום עכשיו כדי לאבטח את המקום שלך!
                 </Text>
               </View>
             )}
@@ -100,11 +100,11 @@ const RegistrationSuccessModal: React.FC<Props> = ({ isOpen, lesson, onClose, on
           {/* Footer */}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.laterBtn} onPress={onClose}>
-              <Text style={styles.laterBtnText}>Later</Text>
+              <Text style={styles.laterBtnText}>מאוחר יותר</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.payBtn} onPress={() => { onClose(); onMarkAsPaid(); }}>
               <MaterialIcons name="payment" size={18} color="#ffffff" style={{ marginRight: 6 }} />
-              <Text style={styles.payBtnText}>Mark as Paid</Text>
+              <Text style={styles.payBtnText}>סמן כשולם</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -137,9 +137,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.4)',
   },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#ffffff', letterSpacing: 0.4, marginBottom: 6 },
-  headerSubtitle: { fontSize: 15, fontWeight: '700', color: 'rgba(255,255,255,0.9)', marginBottom: 4 },
-  headerTime: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.75)' },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: '#ffffff', letterSpacing: 0.4, marginBottom: 6, textAlign: 'left', writingDirection: 'rtl' },
+  headerSubtitle: { fontSize: 15, fontWeight: '700', color: 'rgba(255,255,255,0.9)', marginBottom: 4, textAlign: 'left', writingDirection: 'rtl' },
+  headerTime: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.75)', textAlign: 'left', writingDirection: 'rtl' },
   content: { padding: 20 },
   chipRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
   chip: {
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(25,118,210,0.15)',
   },
-  chipText: { fontSize: 13, fontWeight: '700', color: '#1976d2' },
+  chipText: { fontSize: 13, fontWeight: '700', color: '#1976d2', writingDirection: 'rtl' },
   infoCard: {
     backgroundColor: '#f8fafc',
     borderRadius: 20,
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  infoTitle: { fontSize: 14, fontWeight: '800', color: '#0d47a1', letterSpacing: 0.4 },
+  infoTitle: { fontSize: 14, fontWeight: '800', color: '#0d47a1', letterSpacing: 0.4, textAlign: 'left', writingDirection: 'rtl' },
   stepList: { gap: 0 },
   step: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 6 },
   stepDot: {
@@ -184,9 +184,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   stepDotText: { fontSize: 11, fontWeight: '800', color: '#ffffff' },
-  stepText: { flex: 1, fontSize: 13, fontWeight: '500', color: '#374151', lineHeight: 19 },
+  stepText: { flex: 1, fontSize: 13, fontWeight: '500', color: '#374151', lineHeight: 19, textAlign: 'left', writingDirection: 'rtl' },
   boldText: { fontWeight: '800', color: '#0d47a1' },
-  stepDivider: { height: 1, backgroundColor: 'rgba(25,118,210,0.07)', marginLeft: 34, marginVertical: 4 },
+  stepDivider: { height: 1, backgroundColor: 'rgba(25,118,210,0.07)', marginStart: 34, marginVertical: 4 },
   urgentBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(180,83,9,0.25)',
   },
-  urgentText: { flex: 1, fontSize: 12.5, fontWeight: '700', color: '#b45309', lineHeight: 17 },
+  urgentText: { flex: 1, fontSize: 12.5, fontWeight: '700', color: '#b45309', lineHeight: 17, textAlign: 'left', writingDirection: 'rtl' },
   footer: {
     flexDirection: 'row',
     gap: 12,

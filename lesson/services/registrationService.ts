@@ -14,7 +14,7 @@ const normalizeRegistration = (raw: any): RegistrationWithPayment => ({
 
 const getAuthHeaders = async () => {
   const token = await SecureStorage.getToken();
-  if (!token) throw new Error('No authentication token found');
+  if (!token) throw new Error('לא נמצא אסימון אימות');
   return {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,

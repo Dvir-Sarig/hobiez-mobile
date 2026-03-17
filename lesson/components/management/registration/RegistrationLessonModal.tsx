@@ -82,7 +82,7 @@ const RegistrationLessonModal: React.FC<Props> = ({
     }
   };
 
-  const coachName = coachGlobalInfo?.name || initialCoachName || 'Coach';
+  const coachName = coachGlobalInfo?.name || initialCoachName || 'מאמן';
   const registered = lesson.registeredCount ?? 0;
   const capacity = lesson.capacityLimit ?? 0;
   const capacityColor = getCapacityColor(registered, capacity);
@@ -128,7 +128,7 @@ const RegistrationLessonModal: React.FC<Props> = ({
                     </View>
                   </View>
                 </View>
-                <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close registration modal">
+                <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="סגור חלון הרשמה">
                   <MaterialIcons name="close" size={22} color="#ffffff" />
                 </TouchableOpacity>
               </View>
@@ -149,7 +149,7 @@ const RegistrationLessonModal: React.FC<Props> = ({
                   </View>
                 </View>
               </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="Close registration modal">
+              <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityLabel="סגור חלון הרשמה">
                 <MaterialIcons name="close" size={22} color="#ffffff" />
               </TouchableOpacity>
             </View>
@@ -174,19 +174,19 @@ const RegistrationLessonModal: React.FC<Props> = ({
               <View style={styles.sectionHeaderRow}> 
                 <View style={styles.sectionHeaderLeft}> 
                   <FontAwesome5 name="users" size={16} color={capacityColor} />
-                  <Text style={styles.sectionTitle}>Capacity</Text>
+                  <Text style={styles.sectionTitle}>תפוסה</Text>
                 </View>
                 <View style={[styles.capacityPill,{ borderColor: capacityColor }]}> 
                   <Text style={[styles.capacityPillText,{ color: capacityColor }]}>{registered}/{capacity}</Text>
                 </View>
               </View>
-              <Text style={styles.capacityHint}>{registered >= capacity ? 'Fully booked' : capacity - registered <= 2 ? 'Almost full — last spots' : registered === 0 ? 'Be the first to join' : 'Spots available'}</Text>
+              <Text style={styles.capacityHint}>{registered >= capacity ? 'מלא' : capacity - registered <= 2 ? 'כמעט מלא — מקומות אחרונים' : registered === 0 ? 'היה הראשון להירשם' : 'יש מקומות פנויים'}</Text>
             </View>
 
             {/* Description */}
             {!!lesson.description && (
               <View style={styles.sectionCard}> 
-                <Text style={styles.sectionLabel}>Description</Text>
+                <Text style={styles.sectionLabel}>תיאור</Text>
                 <Text style={styles.bodyText}>{lesson.description}</Text>
               </View>
             )}
@@ -194,7 +194,7 @@ const RegistrationLessonModal: React.FC<Props> = ({
             {/* Location */}
             {locationText ? (
               <View style={styles.sectionCard}> 
-                <Text style={styles.sectionLabel}>Location</Text>
+                <Text style={styles.sectionLabel}>מיקום</Text>
                 <View style={styles.inlineRow}> 
                   <Entypo name="location-pin" size={18} color="#0d47a1" style={{ marginRight:6 }} />
                   <Text style={styles.bodyText} numberOfLines={2}>{locationText}</Text>
@@ -204,11 +204,11 @@ const RegistrationLessonModal: React.FC<Props> = ({
 
             {/* Coach */}
             <View style={styles.sectionCard}> 
-              <Text style={styles.sectionLabel}>Coach</Text>
-              <TouchableOpacity onPress={handleCoachPress} style={styles.coachRow} accessibilityLabel="View coach profile"> 
+              <Text style={styles.sectionLabel}>מאמן</Text>
+              <TouchableOpacity onPress={handleCoachPress} style={styles.coachRow} accessibilityLabel="צפה בפרופיל המאמן"> 
                 {renderCoachAvatar()}
-                <Text style={styles.coachNameText} numberOfLines={1}>{isLoadingCoachInfo? 'Loading...' : coachName}</Text>
-                <MaterialIcons name="chevron-right" size={20} color="#0d47a1" />
+                <Text style={styles.coachNameText} numberOfLines={1}>{isLoadingCoachInfo? 'טוען...' : coachName}</Text>
+                <MaterialIcons name="chevron-left" size={20} color="#0d47a1" />
               </TouchableOpacity>
             </View>
 
@@ -217,14 +217,14 @@ const RegistrationLessonModal: React.FC<Props> = ({
 
           {/* Footer Actions */}
           <View style={styles.footerBar}> 
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} disabled={isLoading} accessibilityLabel="Cancel registration"> 
-              <Text style={[styles.cancelBtnText, isLoading && { opacity:0.5 }]}>Cancel</Text>
+            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} disabled={isLoading} accessibilityLabel="ביטול הרשמה"> 
+              <Text style={[styles.cancelBtnText, isLoading && { opacity:0.5 }]}>ביטול</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.primaryBtn, isLoading && styles.primaryBtnDisabled]} onPress={handleRegister} disabled={isLoading} accessibilityLabel="Confirm registration"> 
+            <TouchableOpacity style={[styles.primaryBtn, isLoading && styles.primaryBtnDisabled]} onPress={handleRegister} disabled={isLoading} accessibilityLabel="אשר הרשמה"> 
               {isLoading ? (
                 <ActivityIndicator size="small" color="#ffffff" />
               ) : (
-                <Text style={styles.primaryBtnText}>Secure Spot</Text>
+                <Text style={styles.primaryBtnText}>שמור מקום</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -244,28 +244,28 @@ const styles = StyleSheet.create({
   headerTextCol:{ flex:1 },
   lessonIconWrap:{},
   lessonIconAvatar:{ backgroundColor:'rgba(255,255,255,0.25)' },
-  headerTitle:{ fontSize:20, fontWeight:'800', color:'#ffffff', flex:0, letterSpacing:0.4 },
+  headerTitle:{ fontSize:20, fontWeight:'800', color:'#ffffff', flex:0, letterSpacing:0.4, textAlign:'left', writingDirection:'rtl' },
   headerMetaRow:{ flexDirection:'row', alignItems:'center', marginTop:4 },
-  headerMetaText:{ fontSize:12.5, fontWeight:'700', color:'#ffffff', marginLeft:4, letterSpacing:0.5 },
+  headerMetaText:{ fontSize:12.5, fontWeight:'700', color:'#ffffff', marginStart:4, letterSpacing:0.5, writingDirection:'rtl' },
   closeBtn:{ width:40, height:40, borderRadius:14, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.4)' },
   scrollContent:{ padding:20, paddingBottom:0 },
   metricRow:{ flexDirection:'row', flexWrap:'wrap', gap:8, marginBottom:22 },
   metricChip:{ flexDirection:'row', alignItems:'center', gap:4, backgroundColor:'#f1f5f9', paddingVertical:6, paddingHorizontal:10, borderRadius:14, borderWidth:1, borderColor:'rgba(13,71,161,0.12)' },
   metricChipEmphasis:{ backgroundColor:'#ffffff', paddingVertical:8, paddingHorizontal:14, borderWidth:1, borderColor:'rgba(13,71,161,0.25)', shadowColor:'#0d47a1', shadowOpacity:0.08, shadowRadius:6, shadowOffset:{width:0,height:3} },
-  metricChipText:{ fontSize:12, fontWeight:'700', color:'#0d47a1', letterSpacing:0.3 },
+  metricChipText:{ fontSize:12, fontWeight:'700', color:'#0d47a1', letterSpacing:0.3, writingDirection:'rtl' },
   metricChipTextEmphasis:{ fontSize:14, fontWeight:'800', letterSpacing:0.5 },
   sectionCard:{ backgroundColor:'#ffffff', borderRadius:22, padding:18, marginBottom:18, borderWidth:1, borderColor:'rgba(13,71,161,0.08)', shadowColor:'#0d47a1', shadowOpacity:0.06, shadowRadius:10, shadowOffset:{width:0,height:4} },
   sectionHeaderRow:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:10 },
   sectionHeaderLeft:{ flexDirection:'row', alignItems:'center', gap:8 },
-  sectionTitle:{ fontSize:14, fontWeight:'700', color:'#0d47a1', letterSpacing:0.4 },
-  sectionLabel:{ fontSize:12, fontWeight:'800', color:'#0d47a1', marginBottom:8, letterSpacing:0.6, textTransform:'uppercase' },
-  bodyText:{ fontSize:14, fontWeight:'500', color:'#0f172a', lineHeight:20 },
+  sectionTitle:{ fontSize:14, fontWeight:'700', color:'#0d47a1', letterSpacing:0.4, textAlign:'left', writingDirection:'rtl' },
+  sectionLabel:{ fontSize:12, fontWeight:'800', color:'#0d47a1', marginBottom:8, letterSpacing:0.6, textTransform:'uppercase', textAlign:'left', writingDirection:'rtl' },
+  bodyText:{ fontSize:14, fontWeight:'500', color:'#0f172a', lineHeight:20, textAlign:'left', writingDirection:'rtl' },
   inlineRow:{ flexDirection:'row', alignItems:'center' },
   capacityPill:{ paddingHorizontal:12, paddingVertical:6, borderRadius:18, borderWidth:1, backgroundColor:'#f1f5f9', minWidth:70, alignItems:'center' },
   capacityPillText:{ fontSize:13, fontWeight:'800', letterSpacing:0.5 },
-  capacityHint:{ fontSize:11, fontWeight:'600', color:'rgba(13,71,161,0.70)', letterSpacing:0.4 },
+  capacityHint:{ fontSize:11, fontWeight:'600', color:'rgba(13,71,161,0.70)', letterSpacing:0.4, writingDirection:'rtl' },
   coachRow:{ flexDirection:'row', alignItems:'center', gap:12, paddingVertical:4 },
-  coachNameText:{ fontSize:15, fontWeight:'700', color:'#0d47a1', flex:1 },
+  coachNameText:{ fontSize:15, fontWeight:'700', color:'#0d47a1', flex:1, textAlign:'left', writingDirection:'rtl' },
   footerBar:{ flexDirection:'row', alignItems:'center', gap:14, padding:18, borderTopWidth:1, borderTopColor:'rgba(13,71,161,0.10)', backgroundColor:'rgba(255,255,255,0.94)' },
   cancelBtn:{ flex:1, backgroundColor:'rgba(255,255,255,0.55)', borderRadius:18, alignItems:'center', justifyContent:'center', paddingVertical:14, borderWidth:1.5, borderColor:'rgba(25,118,210,0.25)' },
   cancelBtnText:{ color:'#0d47a1', fontSize:14, fontWeight:'700', letterSpacing:0.4 },

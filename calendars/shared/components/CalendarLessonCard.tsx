@@ -1,6 +1,6 @@
 import React from 'react';
-import { Image } from 'react-native';
-import { getLessonBackground } from '../../../lesson/types/LessonType';
+import { ImageBackground } from 'react-native';
+import { getLessonBackground, getLessonTypeDisplayName } from '../../../lesson/types/LessonType';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import dayjs from 'dayjs';
@@ -24,22 +24,29 @@ export const CalendarLessonCard: React.FC<CalendarLessonCardProps> = ({ lesson, 
   const lessonImageSource = getLessonBackground(lesson.title);
   return (
     <TouchableOpacity key={lesson.id} style={styles.dayLessonCard} onPress={() => onPress(lesson)} activeOpacity={0.85}>
-      {lessonImageSource && (
-        <Image source={lessonImageSource} style={styles.lessonBanner} resizeMode="cover" />
+      {lessonImageSource ? (
+        <ImageBackground source={lessonImageSource} style={styles.lessonBanner} resizeMode="cover" imageStyle={styles.lessonBannerImage}>
+          <View style={styles.headerOverlay}>
+            <Text style={styles.headerTitle} numberOfLines={1}>{getLessonTypeDisplayName(lesson.title)}</Text>
+          </View>
+        </ImageBackground>
+      ) : (
+        <View style={styles.lessonBannerFallback}>
+          <Text style={styles.headerTitle} numberOfLines={1}>{getLessonTypeDisplayName(lesson.title)}</Text>
+        </View>
       )}
       <View style={styles.cardContent}>
-        <Text style={styles.dayLessonTitle} numberOfLines={1}>{lesson.title}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginVertical: 2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Icon name="schedule" size={14} color="#1976d2" style={{ marginRight: 2 }} />
+            <Icon name="schedule" size={14} color="#1976d2" style={{ marginEnd: 2 }} />
             <Text style={styles.dayLessonMeta}>{dayjs(lesson.time).format('HH:mm')}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Icon name="timer" size={14} color="#1976d2" style={{ marginRight: 2 }} />
-            <Text style={styles.dayLessonMeta}>{lesson.duration} min</Text>
+            <Icon name="timer" size={14} color="#1976d2" style={{ marginEnd: 2 }} />
+            <Text style={styles.dayLessonMeta}>{lesson.duration} דק׳</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Icon name="group" size={14} color="#1976d2" style={{ marginRight: 2 }} />
+            <Icon name="group" size={14} color="#1976d2" style={{ marginEnd: 2 }} />
             <Text style={styles.dayLessonMeta}>{lesson.registeredCount || 0}/{lesson.capacityLimit}</Text>
           </View>
         </View>
@@ -70,9 +77,36 @@ const styles = StyleSheet.create({
   lessonBanner: {
     width: '100%',
     height: 40,
+    justifyContent: 'flex-end',
+    backgroundColor: '#f3f3f3',
+  },
+  lessonBannerImage: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    backgroundColor: '#f3f3f3',
+  },
+  headerOverlay: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(13,71,161,0.30)',
+  },
+  lessonBannerFallback: {
+    height: 50,
+    backgroundColor: '#1976d2',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#ffffff',
+    textAlign: 'left',
+    writingDirection: 'rtl',
+    textShadowColor: 'rgba(0,0,0,0.22)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   cardContent: {
     padding: 14,
@@ -84,18 +118,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginEnd: 12,
   },
   typeBadgeText: {
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.5,
-  },
-  dayLessonTitle: {
-    fontSize: 14.5,
-    fontWeight: '800',
-    color: '#0d47a1',
-    marginBottom: 4,
   },
   dayLessonMeta: {
     fontSize: 11.5,

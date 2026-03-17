@@ -25,10 +25,10 @@ const ResetPassword: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState('');
 
   const validate = () => {
-    if (!email || !code) { setError('Missing email or code'); return false; }
-    if (newPassword.length < MIN_LENGTH) { setError(`Password must be at least ${MIN_LENGTH} characters`); return false; }
-    if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) { setError('Include letters and numbers'); return false; }
-    if (newPassword !== confirmPassword) { setError('Passwords do not match'); return false; }
+    if (!email || !code) { setError('חסר אימייל או קוד'); return false; }
+    if (newPassword.length < MIN_LENGTH) { setError(`הסיסמה חייבת להכיל לפחות ${MIN_LENGTH} תווים`); return false; }
+    if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) { setError('יש לכלול אותיות ומספרים'); return false; }
+    if (newPassword !== confirmPassword) { setError('הסיסמאות לא תואמות'); return false; }
     return true;
   };
 
@@ -37,24 +37,24 @@ const ResetPassword: React.FC = () => {
     setLoading(true); setError(''); setSuccessMsg('');
     try {
   const res = await resetPassword(email, code, newPassword, confirmPassword);
-      setSuccessMsg(res.message || 'Password updated');
+      setSuccessMsg(res.message || 'הסיסמה עודכנה');
       // After brief delay navigate to SignIn
       setTimeout(() => navigation.navigate('SignIn'), 1000);
     } catch (e: any) {
-      setError(e.message || 'Reset failed');
+      setError(e.message || 'האיפוס נכשל');
     } finally { setLoading(false); }
   };
 
   return (
     <AuthLayout>
       <View style={styles.card}>
-        <Text style={styles.title}>Set New Password</Text>
-        <Text style={styles.subtitle}>Code verified for {email || 'your email'}. Choose a strong password (min 8 chars incl. letters & numbers).</Text>
+        <Text style={styles.title}>הגדר סיסמה חדשה</Text>
+        <Text style={styles.subtitle}>הקוד אומת עבור {email || 'האימייל שלך'}. בחר סיסמה חזקה (מינימום 8 תווים כולל אותיות ומספרים).</Text>
 
         <View style={styles.inputGroup}>
           <TextInput
             style={styles.input}
-            placeholder="New password"
+            placeholder="סיסמה חדשה"
             placeholderTextColor="#94a3b8"
             secureTextEntry
             value={newPassword}
@@ -66,7 +66,7 @@ const ResetPassword: React.FC = () => {
         <View style={styles.inputGroup}>
           <TextInput
             style={styles.input}
-            placeholder="Confirm password"
+            placeholder="אימות סיסמה"
             placeholderTextColor="#94a3b8"
             secureTextEntry
             value={confirmPassword}
@@ -79,11 +79,11 @@ const ResetPassword: React.FC = () => {
         {successMsg ? <Text style={styles.success}>{successMsg}</Text> : null}
 
         <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={submit} disabled={loading}>
-          {loading ? <ActivityIndicator color={tokens.colors.textOnDark} /> : <Text style={styles.buttonText}>Reset Password</Text>}
+          {loading ? <ActivityIndicator color={tokens.colors.textOnDark} /> : <Text style={styles.buttonText}>אפס סיסמה</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondary} onPress={() => navigation.navigate('SignIn')}>
-          <Text style={styles.secondaryText}>Back to Sign In</Text>
+          <Text style={styles.secondaryText}>חזרה להתחברות</Text>
         </TouchableOpacity>
       </View>
     </AuthLayout>
@@ -92,17 +92,17 @@ const ResetPassword: React.FC = () => {
 
 const styles = StyleSheet.create({
   card: { ...surfaces.glassCard, borderRadius: tokens.radius.xl, padding: tokens.space.xl, ...utils.shadowSoft },
-  title: { fontSize: 26, fontWeight: tokens.fontWeight.heavy as any, color: tokens.colors.textOnDark, marginBottom: tokens.space.sm },
-  subtitle: { fontSize: 14, lineHeight: 20, color: tokens.colors.textSubtle, marginBottom: tokens.space.lg },
+  title: { fontSize: 26, fontWeight: tokens.fontWeight.heavy as any, color: tokens.colors.textOnDark, marginBottom: tokens.space.sm, textAlign: 'left', writingDirection: 'rtl' },
+  subtitle: { fontSize: 14, lineHeight: 20, color: tokens.colors.textSubtle, marginBottom: tokens.space.lg, textAlign: 'left', writingDirection: 'rtl' },
   inputGroup: { backgroundColor: tokens.colors.input, borderRadius: tokens.radius.md, paddingHorizontal: tokens.space.md, marginBottom: tokens.space.sm, borderWidth: 1.5, borderColor: tokens.colors.inputBorder },
   input: { flex: 1, paddingVertical: 12, fontSize: 15, fontWeight: tokens.fontWeight.medium as any, color: tokens.colors.textDark },
   button: { backgroundColor: tokens.colors.primary, paddingVertical: tokens.space.lg, borderRadius: tokens.radius.pill, alignItems: 'center', marginTop: tokens.space.md },
   buttonDisabled: { opacity: 0.7 },
-  buttonText: { color: tokens.colors.textOnDark, fontSize: 16, fontWeight: tokens.fontWeight.bold as any },
+  buttonText: { color: tokens.colors.textOnDark, fontSize: 16, fontWeight: tokens.fontWeight.bold as any, textAlign: 'left', writingDirection: 'rtl' },
   secondary: { marginTop: tokens.space.md, alignItems: 'center' },
-  secondaryText: { color: tokens.colors.textOnDark, fontSize: 14, fontWeight: tokens.fontWeight.semibold as any, textDecorationLine: 'underline' },
-  error: { color: tokens.colors.error, marginTop: 8, fontSize: 13 },
-  success: { color: '#10b981', marginTop: 8, fontSize: 13 }
+  secondaryText: { color: tokens.colors.textOnDark, fontSize: 14, fontWeight: tokens.fontWeight.semibold as any, textDecorationLine: 'underline', textAlign: 'left', writingDirection: 'rtl' },
+  error: { color: tokens.colors.error, marginTop: 8, fontSize: 13, textAlign: 'left', writingDirection: 'rtl' },
+  success: { color: '#10b981', marginTop: 8, fontSize: 13, textAlign: 'left', writingDirection: 'rtl' }
 });
 
 export default ResetPassword;

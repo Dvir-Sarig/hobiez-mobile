@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CoachProfile } from '../../types/profile';
 import BaseProfileView from './BaseProfileView';
+import { getLessonTypeDisplayName } from '../../../lesson/types/LessonType';
 
 interface CoachProfileViewProps {
   profileData: CoachProfile;
@@ -20,39 +21,39 @@ export default function CoachProfileView({ profileData, onEditClick, onViewCalen
       onWhatsAppPress={onWhatsAppPress}
     >
       <View style={styles.section}>
-        <SectionHeader icon="work" title="Experience" />
-        <Text style={styles.longText}>{profileData.experience || 'No experience info yet'}</Text>
+        <SectionHeader icon="work" title="ניסיון" />
+        <Text style={styles.longText}>{profileData.experience || 'אין עדיין מידע על ניסיון'}</Text>
       </View>
 
       <View style={styles.section}>
-        <SectionHeader icon="school" title="Education" />
+        <SectionHeader icon="school" title="השכלה" />
         {profileData.education && profileData.education.length > 0 ? profileData.education.map((edu, i) => (
           <View key={i} style={[styles.eduBlock, i === profileData.education.length - 1 && styles.eduBlockLast]}>
             <Text style={styles.eduDegree}>{edu.degree}</Text>
             <Text style={styles.eduInstitution}>{edu.institution}</Text>
-            <Text style={styles.eduDates}>{edu.startDate} – {edu.endDate || 'Present'}</Text>
+            <Text style={styles.eduDates}>{edu.startDate} – {edu.endDate || 'כרגע'}</Text>
             {!!edu.fieldOfStudy && <Text style={styles.metaText}>{edu.fieldOfStudy}</Text>}
             {!!edu.description && <Text style={styles.metaText}>{edu.description}</Text>}
-            {edu.gpa !== null && edu.gpa !== undefined && <Text style={styles.metaBadge}>GPA {edu.gpa}</Text>}
+            {edu.gpa !== null && edu.gpa !== undefined && <Text style={styles.metaBadge}>ממוצע {edu.gpa}</Text>}
           </View>
-        )) : <Text style={styles.emptyText}>No education added yet</Text>}
+        )) : <Text style={styles.emptyText}>עדיין לא נוספה השכלה</Text>}
       </View>
 
       <View style={styles.section}>
-        <SectionHeader icon="star" title="Skills" />
+        <SectionHeader icon="star" title="כישורים" />
         <View style={styles.chipContainer}>
           {profileData.skills && profileData.skills.length > 0 ? profileData.skills.map((skill, i) => (
-            <View key={i} style={styles.skillChip}><Text style={styles.skillChipText}>{skill}</Text></View>
-          )) : <Text style={styles.emptyText}>No skills listed</Text>}
+            <View key={i} style={styles.skillChip}><Text style={styles.skillChipText}>{getLessonTypeDisplayName(skill)}</Text></View>
+          )) : <Text style={styles.emptyText}>אין כישורים ברשימה</Text>}
         </View>
       </View>
 
       <View style={[styles.section, { marginBottom: 42 }]}>
-        <SectionHeader icon="language" title="Languages" />
+        <SectionHeader icon="language" title="שפות" />
         <View style={styles.chipContainer}>
           {profileData.genericProfile.languages && profileData.genericProfile.languages.length > 0 ? profileData.genericProfile.languages.map((lang, i) => (
             <View key={i} style={styles.langChip}><Text style={styles.langChipText}>{lang}</Text></View>
-          )) : <Text style={styles.emptyText}>No languages listed</Text>}
+          )) : <Text style={styles.emptyText}>אין שפות ברשימה</Text>}
         </View>
       </View>
     </BaseProfileView>
@@ -93,7 +94,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e3f2fd',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginEnd: 10,
   },
   sectionTitle: {
     fontSize: 15,
@@ -101,11 +102,15 @@ const styles = StyleSheet.create({
     color: '#0d47a1',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   longText: {
     fontSize: 14,
     color: '#37474f',
     lineHeight: 20,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   eduBlock: {
     marginBottom: 14,
@@ -121,22 +126,30 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#0d47a1',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   eduInstitution: {
     fontSize: 13,
     fontWeight: '600',
     color: '#1565c0',
     marginTop: 2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   eduDates: {
     fontSize: 11,
     color: '#607d8b',
     marginTop: 2,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   metaText: {
     fontSize: 12,
     color: '#455a64',
     marginTop: 4,
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   metaBadge: {
     marginTop: 6,
@@ -170,6 +183,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.3,
+    writingDirection: 'rtl',
   },
   langChip: {
     backgroundColor: '#1565c0',
@@ -186,11 +200,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.3,
+    writingDirection: 'rtl',
   },
   emptyText: {
     color: '#607d8b',
     fontSize: 13,
     fontStyle: 'italic',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   actionButtonsContainer: {
     flexDirection: 'row',
@@ -213,13 +230,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
     flex: 1,
-    marginRight: 5,
+    marginEnd: 5,
   },
   calendarButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 10,
+    marginStart: 10,
+    writingDirection: 'rtl',
   },
   whatsAppButton: {
     flexDirection: 'row',
@@ -235,12 +253,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
     flex: 1,
-    marginLeft: 5,
+    marginStart: 5,
   },
   whatsAppButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 10,
+    marginStart: 10,
+    writingDirection: 'rtl',
   },
 });

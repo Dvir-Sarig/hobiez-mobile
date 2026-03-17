@@ -11,7 +11,7 @@ import { fetchCoachGlobalInfo } from '../../profile/services/coachService';
 import UnregisterLessonModal from './components/UnregisterLessonModal';
 import UnregisterConfirmationModal from '../../lesson/components/management/registration/UnregisterConfirmationModal';
 import CoachProfileModal from '../../profile/components/modals/CoachProfileModal';
-import { formatLessonToEvent } from '../shared/utils/calendar.utils';
+import { formatLessonToEvent, hebrewDayName, hebrewDateLabel, hebrewWeekRange } from '../shared/utils/calendar.utils';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { CalendarLessonCard } from '../shared/components/CalendarLessonCard';
 import { CalendarEvent } from '../shared/types/calendar.types';
@@ -85,7 +85,7 @@ const ClientCalendarView: React.FC = () => {
       setSelectedDateLessons((prev) => prev.filter((lesson) => lesson.id !== lessonId));
     } catch (error) {
       console.error('Error unregistering:', error);
-      Alert.alert('Error', 'An error occurred while unregistering.');
+      Alert.alert('שגיאה', 'אירעה שגיאה בעת ביטול ההרשמה.');
     }
   };
 
@@ -216,7 +216,7 @@ const ClientCalendarView: React.FC = () => {
   const goNextWeek = () => { const d = weekAnchor.add(1,'week'); setWeekAnchor(d); handleDateSelect(d.toDate()); };
   const goToday = () => { const d = dayjs(); setWeekAnchor(d); handleDateSelect(d.toDate()); };
 
-  const weekRangeLabel = useMemo(()=>{ const start = weekAnchor.startOf('week').add(1,'day'); const end = start.add(6,'day'); return `${start.format('MMM D')} – ${end.format(start.month()!==end.month()? 'MMM D':'D, YYYY')}`; },[weekAnchor]);
+  const weekRangeLabel = useMemo(()=> hebrewWeekRange(weekAnchor),[weekAnchor]);
 
   const renderLessonCard = (lesson: Lesson) => {
     const typeKey = inferType(lesson.title);
@@ -238,17 +238,17 @@ const ClientCalendarView: React.FC = () => {
         <View style={styles.headerPolished}> 
           <TouchableOpacity onPress={() => {
             (navigation as any).navigate('SearchLessons', { focusRegistered: true });
-          }} style={styles.headerIconBtn} accessibilityLabel="Back to registered lessons"> 
-            <Icon name="arrow-back" size={20} color="#ffffff" />
+          }} style={styles.headerIconBtn} accessibilityLabel="חזרה לשיעורים רשומים"> 
+            <Icon name="arrow-forward" size={20} color="#ffffff" />
           </TouchableOpacity>
           <View style={{flex:1}}>
-            <Text style={styles.headerTitle}>My Schedule</Text>
+            <Text style={styles.headerTitle}>לוח השיעורים שלי</Text>
             <Text style={styles.headerSubtitle}>{weekRangeLabel}</Text>
           </View>
           <View style={styles.navControls}> 
-            <TouchableOpacity onPress={goPrevWeek} style={styles.navPill}><Icon name="chevron-left" size={20} color="#0d47a1" /></TouchableOpacity>
-            <TouchableOpacity onPress={goToday} style={[styles.navPill, styles.todayPill]}><Text style={styles.todayText}>Today</Text></TouchableOpacity>
-            <TouchableOpacity onPress={goNextWeek} style={styles.navPill}><Icon name="chevron-right" size={20} color="#0d47a1" /></TouchableOpacity>
+            <TouchableOpacity onPress={goPrevWeek} style={styles.navPill}><Icon name="chevron-right" size={20} color="#0d47a1" /></TouchableOpacity>
+            <TouchableOpacity onPress={goToday} style={[styles.navPill, styles.todayPill]}><Text style={styles.todayText}>היום</Text></TouchableOpacity>
+            <TouchableOpacity onPress={goNextWeek} style={styles.navPill}><Icon name="chevron-left" size={20} color="#0d47a1" /></TouchableOpacity>
           </View>
         </View>
 
@@ -259,7 +259,8 @@ const ClientCalendarView: React.FC = () => {
             date={weekAnchor.toDate()}
             height={Dimensions.get('window').height * 0.42}
             mode="week"
-            weekStartsOn={1}
+            weekStartsOn={0}
+            locale="he"
             hourRowHeight={44}
             swipeEnabled
             showTime
@@ -299,8 +300,8 @@ const ClientCalendarView: React.FC = () => {
         <View style={styles.dayListCard}> 
           <View style={styles.dayListHeaderRow}> 
             <View>
-              <Text style={styles.dayHeading}>{selectedDate.format('dddd')}</Text>
-              <Text style={styles.daySubHeading}>{selectedDate.format('D MMM YYYY')}</Text>
+              <Text style={styles.dayHeading}>יום {hebrewDayName(selectedDate)}</Text>
+              <Text style={styles.daySubHeading}>{hebrewDateLabel(selectedDate)}</Text>
             </View>
             <View style={styles.countBadge}><Text style={styles.countBadgeText}>{selectedDateLessons.length}</Text></View>
           </View>
@@ -309,8 +310,8 @@ const ClientCalendarView: React.FC = () => {
           ) : (
             <View style={styles.emptyState}> 
               <Icon name="event-busy" size={44} color="#ffffff" style={{opacity:0.55}} />
-              <Text style={styles.emptyTitle}>No lessons</Text>
-              <Text style={styles.emptySubtitle}>Select another day or check back later.</Text>
+              <Text style={styles.emptyTitle}>אין שיעורים</Text>
+              <Text style={styles.emptySubtitle}>בחר יום אחר או בדוק שוב מאוחר יותר.</Text>
             </View>
           )}
         </View>
@@ -343,9 +344,9 @@ const styles = StyleSheet.create({
   gradientContainer:{ flex:1 },
   overlayLayer:{ flex:1, paddingTop:Platform.OS==='ios'? 54:36, paddingHorizontal:18 },
   headerPolished:{ flexDirection:'row', alignItems:'center', marginBottom:16 },
-  headerIconBtn:{ width:46, height:46, borderRadius:16, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.45)', marginRight:14 },
-  headerTitle:{ fontSize:22, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
-  headerSubtitle:{ fontSize:12, fontWeight:'600', color:'rgba(255,255,255,0.85)', marginTop:4 },
+  headerIconBtn:{ width:46, height:46, borderRadius:16, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.45)', marginEnd:14 },
+  headerTitle:{ fontSize:22, fontWeight:'800', color:'#ffffff', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
+  headerSubtitle:{ fontSize:12, fontWeight:'600', color:'rgba(255,255,255,0.85)', marginTop:4, textAlign:'left', writingDirection:'rtl' },
   navControls:{ flexDirection:'row', alignItems:'center', gap:8 },
   navPill:{ backgroundColor:'#ffffff', paddingHorizontal:8, paddingVertical:5, borderRadius:10, borderWidth:1, borderColor:'rgba(13,71,161,0.25)', shadowColor:'#000', shadowOpacity:0.10, shadowRadius:3, shadowOffset:{width:0,height:1}, minHeight:30, minWidth:34, alignItems:'center', justifyContent:'center' },
   todayPill:{ backgroundColor:'#e3f2fd' },
@@ -356,12 +357,12 @@ const styles = StyleSheet.create({
   eventAbbr:{ fontSize:11, fontWeight:'800', color:'#0d47a1' },
   dayListCard:{ flex:1, backgroundColor:'rgba(255,255,255,0.9)', borderRadius:30, padding:18, borderWidth:1, borderColor:'rgba(255,255,255,0.55)', shadowColor:'#000', shadowOpacity:0.15, shadowRadius:18, shadowOffset:{width:0,height:8} },
   dayListHeaderRow:{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:14 },
-  dayHeading:{ fontSize:18, fontWeight:'800', color:'#0d47a1' },
-  daySubHeading:{ fontSize:12, fontWeight:'700', color:'#1976d2', marginTop:2 },
+  dayHeading:{ fontSize:18, fontWeight:'800', color:'#0d47a1', textAlign:'left', writingDirection:'rtl' },
+  daySubHeading:{ fontSize:12, fontWeight:'700', color:'#1976d2', marginTop:2, textAlign:'left', writingDirection:'rtl' },
   countBadge:{ backgroundColor:'#0d47a1', paddingHorizontal:12, paddingVertical:6, borderRadius:16, borderWidth:1, borderColor:'#1565c0' },
   countBadgeText:{ fontSize:12, fontWeight:'800', color:'#ffffff', letterSpacing:0.5 },
   dayLessonCard:{ flexDirection:'row', backgroundColor:'#ffffff', borderRadius:20, padding:14, marginBottom:14, borderWidth:1, borderColor:'rgba(13,71,161,0.1)', shadowColor:'#0d47a1', shadowOpacity:0.08, shadowRadius:10, shadowOffset:{width:0,height:4} },
-  typeBadge:{ width:46, height:46, borderRadius:16, borderWidth:1.5, alignItems:'center', justifyContent:'center', marginRight:12 },
+  typeBadge:{ width:46, height:46, borderRadius:16, borderWidth:1.5, alignItems:'center', justifyContent:'center', marginEnd:12 },
   typeBadgeText:{ fontSize:13, fontWeight:'800', letterSpacing:0.5 },
   dayLessonTitle:{ fontSize:14.5, fontWeight:'800', color:'#0d47a1', marginBottom:4 },
   dayLessonMeta:{ fontSize:11.5, fontWeight:'700', color:'#1976d2' },
@@ -369,8 +370,8 @@ const styles = StyleSheet.create({
   capacityBar:{ height:5, backgroundColor:'#e0f2fe', borderRadius:4, overflow:'hidden', marginTop:8 },
   capacityFill:{ height:5, backgroundColor:'#1976d2' },
   emptyState:{ alignItems:'center', paddingVertical:32 },
-  emptyTitle:{ fontSize:16, fontWeight:'800', color:'#0d47a1', marginTop:12 },
-  emptySubtitle:{ fontSize:12.5, fontWeight:'600', color:'#1e3a8a', marginTop:4, textAlign:'center', paddingHorizontal:18 },
+  emptyTitle:{ fontSize:16, fontWeight:'800', color:'#0d47a1', marginTop:12, textAlign:'left', writingDirection:'rtl' },
+  emptySubtitle:{ fontSize:12.5, fontWeight:'600', color:'#1e3a8a', marginTop:4, textAlign:'center', paddingHorizontal:18, writingDirection:'rtl' },
   // Compact event styles
   compactEventContainer:{ flexDirection:'row', alignItems:'center', paddingHorizontal:6, gap:4, borderRadius:8, borderWidth:1, minHeight:26 },
   compactStripe:{ position:'absolute', left:0, top:0, bottom:0, width:3, borderTopLeftRadius:6, borderBottomLeftRadius:6 },

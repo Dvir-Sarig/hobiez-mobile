@@ -35,7 +35,7 @@ export default function CoachProfileDashboard() {
   const fetchProfile = async () => {
     try {
       if (!userId) {
-        throw new Error('Missing user ID');
+        throw new Error('חסר מזהה משתמש');
       }
 
       const profileData = await fetchCoachProfile(userId);
@@ -66,7 +66,7 @@ export default function CoachProfileDashboard() {
     try {
       setSaving(true);
       if (!userId) {
-        throw new Error('Missing user ID');
+        throw new Error('חסר מזהה משתמש');
       }
 
       await updateCoachProfile(userId, editData as CoachProfile);
@@ -77,10 +77,10 @@ export default function CoachProfileDashboard() {
         setProfile(updatedProfile);
         setEditMode(false);
       } else {
-        throw new Error('Failed to fetch updated profile');
+        throw new Error('שליפת הפרופיל המעודכן נכשלה');
       }
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('שגיאה', err.message);
     } finally {
       setSaving(false);
     }
@@ -111,16 +111,16 @@ export default function CoachProfileDashboard() {
     return (
       <View style={styles.centered}>
         <View style={styles.noProfileContainer}>
-          <Text style={styles.noProfileTitle}>Ready to Coach?</Text>
+          <Text style={styles.noProfileTitle}>מוכן לאמן?</Text>
           <Text style={styles.noProfileDescription}>
-            Create your professional coach profile to showcase your expertise
-            and start connecting with new clients today.
+            צור את פרופיל המאמן המקצועי שלך כדי להציג את המומחיות שלך
+            ולהתחיל להתחבר ללקוחות חדשים היום.
           </Text>
           <TouchableOpacity 
             style={styles.createProfileButton}
             onPress={() => navigation.navigate('CreateCoachProfile')}
           >
-            <Text style={styles.createProfileButtonText}>Create Your Coach Profile</Text>
+            <Text style={styles.createProfileButtonText}>צור את פרופיל המאמן שלך</Text>
           </TouchableOpacity>
         </View>
         
@@ -185,7 +185,8 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: 'left',
+    writingDirection: 'rtl',
     padding: 20,
   },
   noProfileContainer: {
@@ -201,12 +202,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: 'left',
+    writingDirection: 'rtl',
   },
   noProfileDescription: {
     fontSize: 16,
     color: '#fff',
-    textAlign: 'center',
+    textAlign: 'left',
+    writingDirection: 'rtl',
     marginBottom: 24,
     lineHeight: 22,
   },
@@ -225,6 +228,7 @@ const styles = StyleSheet.create({
     color: '#1565c0',
     fontSize: 16,
     fontWeight: '600',
+    writingDirection: 'rtl',
   },
   deleteButtonContainer: {
     paddingHorizontal: 16,
@@ -245,6 +249,7 @@ const styles = StyleSheet.create({
     color: '#dc3545',
     fontSize: 16,
     fontWeight: '600',
-    marginLeft: 8,
+    marginStart: 8,
+    writingDirection: 'rtl',
   },
 });
