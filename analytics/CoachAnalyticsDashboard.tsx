@@ -332,7 +332,7 @@ export default function CoachAnalyticsDashboard() {
                     </Text>
                   </View>
                   <View style={styles.metricBox}>
-                    <Text style={styles.metricBoxLabel}>שיעור גבייה</Text>
+                    <Text style={styles.metricBoxLabel}>אחוז הכנסה מאושרת מנרשמים</Text>
                     <Text style={[styles.metricBoxValue, {
                       color: analyticsData.paymentAnalytics.collectionRate >= 80 ? '#15803d'
                         : analyticsData.paymentAnalytics.collectionRate >= 50 ? '#b45309' : '#dc2626',
@@ -545,7 +545,7 @@ export default function CoachAnalyticsDashboard() {
                 </View>
 
                 <View style={styles.metricBox}>
-                  <Text style={styles.metricBoxLabel}>גודל כיתה ממוצע</Text>
+                  <Text style={styles.metricBoxLabel}>גודל שיעור ממוצע</Text>
                   <Text style={styles.metricBoxValue}>{analyticsData.occupancyMetrics.averageClassSize}</Text>
                   <Text style={styles.metricBoxSubtext}>תלמידים לשיעור</Text>
                 </View>

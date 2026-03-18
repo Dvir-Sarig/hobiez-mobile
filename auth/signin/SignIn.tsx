@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AuthSession from 'expo-auth-session';
@@ -267,10 +267,9 @@ export default function SignInScreen() {
     <AuthLayout>
       <View style={styles.header}>
         <View style={styles.headerIconWrap}>
-          <Ionicons name="log-in-outline" size={40} color={tokens.colors.textOnDark} />
+          <MaterialCommunityIcons name="karate" size={40} color={tokens.colors.textOnDark} />
         </View>
-        <Text style={styles.title}>ברוכים השבים</Text>
-        <Text style={styles.subtitle}>התחבר כדי להמשיך את המסע שלך</Text>
+        <Text style={styles.title}>HOBINET</Text>
       </View>
 
       <View style={styles.formCard}>

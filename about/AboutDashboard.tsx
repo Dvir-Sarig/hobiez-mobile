@@ -69,7 +69,6 @@ export default function AboutDashboard() {
       <View pointerEvents='none' style={styles.decorBubbleThree} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.heroWrap}> 
-          <View style={styles.heroIconBadge}><MaterialIcons name='info-outline' size={22} color='#ffffff' /></View>
           <Text style={[styles.heroTitle, isMobile && styles.heroTitleMobile]}>אודות Hobinet</Text>
           <Text style={styles.heroSubtitle}>פלטפורמה צומחת ללמידת תחביבים, אימון וקהילה.</Text>
         </View>
@@ -82,7 +81,6 @@ export default function AboutDashboard() {
             {renderSectionContent(s.content)}
           </View>
         ))}
-        <Text style={styles.footerNote}>תודה שאתם מהמאמצים הראשונים.</Text>
         <View style={{height:50}} />
       </ScrollView>
     </LinearGradient>
@@ -93,7 +91,6 @@ const styles = StyleSheet.create({
   gradientBg:{ flex:1 },
   scrollContent:{ paddingTop:Platform.OS==='ios'? 56:40, paddingBottom:60 },
   heroWrap:{ paddingHorizontal:22, marginBottom:8 },
-  heroIconBadge:{ width:52, height:52, borderRadius:18, backgroundColor:'rgba(255,255,255,0.18)', alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:'rgba(255,255,255,0.35)', marginBottom:14 },
   heroTitle:{ fontSize:32, fontWeight:'800', color:'#ffffff', letterSpacing:0.5, marginBottom:10, textAlign:'left', writingDirection:'rtl' },
   heroTitleMobile:{ fontSize:26 },
   heroSubtitle:{ fontSize:14, fontWeight:'600', color:'rgba(255,255,255,0.82)', lineHeight:20, marginBottom:14, textAlign:'left', writingDirection:'rtl' },
@@ -105,7 +102,6 @@ const styles = StyleSheet.create({
   bulletRow:{ flexDirection:'row', alignItems:'flex-start', gap:8 },
   bulletText:{ flex:1, fontSize:13.5, fontWeight:'600', color:'rgba(255,255,255,0.92)', lineHeight:20, textAlign:'left', writingDirection:'rtl' },
   linkText:{ fontSize:14, fontWeight:'700', color:'#ffffff', marginBottom:8, textAlign:'left', writingDirection:'rtl' },
-  footerNote:{ marginTop:36, textAlign:'left', fontSize:12, fontWeight:'700', color:'rgba(255,255,255,0.75)', letterSpacing:0.4, writingDirection:'rtl' },
   decorBubbleOne:{ position:'absolute', top:-70, left:-50, width:200, height:200, borderRadius:100, backgroundColor:'rgba(255,255,255,0.07)' },
   decorBubbleTwo:{ position:'absolute', top:260, right:-60, width:240, height:240, borderRadius:120, backgroundColor:'rgba(255,255,255,0.05)' },
   decorBubbleThree:{ position:'absolute', bottom:-90, left:-40, width:180, height:180, borderRadius:90, backgroundColor:'rgba(255,255,255,0.06)' },

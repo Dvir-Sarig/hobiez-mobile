@@ -152,7 +152,7 @@ export default function ClientAnalyticsDashboard() {
             </View>
             <Text style={styles.headerTitle}>ההתקדמות שלך</Text>
           </View>
-          <Text style={styles.headerSubtitle}>עקוב אחר השיעורים ומסע הלמידה שלך</Text>
+          <Text style={styles.headerSubtitle}>עקוב אחר הפעילות שלך</Text>
         </View>
 
         {/* Month Navigation */}

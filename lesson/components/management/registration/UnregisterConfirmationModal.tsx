@@ -9,7 +9,6 @@ import {
   Dimensions,
   ScrollView,
   Platform,
-  Alert,
   ImageBackground,
 } from 'react-native';
 import { Lesson } from '../../../../lesson/types/Lesson';
@@ -50,6 +49,7 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCoachInfo, setIsLoadingCoachInfo] = useState(false);
   const [coachGlobalInfo, setCoachGlobalInfo] = useState<CoachGlobalInfo | null>(null);
+  const [showBlockedCancelModal, setShowBlockedCancelModal] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -94,14 +94,7 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
     const now = new Date();
     const hoursUntilLesson = (lessonTime.getTime() - now.getTime()) / (1000 * 60 * 60);
     if (hoursUntilLesson < 6) {
-      Alert.alert(
-        'ביטול לא מותר',
-        'לא ניתן לבטל רישום לשיעור פחות מ-6 שעות לפני תחילתו.\n\nכדי לבטל את הרישום, אנא צור קשר עם המאמן שלך ישירות (בטלפון או בוואטסאפ) ובקש ממנו להסיר אותך מהשיעור.',
-        [
-          { text: 'צפה בפרטי מאמן', style: 'default', onPress: handleCoachPress },
-          { text: 'אישור', style: 'cancel' },
-        ]
-      );
+      setShowBlockedCancelModal(true);
       return;
     }
     try {
@@ -121,9 +114,10 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
   };
 
   return (
-    <Modal visible={isOpen} animationType="fade" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.shell}>
+    <>
+      <Modal visible={isOpen && !showBlockedCancelModal} animationType="fade" transparent>
+        <View style={styles.overlay}>
+          <View style={styles.shell}>
           {lessonBg ? (
             <ImageBackground
               source={lessonBg}
@@ -265,7 +259,7 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
                 <MaterialIcons name="warning" size={20} color="#ff8f00" />
                 <Text style={styles.warningTitle}>עזיבת שיעור זה</Text>
               </View>
-              <Text style={styles.warningBody}>תאבד את המקום השמור שלך. אם השיעור יתמלא לאחר הביטול, ייתכן שלא תוכל להצטרף מחדש. פעולה זו אינה ניתנת לביטול מתוך האפליקציה.</Text>
+              <Text style={styles.warningBody}>תאבד את המקום השמור שלך. אם השיעור יתמלא לאחר הביטול, ייתכן שלא תוכל להצטרף מחדש.</Text>
             </View>
 
             {/* Payment refund notice */}
@@ -303,9 +297,42 @@ const UnregisterConfirmationModal: React.FC<Props> = ({
               )}
             </TouchableOpacity>
           </View>
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <Modal visible={showBlockedCancelModal} animationType="fade" transparent onRequestClose={() => setShowBlockedCancelModal(false)}>
+        <View style={styles.blockedAlertOverlay}>
+          <View style={styles.blockedAlertCard}>
+            <Text style={styles.blockedAlertTitle}>ביטול לא מותר</Text>
+            <Text style={styles.blockedAlertBody}>
+              לא ניתן לבטל רישום לשיעור פחות מ-6 שעות לפני תחילתו.{'\n\n'}
+              כדי לבטל את הרישום, אנא צור קשר עם המאמן שלך ישירות (בטלפון או בוואטסאפ)
+              ובקש ממנו להסיר אותך מהשיעור.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.blockedPrimaryBtn}
+              onPress={() => {
+                setShowBlockedCancelModal(false);
+                handleCoachPress();
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.blockedPrimaryBtnText}>צפה בפרטי מאמן</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.blockedSecondaryBtn}
+              onPress={() => setShowBlockedCancelModal(false)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.blockedSecondaryBtnText}>אישור</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -368,6 +395,75 @@ const styles = StyleSheet.create({
   dangerBtnDisabled:{ backgroundColor:'#90a4ae' },
   dangerBtnContent:{ flexDirection:'row', alignItems:'center', gap:6 },
   dangerBtnText:{ color:'#ffffff', fontSize:15, fontWeight:'800', letterSpacing:0.5, textAlign:'left', writingDirection:'rtl' },
+
+  blockedAlertOverlay:{
+    flex:1,
+    backgroundColor:'rgba(0,0,0,0.55)',
+    justifyContent:'center',
+    alignItems:'center',
+    padding:20,
+  },
+  blockedAlertCard:{
+    width:'100%',
+    maxWidth:420,
+    backgroundColor:'#ffffff',
+    borderRadius:26,
+    padding:22,
+    borderWidth:1,
+    borderColor:'rgba(13,71,161,0.12)',
+    shadowColor:'#000',
+    shadowOpacity:0.20,
+    shadowRadius:14,
+    shadowOffset:{ width:0, height:6 },
+  },
+  blockedAlertTitle:{
+    fontSize:33,
+    fontWeight:'800',
+    color:'#0d47a1',
+    marginBottom:12,
+    textAlign:'left',
+    writingDirection:'rtl',
+  },
+  blockedAlertBody:{
+    fontSize:15,
+    fontWeight:'600',
+    color:'#374151',
+    lineHeight:23,
+    marginBottom:18,
+    textAlign:'left',
+    writingDirection:'rtl',
+  },
+  blockedPrimaryBtn:{
+    backgroundColor:'rgba(25,118,210,0.12)',
+    borderRadius:18,
+    borderWidth:1,
+    borderColor:'rgba(25,118,210,0.20)',
+    alignItems:'center',
+    justifyContent:'center',
+    paddingVertical:14,
+    marginBottom:10,
+  },
+  blockedPrimaryBtnText:{
+    fontSize:16,
+    fontWeight:'800',
+    color:'#0d47a1',
+    textAlign:'left',
+    writingDirection:'rtl',
+  },
+  blockedSecondaryBtn:{
+    backgroundColor:'rgba(25,118,210,0.10)',
+    borderRadius:18,
+    alignItems:'center',
+    justifyContent:'center',
+    paddingVertical:14,
+  },
+  blockedSecondaryBtnText:{
+    fontSize:15,
+    fontWeight:'700',
+    color:'#0d47a1',
+    textAlign:'left',
+    writingDirection:'rtl',
+  },
 });
 
 export default UnregisterConfirmationModal;

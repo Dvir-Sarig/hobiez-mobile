@@ -66,7 +66,7 @@ const RegistrationSuccessModal: React.FC<Props> = ({ isOpen, lesson, onClose, on
               <View style={styles.stepList}>
                 <View style={styles.step}>
                   <View style={styles.stepDot}><Text style={styles.stepDotText}>1</Text></View>
-                  <Text style={styles.stepText}>הצהר את אמצעי התשלום שלך כדי שהמאמן ידע איך תשלם.</Text>
+                  <Text style={styles.stepText}>תבחר את אמצעי התשלום שלך כדי שהמאמן ידע איך תשלם.</Text>
                 </View>
                 <View style={styles.stepDivider} />
                 <View style={styles.step}>

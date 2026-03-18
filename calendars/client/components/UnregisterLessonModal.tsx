@@ -185,7 +185,7 @@ const UnregisterLessonModal: React.FC<Props> = ({
                   <Icon name="info" size={18} color="#1565c0" />
                   <Text style={styles.noticeTitle}>אתה רשום</Text>
                 </View>
-                <Text style={styles.noticeBody}>אם אינך יכול להגיע תוכל לשחרר את המקום שלך. תתבקש לאשר.</Text>
+                <Text style={styles.noticeBody}>אם אינך יכול להגיע בבקשה תבטל את ההרשמה שלך.</Text>
               </View>
 
               <View style={{ height:110 }} />

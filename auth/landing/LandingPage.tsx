@@ -88,7 +88,7 @@ export default function LandingPage() {
                     style={styles.heroInner}
                 >
                     <Text style={styles.title}>Hobinet</Text>
-                    <Text style={styles.subtitle}>הפוך את התחביב שלך להרגל</Text>
+                    <Text style={styles.subtitle}>הכל במקום אחד</Text>
 
                     <View style={styles.features}>
                         <View style={styles.featureItem}>
